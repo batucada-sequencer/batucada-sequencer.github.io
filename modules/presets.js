@@ -222,7 +222,7 @@ export class Presets {
 	#openSettings(event) {
 		const title = this.#title.textContent;
 		const isSelected = this.#index !== -1;
-		const isEmpty = isSelected || this.#presets[this.#index] === '0';
+		const isEmpty = isSelected || !this.#params.has(this.#setSearchParam);
 		const index = this.#presets.findIndex(({ name }) => name === title);
 		const updateSelectOptions = (select) => {
 			select.replaceChildren(select.options[0], ...this.#presets.map(({ name }) => new Option(name)));
@@ -259,3 +259,4 @@ export class Presets {
 	}
 
 }
+

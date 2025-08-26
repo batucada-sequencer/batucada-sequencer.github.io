@@ -124,12 +124,10 @@ export class Presets {
 	}
 
 	#setPresetSelection() {
-		const preset = this.#params.get(this.#setSearchParam) || '0';
+		const preset = this.#params.get(this.#setSearchParam);
 		const title = this.#params.get(this.#titleSearchParam);
 		this.#index = this.#presets.findIndex(({ value, name }) =>
-			preset === '0'
-				? value === '0' && name === title
-				: value === preset
+			preset ? value === '0' && name === title : value === preset
 		);
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
@@ -259,4 +257,5 @@ export class Presets {
 	}
 
 }
+
 

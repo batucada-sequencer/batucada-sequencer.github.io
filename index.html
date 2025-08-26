@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Batucada Sequencer - Morceau sans titre</title>
+<link rel="stylesheet" href="style.css"/>
+<link rel="manifest" href="app/app.webmanifest"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<script type="module" defer>
+import config       from './config.json' with { type: "json" };
+import instruments  from './modules/instruments.json' with { type: "json" };
+import {references} from './modules/references.js';
+import {Sequencer}  from './modules/sequencer.js';
+import {Presets}    from './modules/presets.js';
+import {UrlState}   from './modules/url_state.js';
+import {TrackSwap}  from './modules/track_swap.js';
+
+const sequencer = new Sequencer(references, config);
+const urlState  = new UrlState(references);
+const presets   = new Presets(references, config);
+const trackSwap = new TrackSwap(references);
+
+presets  .init();
+sequencer.init(instruments);
+urlState .init(instruments);
+trackSwap.init();
+
+references.container.addEventListener('click', sequencer.onClick);
+references.container.addEventListener('input', sequencer.onInput);
+references.container.addEventListener('input', trackSwap.setDraggable);
+references.container.addEventListener('change', urlState.save);
+references.presetsSelection.addEventListener('change', presets.load);
+references.favoriteButton.addEventListener('click', presets.openSettings);
+addEventListener('load', () => document.body.classList.add('loaded'));
+
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.register('sw.js');
+}
+if (!CSS.supports('inset', 'anchor-size(height)')) {
+	import('./modules/toast_positioning.js').then(({ applyPolyfill }) => {
+		applyPolyfill(references);
+	});
+}
+</script>
+</head>
+<body>
+	<div id="sequencer">
+		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
+		<h1 id="title"></h1>
+		<table>
+			<tr class="track" data-bars="4" data-beat="4" data-instrument="0" data-volume="30">
+				<th scope="row">
+					<div class="dropzone"></div>
+					<div class="select" draggable="false">
+						<div class="handle" title="Déplacer"></div> 
+						<select name="instrument" class="instrument" aria-label="instrument" autocomplete="off">
+							<option selected disabled hidden value="0">Instrument</option>
+						</select>
+						<select name="bars" class="bars" aria-label="nombre de temps" title="Nombre de temps" autocomplete="off">
+							<optgroup label="Nombre de temps">
+								<option selected>4</option>
+								<option>6</option>
+								<option>8</option>
+								<option>12</option>
+								<option>16</option>
+								<option>24</option>
+								<option>32</option>
+							</optgroup>
+						</select>
+						<select name="beat" class="beat" aria-label="mesure" title="Mesure" autocomplete="off">
+							<optgroup label="Mesure">
+								<option value="3">3/4</option>
+								<option selected value="4">4/4</option>
+								<option value="6">6/8</option>
+								<option value="8">8/8</option>
+							</optgroup>
+						</select>
+					<div>
+				</th>
+				<td>
+					<div class="sheet">
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
+					</div>
+				</td>
+				<td><input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" min="0" max="60" autocomplete="off"></td>
+			</tr>
+		</table>
+		<datalist id="volume">
+			<option value="30"></option>
+		</datalist>
+		<nav id="controls" tabindex="-1">
+			<div id="combo_presets">
+				<button id="favorite" title="Gérer le morceau" popovertarget="settings"><div>Gérer les morceaux</div></button>
+				<select id="presets" aria-label="morceaux">
+					<option disabled hidden selected>Morceau</option>
+					<option disabled>Aucun morceau</option>
+				</select>
+			</div>
+			<label id="combo_tempo" for="tempo" title="Tempo">
+				<input id="tempo" aria-label="tempo" type="range" value="80" min="60" max="160" step="4" autocomplete="off">
+				<output for="tempo"><span id="bpm">80</span> bpm</output>
+			</label>
+			<button id="reset">Effacer</button>
+			<button id="start" role="switch" aria-checked="false" title="Démarrer / Arrêter">
+				<div id="play">Démarrer</div>
+				<div id="pause">Arrêter</div>
+			</button>
+		</nav>
+		<dialog id="settings" popover>
+			<div>
+				<form id="add" method="dialog" data-success="Le morceau a été ajouté.">
+					<fieldset>
+						<legend>Ajouter un nouveau morceau</legend>
+						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" autocomplete="off" required>
+						<button>Ajouter</button>
+					</fieldset>
+				</form>
+				<form id="rename" method="dialog" data-success="Le morceau a été renommé." hidden>
+					<fieldset>
+						<legend>Renommer le morceau</legend>
+						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" autocomplete="off" required>
+						<button>Renommer</button>
+					</fieldset>
+				</form>
+				<form id="modify" method="dialog" data-success="Le morceau a été modifé." hidden>
+					<fieldset>
+						<legend>Modifier un morceau existant</legend>
+						<select name="name" aria-label="nom du morceau" required>
+							<option value="" disabled hidden selected>Choisir un morceau</option>
+						</select>
+						<button>Modifier</button>
+					</fieldset>
+				</form>
+				<form id="delete" method="dialog" data-success="Le morceau a été supprimé." hidden>
+					<fieldset>
+						<legend>Supprimer le morceau</legend>
+						<select name="name" aria-label="nom du morceau" required>
+							<option value="" disabled hidden selected>Choisir un morceau</option>
+						</select>
+						<button>Supprimer</button>
+					</fieldset>
+				</form>
+				<form id="close" method="dialog">
+					<button>Fermer</button>
+				</form>
+			</div>
+		</dialog>
+		<div id="toast" popover="auto"><p id="toast_message"></p><button id="toast_button">Annuler</button></div>
+	</div>
+</body>
+</html>

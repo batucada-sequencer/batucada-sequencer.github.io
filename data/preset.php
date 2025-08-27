@@ -24,11 +24,9 @@ $path = "$dir/$filename";
 
 function send_json_headers($file = null) {
 	header('Content-Type: application/json');
-	header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
-	header('Pragma: no-cache');
-	header('Expires: 0');
-	$time = ($file !== null && file_exists($file)) ? filemtime($file) : time();
-	header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $time) . ' GMT');
+	header('Cache-Control: public, max-age=0, must-revalidate');
+	$etag =  $file !== null && file_exists($file) ? md5_file($file) : md5('[]');
+	header('ETag: "' . $etag . '"');
 }
 
 // --- GET ---

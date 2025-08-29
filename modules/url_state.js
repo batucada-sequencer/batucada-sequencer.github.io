@@ -139,7 +139,7 @@ export class UrlState {
 						const value = this.#paramsProperties[param].encode();
 						value ? searchParams.set(param, value) : searchParams.delete(param);
 					})
-					history.replaceState(null, '', searchParams.size ? `?${searchParams.toString()}` : '.');
+					history.replaceState(null, '', searchParams.size ? `?${searchParams}` : '.');
 					dispatchEvent(new CustomEvent('locationSaved'));
 					params.clear();
 				}
@@ -149,16 +149,22 @@ export class UrlState {
 
 	#restoreFromURL() {
 		const params = new URLSearchParams(location.search);
-		for (const [param, property] of Object.entries(this.#paramsProperties)) {
-			if (params.has(param)) {
-				const value = params.get(param);
-				property.decode(value);
-				if (value === this.#paramsProperties[param].defaultValue) {
+		const volume = params.get(this.#volumeSearchParam);
+		if (volume) {
+			const setValue = params.get(this.#setSearchParam) || '0';
+			const setLength = setValue.split('-').filter(Boolean).length;
+			params.set(this.#volumeSearchParam, volume.slice(0, setLength));
+		}
+		for (const [param, { defaultValue, decode }] of Object.entries(this.#paramsProperties)) {
+			const value = params.get(param);
+			if (value !== null) {
+				decode(value);
+				if (value === defaultValue) {
 					params.delete(param);
 				}
 			}
 		}
-		history.replaceState(null, '', params.size ? `?${params.toString()}` : '.');
+		history.replaceState(null, '', params.size ? `?${params}` : '.');
 	}
 
 	#encodeSet() {

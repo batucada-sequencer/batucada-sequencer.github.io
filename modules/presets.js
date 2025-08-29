@@ -13,7 +13,13 @@ export class Presets {
 	#toastButton;
 	#setSearchParam;
 	#titleSearchParam;
-	#volumeSearchParam;
+	#shareSearchParam;
+	#shared;
+	#shareList;
+	#sharedList;
+	#shareButton;
+	#checkBoxShare;
+	#checkBoxMaster;
 	#presetsSelection;
 	#presetsSelectionInit;
 	#headUntitled;
@@ -30,23 +36,33 @@ export class Presets {
 		this.#toastMessage = references.toastMessage;
 		this.#toastButton = references.toastButton;
 		this.#setSearchParam = references.setSearchParam;
+		this.#shareSearchParam = references.shareSearchParam;
 		this.#titleSearchParam = references.titleSearchParam;
-		this.#volumeSearchParam = references.volumeSearchParam;
+		this.#shared = references.shared;
+		this.#shareList = references.shareList;
+		this.#sharedList = references.sharedList;
+		this.#shareButton = references.shareButton;
+		this.#checkBoxMaster = references.checkBoxMaster;
 		this.#presetsSelection = references.presetsSelection;
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		this.#headUntitled = references.headUntitled;
 		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
-		this.load = (event) => this.#loadPreset(event.target);
+		this.load = (event) => this.#loadSelectedPreset(event.target);
 		this.openSettings = event => this.#openSettings(event);
 	}
 
 	async init() {
 		this.#getSearchParams();
+		this.#showShared();
+		addEventListener('popstate', () => this.#toggleShared());
 		addEventListener('locationSaved', () => {
 			this.#getSearchParams();
 			this.#setPresetSelection();
 		});
-		this.#settingsDialog.addEventListener('submit', (event) => this.#submitDialog(event));
+		document.addEventListener('submit', (event) => this.#submitDialog(event));
+		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
+		this.#sharedList.addEventListener('click', (event) => this.#loadSharedPreset(event));
+		this.#shareList.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
 		const updateDataNeeded = this.#updateData();
@@ -95,16 +111,26 @@ export class Presets {
 		};
 	}
 
-	#loadPreset(preset) {
+	#loadSharedPreset(event) {
+		const url = event.target.href;
+		if (!url) return;
+		event.preventDefault();
+		const params = new URL(url).searchParams;
+		const name = params.get(this.#titleSearchParam);
+		const value = params.get(this.#setSearchParam) || '0';
+		const returnValue = JSON.stringify({ name, value });
+		this.#shared.requestClose(returnValue);
+	}
+
+	#loadSelectedPreset(preset) {
 		this.#index = preset.selectedIndex - 1;
-		const { value, name } = this.#presets[this.#index];
-		this.#params.set(this.#setSearchParam, value);
-		this.#params.set(this.#titleSearchParam, name);
-		const volume = this.#params.get(this.#volumeSearchParam);
-		if (volume) {
-			this.#params.set(this.#volumeSearchParam, volume.slice(0, value.split('-').filter(Boolean).length));
-		}
-		history.replaceState({}, '', `?${this.#params.toString()}`);
+		this.#loadPreset(this.#presets[this.#index]);
+	}
+
+	#loadPreset(preset) {
+		this.#params.set(this.#setSearchParam, preset.value);
+		this.#params.set(this.#titleSearchParam, preset.name);
+		history.replaceState({}, '', `?${this.#params}`);
 		dispatchEvent(new CustomEvent('locationChanged'));
 	}
 
@@ -127,7 +153,7 @@ export class Presets {
 		const preset = this.#params.get(this.#setSearchParam);
 		const title = this.#params.get(this.#titleSearchParam);
 		this.#index = this.#presets.findIndex(({ value, name }) =>
-			preset ? value === '0' && name === title : value === preset
+			preset ? value === preset : value === '0' && name === title
 		);
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
@@ -146,6 +172,69 @@ export class Presets {
 			event.preventDefault();
 			this.#grantPersistedStorage().then(() => this.#saveSettings(event.target));
 		}
+		else if (event.submitter.name === 'share_list') {
+			this.#showShareList(event.submitter.popoverTargetElement);
+		}
+		else if (event.submitter.name === 'share') {
+			this.#sharePresets(event.target);
+		}
+	}
+
+	#showShareList(dialog) {
+		const labels = this.#presets.map(({ name }, index) => {
+			const label = document.createElement('label');
+			const checkBox = Object.assign(document.createElement('input'), {
+				type: 'checkbox',
+				name: 'index',
+				value: index,
+				checked: index === this.#index,
+			});
+			label.append(checkBox, document.createTextNode(name));
+			return { checkBox, label };
+		});
+		this.#shareList.replaceChildren(this.#shareList.firstElementChild, ...labels.map(item => item.label));
+		this.#checkBoxShare = labels.map(item => item.checkBox);
+		this.#checkBoxMaster.checked = false;
+		this.#checkBoxMaster.disabled = !this.#presets.length;
+		this.#shareButton.disabled = this.#index === -1;
+		dialog.showModal();
+		this.#checkBoxShare[this.#index]?.scrollIntoView({ behavior: 'instant', block: 'center' });
+	}
+
+	#checkValues(event) {
+		if (event.target === this.#checkBoxMaster) {
+			this.#checkBoxShare.forEach(checkbox => checkbox.checked = this.#checkBoxMaster.checked);
+		}
+		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
+		this.#checkBoxMaster.checked = checkedCount === this.#checkBoxShare.length;
+		this.#shareButton.disabled = checkedCount === 0;
+	}
+
+	async #sharePresets(form) {
+		const data = new FormData(form);
+		const indexes = new Set(data.getAll('index').map(Number));
+		const selection = this.#presets
+			.filter((item, index) => indexes.has(index))
+			.map(({ name, value }) => value === '0' ? { name } : { name, value });
+		if (selection.length === 0) return;
+		const url = new URL(location.origin + location.pathname);
+		if (selection.length > 1) {
+			url.searchParams.set(this.#shareSearchParam, encodeURIComponent(JSON.stringify(selection)));
+		} else {
+			const { name, value } = selection[0];
+			if (value) url.searchParams.set(this.#setSearchParam, value);
+			url.searchParams.set(this.#titleSearchParam, name);
+		}
+		if (navigator.share) {
+			try {
+				await navigator.share({ title: this.#headTitlePrefix + 'Morceaux partagés', url });
+				return;
+			} catch {}
+		}
+		else {
+			await navigator.clipboard.writeText(url);
+			this.#showToastMessage('Lien de partage copié dans le presse-papier.');
+		}
 	}
 
 	async #grantPersistedStorage() {
@@ -161,7 +250,7 @@ export class Presets {
 			const nameInput = elements['name'];
 			const name = nameInput?.value.trim();
 			const oldName = this.#presets[this.#index]?.name;
-			const value = this.#params.get(this.#setSearchParam);
+			const value = this.#params.get(this.#setSearchParam) || '0';
 			const isNewName = ['add', 'rename'].includes(action);
 			if (isNewName && !this.#validateNewName(nameInput, data, name, oldName)) return;
 			this.#settingsDialog.close();
@@ -220,7 +309,6 @@ export class Presets {
 	#openSettings(event) {
 		const title = this.#title.textContent;
 		const isSelected = this.#index !== -1;
-		const isEmpty = isSelected || !this.#params.has(this.#setSearchParam);
 		const index = this.#presets.findIndex(({ name }) => name === title);
 		const updateSelectOptions = (select) => {
 			select.replaceChildren(select.options[0], ...this.#presets.map(({ name }) => new Option(name)));
@@ -233,13 +321,21 @@ export class Presets {
 			delete: document.forms['delete']
 		};
 		forms.add.hidden = isSelected;
+		forms.modify.hidden = isSelected || !this.#params.has(this.#setSearchParam) || !this.#presets.length;
 		forms.rename.hidden = !isSelected;
-		forms.modify.hidden = isEmpty || !this.#presets.length;
-		forms.delete.hidden = !isEmpty || !this.#presets.length;
-		forms.add.elements['name'].value = index !== -1 ? '' : title;
-		forms.rename.elements['name'].value = title;
-		updateSelectOptions(forms.delete.elements['name']);
-		updateSelectOptions(forms.modify.elements['name']);
+		forms.delete.hidden = !isSelected || !this.#presets.length;
+		if (!forms.add.hidden) {
+			forms.add.elements['name'].value = index !== -1 ? '' : title;
+		}
+		if (!forms.rename.hidden) {
+			forms.rename.elements['name'].value = title;
+		}
+		if (!forms.delete.hidden) {
+			forms.delete.elements['name'].value = this.#presets[this.#index].name;
+		}
+		if (!forms.modify.hidden) {
+			updateSelectOptions(forms.modify.elements['name']);
+		}
 		this.#settingsDialog.showModal();
 	}
 
@@ -247,7 +343,7 @@ export class Presets {
 		this.#title.textContent = value;
 		value ? this.#params.set(this.#titleSearchParam, value) : this.#params.delete(this.#titleSearchParam);
 		document.title = this.#headTitlePrefix + (value ? value : this.#headUntitled);
-		history.replaceState(null, '', this.#params.size ? `?${this.#params.toString()}` : '.');
+		history.replaceState(null, '', this.#params.size ? `?${this.#params}` : '.');
 	}
 
 	#applyChanges(data, title, message, cancel = false) {
@@ -256,6 +352,43 @@ export class Presets {
 		this.#showToastMessage(message, cancel);
 	}
 
+	#showShared(data) {
+		if (!this.#params.has(this.#shareSearchParam)) return;
+		const encoded = decodeURIComponent(data || this.#params.get('share'));
+		const presets = JSON.parse(encoded);
+		if (!presets.length) return
+		this.#sharedList.replaceChildren(
+			...presets.map(item => {
+				const a = document.createElement('a');
+				const li = document.createElement('li');
+				const setParam = item.value ? `${this.#setSearchParam}=${encodeURIComponent(item.value)}&` : '';
+				const titleParam = `${this.#titleSearchParam}=${encodeURIComponent(item.name)}`;
+				a.href = `./?${setParam}${titleParam}`;
+				a.textContent = item.name;
+				li.appendChild(a);
+				return li;
+			})
+		);
+		this.#shared.showModal();
+		this.#sharedList.focus();
+	}
+
+	#clearShared() {
+		if (this.#params.has(this.#shareSearchParam)) {
+			this.#params.delete(this.#shareSearchParam);
+			history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
+		}
+		if (this.#shared.returnValue) {
+			const preset = JSON.parse(this.#shared.returnValue);
+			this.#loadPreset(preset);
+			this.#setPresetSelection();
+		}
+	}
+
+	#toggleShared() {
+		const shared = this.#params.has(this.#shareSearchParam);
+		this.#getSearchParams();
+		shared ? this.#shared.close() : this.#showShared();
+	}
+
 }
-
-

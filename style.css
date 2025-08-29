@@ -415,11 +415,13 @@ dialog button {
 	width:100%;
 	padding:0 .3em .3em;
 }
-#share fieldset > label {
+#shared li ,
+#share .list > label {
 	flex-shrink:0;
 	font-size:.9em;
 	overflow:hidden;
 	text-wrap:nowrap;
+	padding:.2em 0 0 .2em;
 	text-overflow:ellipsis;
 }
 #shared div,
@@ -428,13 +430,6 @@ dialog button {
 }
 #shared .list {
 	padding: .2em .5em;
-}
-#shared li {
-	flex-shrink:0;
-	font-size:.9em;
-	overflow:hidden;
-	text-wrap:nowrap;
-	text-overflow:ellipsis;
 }
 input[type="checkbox"] {
 	margin-right:.5em;

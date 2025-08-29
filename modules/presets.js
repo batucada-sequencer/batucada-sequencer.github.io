@@ -194,9 +194,8 @@ export class Presets {
 		});
 		this.#shareList.replaceChildren(this.#shareList.firstElementChild, ...labels.map(item => item.label));
 		this.#checkBoxShare = labels.map(item => item.checkBox);
-		this.#checkBoxMaster.checked = false;
 		this.#checkBoxMaster.disabled = !this.#presets.length;
-		this.#shareButton.disabled = this.#index === -1;
+		this.#checkValues();
 		dialog.showModal();
 		this.#checkBoxShare[this.#index]?.scrollIntoView({ behavior: 'instant', block: 'center' });
 	}
@@ -390,5 +389,6 @@ export class Presets {
 		this.#getSearchParams();
 		shared ? this.#shared.close() : this.#showShared();
 	}
+
 
 }

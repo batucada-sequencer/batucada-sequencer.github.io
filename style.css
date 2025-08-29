@@ -7,8 +7,8 @@ body {
 	font:400 4.92svw/1.4 sans-serif;
 	/*overscroll-behavior:contain;*/
 }
-label,
-select,
+#combo_tempo,
+select:not([multiple]),
 input:not([type]),
 button {
 	color:#000;
@@ -20,7 +20,7 @@ button {
 	font-family:sans-serif;
 	border:1px solid hsl(240,10%,60%);
 }
-select {
+select:not([multiple]) {
 	padding-right:.8em;
 	background:white no-repeat right center;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
@@ -28,7 +28,10 @@ select {
 button {
 	background-color:hsl(240,10%,94%);
 }
-label:focus,
+button:disabled {
+	opacity:.6;
+}
+#combo_tempo:focus,
 select:focus,
 input:focus,
 button:focus {
@@ -54,14 +57,14 @@ button:focus {
 	margin:.5em .5em 0;
 	display:inline-block;
 }
-#title {
+h1 {
 	font-size:1.2em;
 	margin:.5em 0 0;
 	padding:0 0 .3em;
 	text-align:center;
 	font-weight:normal;
 }
-#skip:focus + #title {
+#skip:focus + h1 {
 	margin-top:0;
 }
 table {
@@ -288,14 +291,14 @@ nav {
 	order:4;
 }
 #start,
-#favorite {
+#combo_presets button {
 	padding:0;
 	width:2.5rem;
 	height:2.5rem;
 }
 #play,
 #pause,
-#favorite div {
+#combo_presets button div {
 	width:100%;
 	height:100%;
 	font-size:0;
@@ -314,25 +317,25 @@ nav {
 .started #pause {
 	display:block;
 }
-#favorite div {
+#combo_presets button div {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
-#combo_presets:has([value]:checked) #favorite div {
+#combo_presets:has([value]:checked) div {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="hsl(215,80%,43%)" fill="hsl(215,80%,43%)" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
-#presets,
+#combo_presets select,
 #reset {
 	height:2.5rem;
 	font-size:1em; 
 }
-#presets {
+#combo_presets select {
 	flex:1;
 	width:9em;
 	margin-left:-1px;
 	text-overflow:ellipsis;
 	border-radius:0 4px 4px 0;
 }
-#favorite {
+#combo_presets button {
 	border-radius:4px 0 0 4px;
 }
 #tempo {
@@ -348,47 +351,93 @@ dialog::backdrop {
 	background:rgba(0,0,0,.4);
 }
 dialog {
-	padding:1em;
-	max-width:19em;
+	max-width:24em;
 	border-radius:.5em;
 	border:1px solid #555;
+	box-sizing:border-box;
+	width:calc(100% - 2em);
 	inset:1em 1em auto 1em;
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
 }
-dialog div {
+#settings div {
 	gap:1em;
+	padding:1em;
 	display:flex;
 	flex-direction:column;
 }
-#close {
-	margin-top:.5em;
-	text-align:center;
-}
-dialog select,
-dialog input {
+#settings select,
+#settings input {
+	flex:1;
 	width:100%;
 	height:2em;
 	font-size:.9em;
+	text-overflow:ellipsis;
 }
 dialog button {
 	height:2em;
 	min-width:6em;
 	font-size:.9em;
 }
-dialog select,
-dialog input {
-	flex:1;
-	text-overflow:ellipsis;
+#settings input:read-only {
+	border:none;
+	pointer-events:none;
 }
-dialog fieldset {
+#settings fieldset {
 	gap:1em;
 	margin:0;
 	display:flex;
 	border-radius:.3em;
 	border:1px solid #555;
 }
-fieldset:disabled {
-	display:none;
+#close {
+	gap:1em;
+	display:flex;
+	margin-top:.5em;
+	justify-content:space-around;
+}
+#share form {
+	padding:1em;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:space-around;
+}
+.list {
+	min-width:0;
+	min-height:5em;
+	display:flex;
+	overflow-y:auto;
+	margin:.5em 0 1em;
+	border:1px solid #555;
+	flex-direction:column;
+	max-height:calc(100dvh - 10em - 2px);
+}
+#share .list {
+	width:100%;
+	padding:0 .3em .3em;
+}
+#share fieldset > label {
+	flex-shrink:0;
+	font-size:.9em;
+	overflow:hidden;
+	text-wrap:nowrap;
+	text-overflow:ellipsis;
+}
+#shared div,
+#shared form {
+	text-align: center;
+}
+#shared .list {
+	padding: .2em .5em;
+}
+#shared li {
+	flex-shrink:0;
+	font-size:.9em;
+	overflow:hidden;
+	text-wrap:nowrap;
+	text-overflow:ellipsis;
+}
+input[type="checkbox"] {
+	margin-right:.5em;
 }
 #toast {
 	color:white;
@@ -431,8 +480,8 @@ fieldset:disabled {
 
 @media (pointer:fine) and (hover:hover) {
 	input:not([type]):hover,
-	label:hover,
-	select:hover,
+	#combo_tempo:hover,
+	select:not([multiple]):hover,
 	button:not(.tic):not(:disabled):hover {
 		z-index:1;
 		border-color:hsl(240,10%,20%);

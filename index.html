@@ -122,15 +122,15 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 		</datalist>
 		<nav id="controls" tabindex="-1">
 			<div id="combo_presets">
-				<button id="favorite" title="Gérer le morceau" popovertarget="settings"><div>Gérer les morceaux</div></button>
-				<select id="presets" aria-label="morceaux">
+				<button title="Gérer le morceau" popovertarget="settings"><div>Gérer les morceaux</div></button>
+				<select aria-label="morceaux">
 					<option disabled hidden selected>Morceau</option>
 					<option disabled>Aucun morceau</option>
 				</select>
 			</div>
 			<label id="combo_tempo" for="tempo" title="Tempo">
 				<input id="tempo" aria-label="tempo" type="range" value="80" min="60" max="160" step="4" autocomplete="off">
-				<output for="tempo"><span id="bpm">80</span> bpm</output>
+				<output for="tempo"><span>80</span> bpm</output>
 			</label>
 			<button id="reset">Effacer</button>
 			<button id="start" role="switch" aria-checked="false" title="Démarrer / Arrêter">
@@ -166,18 +166,32 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				<form id="delete" method="dialog" data-success="Le morceau a été supprimé." hidden>
 					<fieldset>
 						<legend>Supprimer le morceau</legend>
-						<select name="name" aria-label="nom du morceau" required>
-							<option value="" disabled hidden selected>Choisir un morceau</option>
-						</select>
+						<input name="name" aria-label="nom du morceau" readonly tabindex="-1">
 						<button>Supprimer</button>
 					</fieldset>
 				</form>
 				<form id="close" method="dialog">
-					<button>Fermer</button>
+					<button name="share_list" popovertarget="share">Partager</button><button>Fermer</button>
 				</form>
 			</div>
 		</dialog>
-		<div id="toast" popover="auto"><p id="toast_message"></p><button id="toast_button">Annuler</button></div>
+		<dialog id="share" popover>
+			<form method="dialog">
+				<div>Morceaux à partager</div>
+				<fieldset class="list">
+					<legend><label><input type="checkbox" disabled>Tous les morceaux</label></legend>
+				</fieldset>
+				<button>Annuler</button><button name="share" disabled>Valider</button>
+			</form>
+		</dialog>
+		<dialog id="shared">
+			<div>Morceaux reçus</div>
+			<ul class="list" tabindex="-1"></ul>
+			<form method="dialog">
+				<button>Fermer</button>
+			</form>
+		</dialog>
+		<div id="toast" popover="auto"><p></p><button>Annuler</button></div>
 	</div>
 </body>
 </html>

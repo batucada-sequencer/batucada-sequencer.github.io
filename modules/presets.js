@@ -205,7 +205,7 @@ export class Presets {
 			this.#checkBoxShare.forEach(checkbox => checkbox.checked = this.#checkBoxMaster.checked);
 		}
 		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
-		this.#checkBoxMaster.checked = checkedCount === this.#checkBoxShare.length;
+		this.#checkBoxMaster.checked = checkedCount > 0 && checkedCount === this.#checkBoxShare.length;
 		this.#shareButton.disabled = checkedCount === 0;
 	}
 
@@ -389,5 +389,6 @@ export class Presets {
 		this.#getSearchParams();
 		shared ? this.#shared.close() : this.#showShared();
 	}
+
 
 }

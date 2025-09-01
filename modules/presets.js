@@ -363,6 +363,8 @@ export class Presets {
 
 	#showShared(data) {
 		if (!this.#params.has(this.#shareSearchParam)) return;
+		this.#loadPreset({ name: '', value: '0'});
+		this.#setPresetSelection();
 		const encoded = decodeURIComponent(data || this.#params.get('share'));
 		const presets = JSON.parse(encoded);
 		if (!presets.length) return
@@ -381,6 +383,7 @@ export class Presets {
 		);
 		this.#shared.showModal();
 		this.#sharedList.focus();
+		this.#sharedList.blur();
 	}
 
 	#clearShared() {
@@ -400,5 +403,6 @@ export class Presets {
 		this.#getSearchParams();
 		shared ? this.#shared.close() : this.#showShared();
 	}
+
 
 }

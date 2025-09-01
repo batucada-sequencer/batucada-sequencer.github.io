@@ -20,6 +20,7 @@ export class Presets {
 	#shareButton;
 	#checkBoxShare;
 	#checkBoxMaster;
+	#checkBoxCurrent;
 	#presetsSelection;
 	#presetsSelectionInit;
 	#headUntitled;
@@ -43,6 +44,7 @@ export class Presets {
 		this.#sharedList = references.sharedList;
 		this.#shareButton = references.shareButton;
 		this.#checkBoxMaster = references.checkBoxMaster;
+		this.#checkBoxCurrent = references.checkBoxCurrent;
 		this.#presetsSelection = references.presetsSelection;
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		this.#headUntitled = references.headUntitled;
@@ -62,7 +64,7 @@ export class Presets {
 		document.addEventListener('submit', (event) => this.#submitDialog(event));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
 		this.#sharedList.addEventListener('click', (event) => this.#loadSharedPreset(event));
-		this.#shareList.addEventListener('change', (event) => this.#checkValues(event));
+		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
 		const updateDataNeeded = this.#updateData();
@@ -116,7 +118,7 @@ export class Presets {
 		if (!url) return;
 		event.preventDefault();
 		const params = new URL(url).searchParams;
-		const name = params.get(this.#titleSearchParam);
+		const name = params.get(this.#titleSearchParam) || '';
 		const value = params.get(this.#setSearchParam) || '0';
 		const returnValue = JSON.stringify({ name, value });
 		this.#shared.requestClose(returnValue);
@@ -181,7 +183,8 @@ export class Presets {
 	}
 
 	#showShareList(dialog) {
-		const labels = this.#presets.map(({ name }, index) => {
+		const items = this.#presets.map(({ name }, index) => {
+			const li = document.createElement('li');
 			const label = document.createElement('label');
 			const checkBox = Object.assign(document.createElement('input'), {
 				type: 'checkbox',
@@ -190,11 +193,14 @@ export class Presets {
 				checked: index === this.#index,
 			});
 			label.append(checkBox, document.createTextNode(name));
-			return { checkBox, label };
+			li.append(label);
+			return { checkBox, li };
 		});
-		this.#shareList.replaceChildren(this.#shareList.firstElementChild, ...labels.map(item => item.label));
-		this.#checkBoxShare = labels.map(item => item.checkBox);
+		this.#shareList.replaceChildren(...items.map(item => item.li));
+		this.#checkBoxShare = items.map(item => item.checkBox);
 		this.#checkBoxMaster.disabled = !this.#presets.length;
+		this.#checkBoxCurrent.disabled = this.#index !== -1 || !this.#params.get(this.#setSearchParam);
+		this.#checkBoxCurrent.checked = !this.#checkBoxCurrent.disabled;
 		this.#checkValues();
 		dialog.showModal();
 		this.#checkBoxShare[this.#index]?.scrollIntoView({ behavior: 'instant', block: 'center' });
@@ -206,7 +212,7 @@ export class Presets {
 		}
 		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
 		this.#checkBoxMaster.checked = checkedCount > 0 && checkedCount === this.#checkBoxShare.length;
-		this.#shareButton.disabled = checkedCount === 0;
+		this.#shareButton.disabled = checkedCount === 0 && !this.#checkBoxCurrent.checked;
 	}
 
 	async #sharePresets(form) {
@@ -215,14 +221,18 @@ export class Presets {
 		const selection = this.#presets
 			.filter((item, index) => indexes.has(index))
 			.map(({ name, value }) => value === '0' ? { name } : { name, value });
+		if (this.#checkBoxCurrent.checked) {
+			selection.unshift({ value: this.#params.get(this.#setSearchParam) });
+			console.log(selection)
+		}
 		if (selection.length === 0) return;
 		const url = new URL(location.origin + location.pathname);
 		if (selection.length > 1) {
 			url.searchParams.set(this.#shareSearchParam, encodeURIComponent(JSON.stringify(selection)));
 		} else {
 			const { name, value } = selection[0];
+			if (name) url.searchParams.set(this.#titleSearchParam, name);
 			if (value) url.searchParams.set(this.#setSearchParam, value);
-			url.searchParams.set(this.#titleSearchParam, name);
 		}
 		if (navigator.share) {
 			try {
@@ -357,13 +367,14 @@ export class Presets {
 		const presets = JSON.parse(encoded);
 		if (!presets.length) return
 		this.#sharedList.replaceChildren(
-			...presets.map(item => {
+			...presets.map(({ name, value }) => {
 				const a = document.createElement('a');
 				const li = document.createElement('li');
-				const setParam = item.value ? `${this.#setSearchParam}=${encodeURIComponent(item.value)}&` : '';
-				const titleParam = `${this.#titleSearchParam}=${encodeURIComponent(item.name)}`;
-				a.href = `./?${setParam}${titleParam}`;
-				a.textContent = item.name;
+				const url = new URL(location.origin + location.pathname);
+				if (name) url.searchParams.set(this.#titleSearchParam, name);
+				if (value) url.searchParams.set(this.#setSearchParam, value);
+				a.href = url.href;
+				a.textContent = name || 'Morceau sans titre';
 				li.appendChild(a);
 				return li;
 			})
@@ -389,6 +400,5 @@ export class Presets {
 		this.#getSearchParams();
 		shared ? this.#shared.close() : this.#showShared();
 	}
-
 
 }

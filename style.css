@@ -443,7 +443,7 @@ ul {
 #share ul:before {
 	top:0;
 	content:'';
-	height:.6em;
+	height:.8em;
 	display:block;
 	position:sticky;
 	background:#fff;
@@ -458,7 +458,7 @@ dialog li {
 	font-size:.9em;
 	overflow:hidden;
 	text-wrap:nowrap;
-	padding:.2em 0 0 .2em;
+	padding:0 0 .2em .2em;
 	text-overflow:ellipsis;
 }
 #toast {
@@ -599,4 +599,5 @@ dialog li {
 	.volume {
 		-webkit-appearance:slider-vertical;
 	}
+
 }

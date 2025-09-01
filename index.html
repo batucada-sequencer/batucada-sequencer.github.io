@@ -170,26 +170,30 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 						<button>Supprimer</button>
 					</fieldset>
 				</form>
-				<form id="close" method="dialog">
+				<form class="bottom" method="dialog">
 					<button name="share_list" popovertarget="share">Partager</button><button>Fermer</button>
 				</form>
 			</div>
 		</dialog>
 		<dialog id="share" popover>
 			<form method="dialog">
-				<div>Morceaux à partager</div>
-				<fieldset class="list">
-					<legend><label><input type="checkbox" disabled>Tous les morceaux</label></legend>
-				</fieldset>
-				<button>Annuler</button><button name="share" disabled>Valider</button>
+				<h2>Partager</h2>
+				<label class="current"><input type="checkbox" name="current">Morceau en cours</label>
+				<label class="legend"><input type="checkbox" disabled>Morceaux enregistrés</label>
+				<ul></ul>
+				<div class="bottom">
+					<button>Annuler</button><button name="share" disabled>Valider</button>
+				</div>
 			</form>
 		</dialog>
 		<dialog id="shared">
-			<div>Morceaux reçus</div>
-			<ul class="list" tabindex="-1"></ul>
-			<form method="dialog">
-				<button>Fermer</button>
-			</form>
+			<div>
+				<h2>Morceaux partagés</h2>
+				<ul tabindex="-1"></ul>
+				<form class="bottom" method="dialog">
+					<button>Fermer</button>
+				</form>
+			</div>
 		</dialog>
 		<div id="toast" popover="auto"><p></p><button>Annuler</button></div>
 	</div>

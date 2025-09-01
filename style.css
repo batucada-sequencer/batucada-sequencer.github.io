@@ -64,6 +64,12 @@ h1 {
 	text-align:center;
 	font-weight:normal;
 }
+h2 {
+	margin:0;
+	font-size:1em;
+	text-align:center;
+	font-weight:normal;
+}
 #skip:focus + h1 {
 	margin-top:0;
 }
@@ -351,6 +357,7 @@ dialog::backdrop {
 	background:rgba(0,0,0,.4);
 }
 dialog {
+	padding:0;
 	max-width:24em;
 	border-radius:.5em;
 	border:1px solid #555;
@@ -386,53 +393,73 @@ dialog button {
 	gap:1em;
 	margin:0;
 	display:flex;
-	border-radius:.3em;
 	border:1px solid #555;
 }
-#close {
+.bottom {
 	gap:1em;
 	display:flex;
 	margin-top:.5em;
 	justify-content:space-around;
 }
-#share form {
-	padding:1em;
+#share form,
+#shared > div {
+	gap:.5em;
 	display:flex;
-	flex-wrap:wrap;
-	justify-content:space-around;
-}
-.list {
-	min-width:0;
-	min-height:5em;
-	display:flex;
-	overflow-y:auto;
-	margin:.5em 0 1em;
-	border:1px solid #555;
+	padding:.5em 1em 1em;
 	flex-direction:column;
-	max-height:calc(100dvh - 10em - 2px);
+	max-height:calc(100dvh - 3.9em);
 }
-#share .list {
-	width:100%;
-	padding:0 .3em .3em;
+dialog ul {
+	margin:0;
+	min-width:0;
+	padding:.3em;
+	min-height:4em;
+	overflow-y:auto;
+	border:1px solid #555;
 }
-#shared li ,
-#share .list > label {
-	flex-shrink:0;
+ul {
+	margin:0;
+	padding:0;
+}
+#share .current {
+	padding:.3em;
+	margin-bottom:.4em;
+	border:1px solid #555;
+}
+#share .legend {
+	z-index:1;
+	display:flex;
+	line-height:1.4;
+	background:#fff;
+	align-self:flex-start;
+	border:1px solid #fff;
+	border-right-width:3px;
+	margin:-.3em 0 -1.25em .3em;
+}
+#share ul {
+	position:relative;
+	padding:0 .3em .3em .5em;
+}
+#share ul:before {
+	top:0;
+	content:'';
+	height:.6em;
+	display:block;
+	position:sticky;
+	background:#fff;
+}
+input[type="checkbox"] {
+	margin-right:.5em;
+}
+label:has([name="current"]:disabled) {
+	display:none;
+}
+dialog li {
 	font-size:.9em;
 	overflow:hidden;
 	text-wrap:nowrap;
 	padding:.2em 0 0 .2em;
 	text-overflow:ellipsis;
-}
-#shared div,
-#shared form {
-	text-align: center;
-}
-#shared .list {
-	padding: .2em .5em;
-}
-input[type="checkbox"] {
-	margin-right:.5em;
 }
 #toast {
 	color:white;

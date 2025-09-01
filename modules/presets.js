@@ -363,6 +363,8 @@ export class Presets {
 
 	#showShared(data) {
 		if (!this.#params.has(this.#shareSearchParam)) return;
+		this.#loadPreset({ name: '', value: '0'});
+		this.#setPresetSelection();
 		const encoded = decodeURIComponent(data || this.#params.get('share'));
 		const presets = JSON.parse(encoded);
 		if (!presets.length) return
@@ -385,6 +387,7 @@ export class Presets {
 	}
 
 	#clearShared() {
+		this.#getSearchParams();
 		if (this.#params.has(this.#shareSearchParam)) {
 			this.#params.delete(this.#shareSearchParam);
 			history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
@@ -402,6 +405,4 @@ export class Presets {
 		shared ? this.#shared.close() : this.#showShared();
 	}
 
-
 }
-

@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.18.21',
+	app: '1.18.43',
 	static: '1.01'
 };
 
@@ -72,33 +72,47 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+	if (event.request.method !== 'GET') return;
 	const url = new URL(event.request.url);
 	const folder = url.pathname.split('/').slice(-2, -1)[0];
 	if (folder === 'data') {
-		event.respondWith(
-			(async () => {
-				const cache = await caches.open(dataCache);
-				try {
-					const networkResponse = await fetch(event.request);
-					cache.put(event.request, networkResponse.clone());
-					return networkResponse;
-				}
-				catch (error) {
-					const cachedResponse = await cache.match(event.request);
-					return (
-						cachedResponse ||
-						new Response(JSON.stringify([]), { headers: { 'Content-Type': 'application/json' } })
-					);
-				}
-			})()
-		);
+		event.respondWith(handleDataRequest(event.request));
 	} else {
-		event.respondWith(
-			(async () => {
-				const cache = await caches.open(appCache);
-				const cachedResponse = await cache.match(event.request, { ignoreSearch: true });
-				return cachedResponse || fetch(event.request);
-			})()
-		);
+		event.respondWith(handleAppRequest(event.request));
 	}
 });
+
+async function handleDataRequest(request) {
+	const cache = await caches.open(dataCache);
+	const noCache = request.headers.get('Cache-Control') === 'no-cache';
+	if (noCache) {
+		try {
+			const networkResponse = await fetch(request);
+			if (networkResponse.ok) {
+				await cache.put(request, networkResponse.clone());
+			}
+			return networkResponse;
+		} catch (error) {
+			return Response.error();
+		}
+	} else {
+		const cachedResponse = await cache.match(request);
+		(async () => {
+			try {
+				const networkResponse = await fetch(request);
+				if (networkResponse.ok) {
+					await cache.put(request, networkResponse.clone());
+				}
+			} catch (error) {}
+		})();
+		return cachedResponse || (await fetch(request).catch(() => new Response(JSON.stringify([]), {
+			headers: { 'Content-Type': 'application/json' }
+		})));
+	}
+}
+
+async function handleAppRequest(request) {
+	const cache = await caches.open(appCache);
+	const cachedResponse = await cache.match(request, { ignoreSearch: true });
+	return cachedResponse || fetch(request);
+}

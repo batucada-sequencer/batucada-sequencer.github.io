@@ -357,13 +357,14 @@ dialog::backdrop {
 	background:rgba(0,0,0,.4);
 }
 dialog {
+	inset:1em;
 	padding:0;
+	margin:0 auto;
 	max-width:24em;
 	border-radius:.5em;
 	border:1px solid #555;
 	box-sizing:border-box;
 	width:calc(100% - 2em);
-	inset:1em 1em auto 1em;
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
 }
 #settings div,
@@ -405,7 +406,8 @@ dialog button {
 }
 #share form,
 #shared > div {
-	max-height:calc(100dvh - 4.6em);
+	box-sizing:border-box;
+	max-height:calc(100dvh - 2.5em);
 }
 dialog ul {
 	margin:0;

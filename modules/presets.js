@@ -49,21 +49,19 @@ export class Presets {
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		this.#headUntitled = references.headUntitled;
 		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
-		this.load = (event) => this.#loadSelectedPreset(event.target);
+		this.load = (event) => this.#loadPreset(event.target);
 		this.openSettings = event => this.#openSettings(event);
 	}
 
 	async init() {
 		this.#getSearchParams();
 		this.#showShared();
-		addEventListener('popstate', () => this.#toggleShared());
 		addEventListener('locationSaved', () => {
 			this.#getSearchParams();
 			this.#setPresetSelection();
 		});
 		document.addEventListener('submit', (event) => this.#submitDialog(event));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
-		this.#sharedList.addEventListener('click', (event) => this.#loadSharedPreset(event));
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
@@ -113,25 +111,11 @@ export class Presets {
 		};
 	}
 
-	#loadSharedPreset(event) {
-		const url = event.target.href;
-		if (!url) return;
-		event.preventDefault();
-		const params = new URL(url).searchParams;
-		const name = params.get(this.#titleSearchParam) || '';
-		const value = params.get(this.#setSearchParam) || '0';
-		const returnValue = JSON.stringify({ name, value });
-		this.#shared.requestClose(returnValue);
-	}
-
-	#loadSelectedPreset(preset) {
-		this.#index = preset.selectedIndex - 1;
-		this.#loadPreset(this.#presets[this.#index]);
-	}
-
 	#loadPreset(preset) {
-		this.#params.set(this.#setSearchParam, preset.value);
-		this.#params.set(this.#titleSearchParam, preset.name);
+		this.#index = preset.selectedIndex - 1;
+		const { name, value } = this.#presets[this.#index];
+		this.#params.set(this.#setSearchParam, value);
+		this.#params.set(this.#titleSearchParam, name);
 		history.replaceState({}, '', `?${this.#params}`);
 		dispatchEvent(new CustomEvent('locationChanged'));
 	}
@@ -223,7 +207,6 @@ export class Presets {
 			.map(({ name, value }) => value === '0' ? { name } : { name, value });
 		if (this.#checkBoxCurrent.checked) {
 			selection.unshift({ value: this.#params.get(this.#setSearchParam) });
-			console.log(selection)
 		}
 		if (selection.length === 0) return;
 		const url = new URL(location.origin + location.pathname);
@@ -363,8 +346,6 @@ export class Presets {
 
 	#showShared(data) {
 		if (!this.#params.has(this.#shareSearchParam)) return;
-		this.#loadPreset({ name: '', value: '0'});
-		this.#setPresetSelection();
 		const encoded = decodeURIComponent(data || this.#params.get('share'));
 		const presets = JSON.parse(encoded);
 		if (!presets.length) return
@@ -387,22 +368,8 @@ export class Presets {
 	}
 
 	#clearShared() {
-		this.#getSearchParams();
-		if (this.#params.has(this.#shareSearchParam)) {
-			this.#params.delete(this.#shareSearchParam);
-			history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
-		}
-		if (this.#shared.returnValue) {
-			const preset = JSON.parse(this.#shared.returnValue);
-			this.#loadPreset(preset);
-			this.#setPresetSelection();
-		}
-	}
-
-	#toggleShared() {
-		const shared = this.#params.has(this.#shareSearchParam);
-		this.#getSearchParams();
-		shared ? this.#shared.close() : this.#showShared();
+		this.#params.delete(this.#shareSearchParam);
+		history.replaceState(null, '', this.#params.size ? `?${this.#params}` : '.');
 	}
 
 }

@@ -366,7 +366,9 @@ dialog {
 	inset:1em 1em auto 1em;
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
 }
-#settings div {
+#settings div,
+#share form,
+#shared > div {
 	gap:1em;
 	padding:1em;
 	display:flex;
@@ -403,11 +405,7 @@ dialog button {
 }
 #share form,
 #shared > div {
-	gap:.5em;
-	display:flex;
-	padding:.5em 1em 1em;
-	flex-direction:column;
-	max-height:calc(100dvh - 3.9em);
+	max-height:calc(100dvh - 4.6em);
 }
 dialog ul {
 	margin:0;
@@ -434,7 +432,7 @@ ul {
 	align-self:flex-start;
 	border:1px solid #fff;
 	border-right-width:3px;
-	margin:-.3em 0 -1.25em .3em;
+	margin:-.5em 0 -1.75em .3em;
 }
 #share ul {
 	position:relative;
@@ -599,5 +597,4 @@ dialog li {
 	.volume {
 		-webkit-appearance:slider-vertical;
 	}
-
 }

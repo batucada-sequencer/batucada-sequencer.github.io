@@ -60,30 +60,27 @@ export class Presets {
 			this.#getSearchParams();
 			this.#setPresetSelection();
 		});
+		addEventListener('focus', () => this.#updateOptions(true));
 		document.addEventListener('submit', (event) => this.#submitDialog(event));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
-		const updateDataNeeded = this.#updateData();
-		if (updateDataNeeded) {
-			document.addEventListener('visibilitychange', updateDataNeeded);
-		}
 		const user = this.#params.get('user')?.trim() || '0';
 		this.#fileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
-		this.#fetchData().then(data => this.#createOptions(data));
+		this.#updateOptions();
 	}
 
-	#fetchData() {
-		const getResponse = this.#local
-			? caches.open(this.#cacheName).then(cache => cache.match(this.#fileName))
-			: fetch(this.#fileName);
-		return getResponse
-			.then(response => response && response.ok ? response.json() : []);
-	}
-
-	#getSearchParams() {
-		this.#params = new URLSearchParams(location.search);
+	async #fetchData(noCache) {
+		if (this.#local) {
+			const cache = await caches.open(this.#cacheName);
+			const response = await cache.match(this.#fileName);
+			return response ? await response.json() : [];
+		} else {
+			const response = await fetch(this.#fileName, noCache ? { headers: { 'Cache-Control': 'no-cache' } } : {});
+			if (!response.ok) throw new Error();
+			return response.json();
+		}
 	}
 
 	#saveData(data) {
@@ -98,17 +95,8 @@ export class Presets {
 		return fetch(this.#fileName, { method: 'PUT', body }).then((response) => cacheResponse(response));
 	}
 
-	#updateData() {
-		if (this.#local) return null;
-		let lastCall = 0;
-		const delay = 600000;
-		return () => {
-			const now = Date.now();
-			if (now - lastCall > delay) {
-				lastCall = now;
-				this.#fetchData().then(data => this.#createOptions(data));
-			}
-		};
+	#getSearchParams() {
+		this.#params = new URLSearchParams(location.search);
 	}
 
 	#loadPreset(preset) {
@@ -120,8 +108,15 @@ export class Presets {
 		dispatchEvent(new CustomEvent('locationChanged'));
 	}
 
+	async #updateOptions(noCache) {
+		try {
+			const data = await this.#fetchData(noCache);
+			this.#createOptions(data);
+		} catch (error) {}
+	}
+
 	#createOptions(presets) {
-		if (!Array.isArray(presets)) return;
+		if (!Array.isArray(presets) || JSON.stringify(presets) === JSON.stringify(this.#presets)) return;
 		this.#presets = presets;
 		if (presets.length) {
 			const fragment = document.createDocumentFragment();
@@ -132,7 +127,7 @@ export class Presets {
 			this.#presetsSelection.replaceChildren(...this.#presetsSelectionInit.cloneNode(true).options);
 		}
 		this.#setPresetSelection();
-		console.log('Presets loaded');
+		console.log('Presets updated');
 	}
 
 	#setPresetSelection() {
@@ -237,7 +232,7 @@ export class Presets {
 
 	async #saveSettings(form) {
 		try {
-			const data = await this.#fetchData();
+			const data = await this.#fetchData(true);
 			const { id: action, elements, dataset } = form;
 			const nameInput = elements['name'];
 			const name = nameInput?.value.trim();
@@ -262,6 +257,9 @@ export class Presets {
 			this.#applyChanges(data, action === 'delete' ? '' : name, dataset.success, true);
 		} 
 		catch (error) {
+			if (this.#settingsDialog.open) {
+				this.#settingsDialog.close();
+			}
 			this.#showToastMessage('⚠️ La modification a échoué.');
 		}
 	}

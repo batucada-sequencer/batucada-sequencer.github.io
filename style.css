@@ -66,7 +66,7 @@ h1 {
 }
 h2 {
 	margin:0;
-	font-size:1em;
+	font-size:1.1em;
 	text-align:center;
 	font-weight:normal;
 }
@@ -537,8 +537,11 @@ dialog li {
 		--margin-top:.5em;
 		border-radius:.5em;
 	}
-	#title {
+	h1 {
 		font-size:1.4em;
+	}
+	h2 {
+		font-size:1.2em;
 	}
 	.track .select {
 		margin-left:.2em;
@@ -599,4 +602,5 @@ dialog li {
 	.volume {
 		-webkit-appearance:slider-vertical;
 	}
+
 }

@@ -147,7 +147,7 @@ export class Presets {
 	}
 
 	#submitDialog(event) {
-		if (['add', 'modify' ,'rename' ,'delete'].includes(event.target.id)) {
+		if (['newOne', 'modify' ,'rename' ,'delete'].includes(event.target.id)) {
 			event.preventDefault();
 			this.#grantPersistedStorage().then(() => this.#saveSettings(event.target));
 		}
@@ -238,19 +238,19 @@ export class Presets {
 	async #saveSettings(form) {
 		try {
 			const data = await this.#fetchData(true);
+			const title = this.#title.textContent;
 			const { id: action, elements, dataset } = form;
 			const nameInput = elements['name'];
 			const name = nameInput?.value.trim();
-			const oldName = this.#presets[this.#index]?.name;
 			const value = this.#params.get(this.#setSearchParam) || '0';
-			const isNewName = ['add', 'rename'].includes(action);
-			if (isNewName && !this.#validateNewName(nameInput, data, name, oldName)) return;
+			const isNewName = ['newOne', 'rename'].includes(action);
+			if (isNewName && !this.#validateNewName(nameInput, data, name)) return;
 			this.#settingsDialog.close();
-			const indexName = action === 'rename' ? oldName || '' : name;
+			const indexName = action === 'rename' ? title : name;
 			const index = data.findIndex(preset => preset.name === indexName);
 			this.#lastAction = { data: structuredClone(data), title: this.#title.textContent };
 			switch (action) {
-				case 'add': data.push({ name, value }); break;
+				case 'newOne': data.push({ name, value }); break;
 				case 'modify': data[index].value = value; break;
 				case 'rename': data[index].name = name; break;
 				case 'delete': data.splice(index, 1); break;
@@ -269,9 +269,9 @@ export class Presets {
 		}
 	}
 	
-	#validateNewName(nameInput, data, newName, oldName) {
+	#validateNewName(nameInput, data, newName) {
 		const existingNames = new Set(data.map(item => item.name));
-		existingNames.delete(oldName);
+		existingNames.delete(this.#title.textContent);
 		if (!/\S/.test(newName)) {
 			nameInput.setCustomValidity('Doit contenir au moins un caractère.');
 		}
@@ -307,7 +307,7 @@ export class Presets {
 		const hasSelection = this.#index !== -1;
 		const exists = presetIndex !== -1;
 		const formsValues = [
-			{ formId:'add', name: exists ? '' : title, hidden: hasSelection },
+			{ formId:'newOne', name: exists ? '' : title, hidden: hasSelection },
 			{ formId:'modify', name: title, hidden: hasSelection || !exists },
 			{ formId:'rename', name: title, hidden: !hasSelection },
 			{ formId:'delete', name: title, hidden: !hasSelection },

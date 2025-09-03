@@ -162,21 +162,28 @@ export class Presets {
 	}
 
 	#showShareList(dialog) {
-		const items = this.#presets.map(({ name }, index) => {
-			const li = document.createElement('li');
-			const label = document.createElement('label');
-			const checkBox = Object.assign(document.createElement('input'), {
-				type: 'checkbox',
-				name: 'index',
-				value: index,
-				checked: index === this.#index,
+		const items = [];
+		if (this.#presets.length > 0) {
+			this.#presets.forEach(({ name }, index) => {
+				const li = document.createElement('li');
+				const label = document.createElement('label');
+				const checkBox = Object.assign(document.createElement('input'), {
+					type: 'checkbox',
+					name: 'index',
+					value: index,
+					checked: index === this.#index,
+				});
+				label.append(checkBox, document.createTextNode(name));
+				li.append(label);
+				items.push(li);
 			});
-			label.append(checkBox, document.createTextNode(name));
-			li.append(label);
-			return { checkBox, li };
-		});
-		this.#shareList.replaceChildren(...items.map(item => item.li));
-		this.#checkBoxShare = items.map(item => item.checkBox);
+		} else {
+			const li = document.createElement('li');
+			li.append(document.createTextNode('Aucun morceau'));
+			items.push(li);
+		}
+		this.#shareList.replaceChildren(...items);
+		this.#checkBoxShare = Array.from(this.#shareList.querySelectorAll('input[type="checkbox"]'));
 		this.#checkBoxMaster.disabled = !this.#presets.length;
 		this.#checkBoxCurrent.disabled = this.#index !== -1 || !this.#params.get(this.#setSearchParam);
 		this.#checkBoxCurrent.checked = !this.#checkBoxCurrent.disabled;

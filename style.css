@@ -428,9 +428,9 @@ ul {
 	padding:0;
 }
 #share .current {
-	padding:.3em;
 	margin-bottom:.4em;
 	border:1px solid #555;
+	padding:.3em .3em .3em .7em;
 }
 #share .legend {
 	z-index:1;

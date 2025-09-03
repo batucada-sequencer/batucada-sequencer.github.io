@@ -138,7 +138,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				<div id="pause">Arrêter</div>
 			</button>
 		</nav>
-		<dialog id="settings" popover>
+		<dialog id="settings" aria-modal="true" popover>
 			<div>
 				<h2>Gérer le morceau</h2>
 				<form id="modify" method="dialog" data-success="Le morceau a été enregistré." hidden>
@@ -174,7 +174,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				</form>
 			</div>
 		</dialog>
-		<dialog id="share" popover>
+		<dialog id="share" aria-modal="true" popover>
 			<form method="dialog">
 				<h2>Partager</h2>
 				<label class="current"><input type="checkbox" name="current">Morceau en cours</label>
@@ -185,7 +185,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				</div>
 			</form>
 		</dialog>
-		<dialog id="shared">
+		<dialog id="shared" aria-modal="true">
 			<div>
 				<h2>Morceaux partagés</h2>
 				<ul></ul>

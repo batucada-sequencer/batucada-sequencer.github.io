@@ -144,9 +144,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				<form id="modify" method="dialog" data-success="Le morceau a été enregistré." hidden>
 					<fieldset>
 						<legend>Enregistrer le morceau</legend>
-						<select name="name" aria-label="nom du morceau" required>
-							<option value="" disabled hidden selected>Choisir un morceau</option>
-						</select>
+						<input name="name" aria-label="nom du morceau" readonly tabindex="-1">
 						<button>Enregistrer</button>
 					</fieldset>
 				</form>

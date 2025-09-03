@@ -438,9 +438,7 @@ ul {
 	line-height:1.4;
 	background:#fff;
 	align-self:flex-start;
-	border:1px solid #fff;
-	border-right-width:3px;
-	margin:-.5em 0 -1.75em .3em;
+	margin:-.5em 0 -1.75em .72em;
 }
 #share ul {
 	position:relative;

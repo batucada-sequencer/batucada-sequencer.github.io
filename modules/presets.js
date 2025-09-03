@@ -131,11 +131,9 @@ export class Presets {
 	}
 
 	#setPresetSelection() {
-		const preset = this.#params.get(this.#setSearchParam);
+		const preset = this.#params.get(this.#setSearchParam) || '0';
 		const title = this.#params.get(this.#titleSearchParam);
-		this.#index = this.#presets.findIndex(({ value, name }) =>
-			preset ? value === preset : value === '0' && name === title
-		);
+		this.#index = this.#presets.findIndex(({ value, name }) => value === preset && name === title);
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
 			this.#setTitle(this.#presets[this.#index].name);
@@ -227,7 +225,7 @@ export class Presets {
 		}
 		else {
 			await navigator.clipboard.writeText(url);
-			this.#showToastMessage('Lien de partage copié dans le presse-papier.');
+			this.#showToastMessage('🔗 Lien de partage copié dans le presse-papier.');
 		}
 	}
 
@@ -305,33 +303,19 @@ export class Presets {
 
 	#openSettings(event) {
 		const title = this.#title.textContent;
-		const isSelected = this.#index !== -1;
-		const index = this.#presets.findIndex(({ name }) => name === title);
-		const updateSelectOptions = (select) => {
-			select.replaceChildren(select.options[0], ...this.#presets.map(({ name }) => new Option(name)));
-			select.selectedIndex = 1 + index;
-		};
-		const forms = {
-			add: document.forms['add'],
-			modify: document.forms['modify'],
-			rename: document.forms['rename'],
-			delete: document.forms['delete']
-		};
-		forms.add.hidden = isSelected;
-		forms.modify.hidden = isSelected || !this.#params.has(this.#setSearchParam) || !this.#presets.length;
-		forms.rename.hidden = !isSelected;
-		forms.delete.hidden = !isSelected || !this.#presets.length;
-		if (!forms.add.hidden) {
-			forms.add.elements['name'].value = index !== -1 ? '' : title;
-		}
-		if (!forms.rename.hidden) {
-			forms.rename.elements['name'].value = title;
-		}
-		if (!forms.delete.hidden) {
-			forms.delete.elements['name'].value = this.#presets[this.#index].name;
-		}
-		if (!forms.modify.hidden) {
-			updateSelectOptions(forms.modify.elements['name']);
+		const presetIndex = this.#presets.findIndex(({ name }) => name === title);
+		const hasSelection = this.#index !== -1;
+		const exists = presetIndex !== -1;
+		const formsValues = [
+			{ formId:'add', name: exists ? '' : title, hidden: hasSelection },
+			{ formId:'modify', name: title, hidden: hasSelection || !exists },
+			{ formId:'rename', name: title, hidden: !hasSelection },
+			{ formId:'delete', name: title, hidden: !hasSelection },
+		];
+		for (const { formId, name, hidden } of formsValues) {
+			const form = document.forms[formId];
+			form.hidden = hidden;
+			form.elements.name.value = name;
 		}
 		this.#settingsDialog.showModal();
 	}

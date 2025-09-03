@@ -133,7 +133,7 @@ export class Presets {
 	#setPresetSelection() {
 		const preset = this.#params.get(this.#setSearchParam) || '0';
 		const title = this.#params.get(this.#titleSearchParam);
-		this.#index = this.#presets.findIndex(({ value, name }) => value === preset && name === title);
+		this.#index = this.#presets.findIndex(({ value, name }) => value === preset && (!title || name === title));
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
 			this.#setTitle(this.#presets[this.#index].name);

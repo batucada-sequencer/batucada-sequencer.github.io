@@ -361,8 +361,7 @@ export class Presets {
 			})
 		);
 		this.#shared.showModal();
-		this.#sharedList.focus();
-		this.#sharedList.blur();
+		this.#shared.focus();
 	}
 
 	#clearShared() {

@@ -49,7 +49,7 @@ export class Presets {
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		this.#headUntitled = references.headUntitled;
 		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
-		this.load = (event) => this.#loadPreset(event.target);
+		this.load = (event) => this.#loadSelectedPreset(event);
 		this.openSettings = event => this.#openSettings(event);
 	}
 
@@ -61,6 +61,7 @@ export class Presets {
 		addEventListener('locationSaved', () => this.#updateParams());
 		document.addEventListener('submit', (event) => this.#submitDialog(event));
 		document.addEventListener('click', (event) => this.#lightDismiss(event.target));
+		this.#sharedList.addEventListener('click', (event) => this.#loadClickedPreset(event));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
@@ -100,17 +101,27 @@ export class Presets {
 		return fetch(this.#fileName, { method: 'PUT', body }).then((response) => cacheResponse(response));
 	}
 
-	#getSearchParams() {
-		this.#params = new URLSearchParams(location.search);
+	#getSearchParams(url) {
+		this.#params = new URLSearchParams(url ?? location.search);
 	}
 
-	#loadPreset(preset) {
-		this.#index = preset.selectedIndex - 1;
+	#loadSelectedPreset(event) {
+		this.#index = event.target.selectedIndex - 1;
 		const { name, value } = this.#presets[this.#index];
 		this.#params.set(this.#setSearchParam, value);
 		this.#params.set(this.#titleSearchParam, name);
 		history.pushState({}, '', `?${this.#params}`);
 		dispatchEvent(new CustomEvent('locationChanged'));
+	}
+
+	#loadClickedPreset(event) {
+		const url = event.target.href;
+		if (!url) return;
+		event.preventDefault();
+		this.#getSearchParams(url);
+		history.pushState(null, '', url);
+		dispatchEvent(new CustomEvent('locationChanged'));
+		this.#shared.close();
 	}
 
 	async #updateOptions(noCache) {
@@ -138,7 +149,9 @@ export class Presets {
 	#setPresetSelection() {
 		const preset = this.#params.get(this.#setSearchParam) || '0';
 		const title = this.#params.get(this.#titleSearchParam);
-		this.#index = this.#presets.findIndex(({ value, name }) => value === preset && (!title || name === title));
+		this.#index = (preset === '0' && !title) 
+			? -1
+			: this.#presets.findIndex(({ value, name }) => value === preset && (!title || name === title));
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
 			this.#setTitle(this.#presets[this.#index].name);
@@ -212,10 +225,10 @@ export class Presets {
 
 	async #sharePresets(form) {
 		const data = new FormData(form);
-		const indexes = new Set(data.getAll('index').map(Number));
-		const selection = this.#presets
-			.filter((item, index) => indexes.has(index))
-			.map(({ name, value }) => value === '0' ? { name } : { name, value });
+		const selection = data.getAll('index').map(i => {
+			const { name, value } = this.#presets[Number(i)];
+			return value === '0' ? { name } : { name, value };
+		});
 		if (this.#checkBoxCurrent.checked) {
 			selection.unshift({ value: this.#params.get(this.#setSearchParam) });
 		}
@@ -368,8 +381,10 @@ export class Presets {
 	}
 
 	#clearShared() {
-		this.#params.delete(this.#shareSearchParam);
-		history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
+		if (this.#params.has(this.#shareSearchParam)) {
+			this.#params.delete(this.#shareSearchParam);
+			history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
+		}
 	}
 
 }

@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.19.02',
+	app: '1.19.09',
 	static: '1.01'
 };
 
@@ -114,5 +114,8 @@ async function handleDataRequest(request) {
 async function handleAppRequest(request) {
 	const cache = await caches.open(appCache);
 	const cachedResponse = await cache.match(request, { ignoreSearch: true });
-	return cachedResponse || fetch(request);
+	if (cachedResponse) return cachedResponse;
+	const response = await fetch(request);
+	cache.put(request, response.clone())
+	return response;
 }

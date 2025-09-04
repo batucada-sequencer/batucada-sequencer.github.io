@@ -121,7 +121,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 			<option value="30"></option>
 		</datalist>
 		<nav id="controls" role="toolbar" tabindex="-1">
-			<div id="combo_presets">
+			<div id="combo_presets" role="group">
 				<button title="Gérer le morceau" popovertarget="settings">Gérer le morceau</button>
 				<select aria-label="morceaux">
 					<option disabled hidden selected>Morceau</option>
@@ -177,9 +177,9 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 		<dialog id="share" popover>
 			<form method="dialog">
 				<h2>Partager</h2>
-				<label class="current"><input type="checkbox" name="current">Morceau en cours</label>
-				<label class="legend" title="Tous sélectionner"><input type="checkbox" disabled>Morceaux enregistrés</label>
-				<ul></ul>
+				<label><input type="checkbox" name="current">Morceau en cours</label>
+				<label id="legend" title="Tous sélectionner"><input type="checkbox" disabled>Morceaux enregistrés</label>
+				<ul role="group" aria-labelledby="legend"></ul>
 				<div class="bottom">
 					<button name="share" disabled>Valider</button><button>Annuler</button>
 				</div>

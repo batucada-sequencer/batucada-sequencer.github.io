@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.18.65',
+	app: '1.19.02',
 	static: '1.01'
 };
 

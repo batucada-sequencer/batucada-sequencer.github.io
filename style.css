@@ -427,12 +427,7 @@ ul {
 	margin:0;
 	padding:0;
 }
-#share .current {
-	margin-bottom:.4em;
-	border:1px solid #555;
-	padding:.3em .3em .3em .7em;
-}
-#share .legend {
+#legend {
 	z-index:1;
 	display:flex;
 	line-height:1.4;
@@ -454,6 +449,11 @@ ul {
 }
 input[type="checkbox"] {
 	margin-right:.5em;
+}
+label:has([name="current"]) {
+	margin-bottom:.4em;
+	border:1px solid #555;
+	padding:.3em .3em .3em .7em;
 }
 label:has([name="current"]:disabled) {
 	display:none;

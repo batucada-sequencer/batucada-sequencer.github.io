@@ -56,12 +56,11 @@ export class Presets {
 	async init() {
 		this.#getSearchParams();
 		this.#showShared();
-		addEventListener('locationSaved', () => {
-			this.#getSearchParams();
-			this.#setPresetSelection();
-		});
 		addEventListener('focus', () => this.#updateOptions(true));
+		addEventListener('popstate', () => this.#updateParams());
+		addEventListener('locationSaved', () => this.#updateParams());
 		document.addEventListener('submit', (event) => this.#submitDialog(event));
+		document.addEventListener('click', (event) => this.#lightDismiss(event.target));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
@@ -69,6 +68,12 @@ export class Presets {
 		const user = this.#params.get('user')?.trim() || '0';
 		this.#fileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
 		this.#updateOptions();
+	}
+
+	#updateParams() {
+		this.#getSearchParams();
+		this.#showShared();
+		this.#setPresetSelection();
 	}
 
 	async #fetchData(noCache) {
@@ -104,7 +109,7 @@ export class Presets {
 		const { name, value } = this.#presets[this.#index];
 		this.#params.set(this.#setSearchParam, value);
 		this.#params.set(this.#titleSearchParam, name);
-		history.replaceState({}, '', `?${this.#params}`);
+		history.pushState({}, '', `?${this.#params}`);
 		dispatchEvent(new CustomEvent('locationChanged'));
 	}
 
@@ -137,6 +142,12 @@ export class Presets {
 		this.#presetsSelection.selectedIndex = 1 + this.#index;
 		if (this.#index !== -1 && !title) {
 			this.#setTitle(this.#presets[this.#index].name);
+		}
+	}
+
+	#lightDismiss(element) {
+		if (element.tagName === 'DIALOG') {
+			element.close();
 		}
 	}
 
@@ -318,6 +329,7 @@ export class Presets {
 			form.elements.name.value = name;
 		}
 		this.#settingsDialog.showModal();
+		this.#settingsDialog.focus();
 	}
 
 	#setTitle(value) {
@@ -357,7 +369,7 @@ export class Presets {
 
 	#clearShared() {
 		this.#params.delete(this.#shareSearchParam);
-		history.replaceState(null, '', this.#params.size ? `?${this.#params}` : '.');
+		history.pushState(null, '', this.#params.size ? `?${this.#params}` : '.');
 	}
 
 }

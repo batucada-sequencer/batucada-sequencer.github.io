@@ -59,6 +59,7 @@ export class UrlState {
 			...instrument,
 			base: Math.max(instrument.files.length + 1, 3), // rétrocompatibilité tamborim
 		}));
+		addEventListener('popstate', () => this.#restoreFromURL(true));
 		addEventListener('locationChanged', () => this.#restoreFromURL());
 		document.addEventListener('DOMContentLoaded', () => this.#restoreFromURL());
 	}
@@ -135,11 +136,13 @@ export class UrlState {
 			timer = setTimeout(() => {
 				if (params.size !== 0) {
 					const searchParams = new URLSearchParams(location.search);
-					params.forEach(param => {
+					for (const param of params) {
 						const value = this.#paramsProperties[param].encode();
 						value ? searchParams.set(param, value) : searchParams.delete(param);
-					})
-					history.replaceState(null, '', searchParams.size ? `?${searchParams}` : '.');
+					}
+					const url = searchParams.size ? `?${searchParams}` : '.';
+					const method = searchParams.size ? 'replaceState' : 'pushState';
+					history[method](null, '', url);
 					dispatchEvent(new CustomEvent('locationSaved'));
 					params.clear();
 				}
@@ -147,16 +150,16 @@ export class UrlState {
 		};
 	}
 
-	#restoreFromURL() {
+	#restoreFromURL(forceParams) {
 		const params = new URLSearchParams(location.search);
 		const volume = params.get(this.#volumeSearchParam);
 		if (volume) {
-			const setValue = params.get(this.#setSearchParam) || '0';
+			const setValue = params.get(this.#setSearchParam) || this.#paramsProperties[this.#setSearchParam].defaultValue;
 			const setLength = setValue.split('-').filter(Boolean).length;
 			params.set(this.#volumeSearchParam, volume.slice(0, setLength));
 		}
 		for (const [param, { defaultValue, decode }] of Object.entries(this.#paramsProperties)) {
-			const value = params.get(param);
+			const value = forceParams ? (params.get(param) || defaultValue) : params.get(param);
 			if (value !== null) {
 				decode(value);
 				if (value === defaultValue) {

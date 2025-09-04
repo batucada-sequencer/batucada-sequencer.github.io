@@ -1,8 +1,9 @@
 export class Sequencer {
 	#animationQueue = [];
 	#durationWhenHidden;
-	#audioContext = new AudioContext();
-	#masterGain = new GainNode(this.#audioContext);
+	#audioSupported;
+	#audioContext;
+	#masterGain;
 	#maxGain;
 	#barIndex;
 	#barTime;
@@ -36,8 +37,6 @@ export class Sequencer {
 	#volumeName;
 	#instrumentName;
 	#title;
-	#headUntitled;
-	#headTitlePrefix;
 	static onClick;
 	static onInput;
 
@@ -60,8 +59,6 @@ export class Sequencer {
 		this.#startClass = references.startClass;
 		this.#currentClass = references.currentClass;
 		this.#title = references.title;
-		this.#headUntitled = references.headUntitled;
-		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
 		this.#durationWhenHidden = config.durationWhenHidden;
 		this.#ticName = this.#tics[0].name;
 		this.#barsName = this.#bars[0].name;
@@ -69,19 +66,35 @@ export class Sequencer {
 		this.#volumeName = this.#volumes[0].name;
 		this.#instrumentName = this.#instruments[0].name;
 		this.#maxGain = Number(this.#volumes[0].max);
-		this.#masterGain.connect(this.#audioContext.destination);
 	}
 
 	init(instrumentsList) {
-		this.#audioContext.suspend();
 		this.#instrumentsList = instrumentsList;
 		this.#createInstruments();
 		this.#createTracks();
-		this.#loadInstrumentSounds();
+		this.#setAudio();
 		this.onClick = (event) => this.#handleClick(event.target);
 		this.onInput = (event) => this.#handleChange(event.target);
 		document.addEventListener('visibilitychange', () => this.#handleVisibilityChange());
-		this.#audioContext.addEventListener('statechange', () => this.#handleAudioStateChange());
+		
+	}
+
+	#setAudio() {
+		this.#audioSupported = typeof AudioContext === 'function'
+		if (this.#audioSupported) {
+		this.#audioContext = new AudioContext();
+			this.#loadInstrumentSounds();
+			this.#masterGain = new GainNode(this.#audioContext);
+			this.#masterGain.connect(this.#audioContext.destination);
+			this.#audioContext.addEventListener('statechange', () => this.#handleAudioStateChange());
+		}
+		else {
+			this.#audioContext = {
+				get currentTime() { return performance.now() / 1000 },
+				state: 'running',
+				suspend: async () => {},
+			};
+		}
 	}
 
 	#handleVisibilityChange() {
@@ -239,6 +252,7 @@ export class Sequencer {
 	}
 
 	#playNote(instrument, volume, hit, time = this.#audioContext.currentTime) {
+		if (!this.#audioSupported) return;
 		const buffers = this.#instrumentsList[instrument].sounds;
 		const buffer = buffers[hit - 1] || buffers[0];
 		const sound = new AudioBufferSourceNode(this.#audioContext, { buffer });
@@ -255,19 +269,10 @@ export class Sequencer {
 		shouldStart ? this.#start() : this.#stop();
 	}
 
-	#toggleStartButton2() {
-		if (this.#audioContext.state !== 'running') {
-			const shouldStart = false;
-			this.#container.classList.toggle(this.#startClass, shouldStart);
-			this.#startButton.setAttribute('aria-checked', String(shouldStart));
-			shouldStart ? this.#start() : this.#stop();
-		}
-	}
-
 	#startSoundLoop() {
 		const buffer = 0.1;
 		this.#barIndex = 0;
-		this.#barTime = this.#audioContext.currentTime + buffer;
+		this.#barTime = this.#audioContext.currentTime;
 		const loop = () => {
 			const secondsPerBar = 60 / Number(this.#tempo.value);
 			if (this.#audioContext.currentTime + buffer > this.#barTime) {
@@ -311,6 +316,7 @@ export class Sequencer {
 	}
 
 	#muteSchedulesNotes() {
+		if (!this.#audioSupported) return;
 		const now = this.#audioContext.currentTime;
 		this.#masterGain.gain.cancelScheduledValues(now);
 		this.#masterGain.gain.setValueAtTime(this.#masterGain.gain.value, now);
@@ -385,7 +391,6 @@ export class Sequencer {
 		items.forEach(item => this.#setValue(item, this.#geDefaultValue(item)));
 		this.#title.textContent = '';
 		this.#title.dispatchEvent(new Event('change', { bubbles: true }));
-		document.title = this.#headTitlePrefix + this.#headUntitled;
 	}
 
 }

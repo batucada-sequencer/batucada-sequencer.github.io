@@ -101,7 +101,7 @@ export class UrlState {
 			}],
 			[this.#titleSearchParam, {
 				defaultValue: '',
-				encode: () => {},
+				encode: () => this.#encodeTitle(),
 				decode: (value) => this.#decodeTitle(value),
 			}],
 		])
@@ -259,7 +259,14 @@ export class UrlState {
 	#decodeTitle(value) {
 		this.#title.textContent = value;
 		document.title = this.#headTitlePrefix + (value ? value : this.#headUntitled);
+		return null;
 	}
+
+	#encodeTitle(value) {
+		this.#title.textContent = value;
+		document.title = this.#headTitlePrefix + (value ? value : this.#headUntitled);
+	}
+
 
 	#setValue(item, value) {
 		if (item.value !== value) {

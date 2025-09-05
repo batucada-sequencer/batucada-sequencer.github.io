@@ -7,7 +7,7 @@
 	{
 		"id": 4,
 		"name": "Tamborim", 
-		"files": ["tamborim.wav"]
+		"files": ["tamborim.wav", "tamborim2.wav"]
 	},
 	{
 		"id": 1,

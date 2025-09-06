@@ -28,6 +28,9 @@ select:not([multiple]) {
 button {
 	background:hsl(240,10%,94%) no-repeat;
 }
+input {
+	background:#fff;
+}
 button:disabled {
 	opacity:.6;
 }
@@ -613,4 +616,5 @@ button[name="share_list"] {
 	.volume {
 		-webkit-appearance:slider-vertical;
 	}
+
 }

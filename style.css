@@ -25,6 +25,9 @@ select:not([multiple]) {
 	background:white no-repeat right center;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
+input {
+	background:#fff;
+}
 button {
 	background:hsl(240,10%,94%) no-repeat;
 }
@@ -613,4 +616,5 @@ button[name="share_list"] {
 	.volume {
 		-webkit-appearance:slider-vertical;
 	}
+
 }

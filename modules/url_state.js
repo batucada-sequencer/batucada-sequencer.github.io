@@ -28,9 +28,8 @@ export class UrlState {
 	#volumeSearchParam;
 	#headUntitled;
 	#headTitlePrefix;
-	static save;
 
-	constructor(references) {
+	constructor(references, instrumentsList) {
 		this.#tics = references.tics;
 		this.#bars = references.bars;
 		this.#beats = references.beats;
@@ -51,17 +50,14 @@ export class UrlState {
 		this.#beatsIndex = this.#getList(this.#beats[0]);
 		this.#paramsTriggers = this.#getParamsTriggers();
 		this.#paramsProperties = this.#getParamsProperties();
-		this.save = this.#saveToURL();
-	}
-
-	init(instrumentsList) {
 		this.#instrumentsList = instrumentsList.map(instrument => ({
 			...instrument,
-			base: Math.max(instrument.files.length + 1, 3), // rétrocompatibilité tamborim
+			base: instrument.files.length + 1,
 		}));
+		this.#restoreFromURL();
 		addEventListener('popstate', () => this.#restoreFromURL(true));
 		addEventListener('locationChanged', () => this.#restoreFromURL());
-		document.addEventListener('DOMContentLoaded', () => this.#restoreFromURL());
+		references.container.addEventListener('change', this.#saveToURL());
 	}
 
 	#getList(select) {
@@ -74,7 +70,7 @@ export class UrlState {
 
 	#getParamsProperties() {
 		const defaultVolume = this.#stringBaseConvert(
-			this.#getDefaultVolume(this.#volumes[0]),
+			this.#volumes[0].defaultValue,
 			10,
 			this.#outputBase
 		);
@@ -136,12 +132,13 @@ export class UrlState {
 			timer = setTimeout(() => {
 				if (params.size !== 0) {
 					const searchParams = new URLSearchParams(location.search);
-					for (const param of params) {
+					const hasValue = [...params].some(param => {
 						const value = this.#paramsProperties[param].encode();
 						value ? searchParams.set(param, value) : searchParams.delete(param);
-					}
+						return !!value;
+					});
 					const url = searchParams.size ? `?${searchParams}` : '.';
-					const method = searchParams.size ? 'replaceState' : 'pushState';
+					const method = hasValue ? 'replaceState' : 'pushState';
 					history[method](null, '', url);
 					dispatchEvent(new CustomEvent('locationSaved'));
 					params.clear();
@@ -239,7 +236,7 @@ export class UrlState {
 	#decodeVolume(encodeValue) {
 		const defaultValue = this.#paramsProperties[this.#volumeSearchParam].defaultValue;
 		let values = encodeValue.padEnd(this.#volumes.length, defaultValue);
-		values = Array.from(values, item => parseInt(this.#stringBaseConvert(item, this.#outputBase, 10)));
+		values = Array.from(values, item => this.#stringBaseConvert(item, this.#outputBase, 10));
 		for (const volume of this.#volumes) {
 			this.#setValue(volume, values.shift());
 		}

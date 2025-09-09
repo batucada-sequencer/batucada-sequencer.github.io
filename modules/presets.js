@@ -26,8 +26,6 @@ export class Presets {
 	#headUntitled;
 	#headTitlePrefix;
 	#isPersistedStorage = null;
-	static load;
-	static openSettings;
 
 	constructor(references, config) {
 		this.#local = config.local;
@@ -49,13 +47,11 @@ export class Presets {
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		this.#headUntitled = references.headUntitled;
 		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
-		this.load = (event) => this.#loadSelectedPreset(event);
-		this.openSettings = event => this.#openSettings(event);
-	}
-
-	async init() {
 		this.#getSearchParams();
 		this.#showShared();
+		const user = this.#params.get('user')?.trim() || '0';
+		this.#fileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
+		this.#updateOptions();
 		addEventListener('focus', () => this.#updateOptions(true));
 		addEventListener('popstate', () => this.#updateParams());
 		addEventListener('locationSaved', () => this.#updateParams());
@@ -66,9 +62,8 @@ export class Presets {
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
-		const user = this.#params.get('user')?.trim() || '0';
-		this.#fileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
-		this.#updateOptions();
+		this.#presetsSelection.addEventListener('change', (event) => this.#loadSelectedPreset(event));
+		references.favoriteButton.addEventListener('click', (event) => this.#openSettings(event));
 	}
 
 	#updateParams() {
@@ -110,7 +105,7 @@ export class Presets {
 		const { name, value } = this.#presets[this.#index];
 		this.#params.set(this.#setSearchParam, value);
 		this.#params.set(this.#titleSearchParam, name);
-		history.pushState({}, '', `?${this.#params}`);
+		history.pushState(null, '', `?${this.#params}`);
 		dispatchEvent(new CustomEvent('locationChanged'));
 	}
 

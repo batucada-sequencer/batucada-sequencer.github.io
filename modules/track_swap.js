@@ -1,70 +1,58 @@
 export class TrackSwap {
 	#container;
-	#dropzones;
 	#draggedClass;
+	#dropzoneClass;
 	#tracks;
 	#instrument;
 	#volume;
-	static setDraggable;
 
 	constructor(references) {
 		this.#container = references.container;
-		this.#dropzones = references.dropzones;
 		this.#draggedClass = references.draggedClass;
+		this.#dropzoneClass = references.dropzoneClass;
 		this.#tracks = references.tracks;
 		this.#instrument = references.instruments[0];
 		this.#volume = references.volumes[0];
-		this.setDraggable = (event) => this.#handleChange(event.target);
-	}
-
-	init() {
-		this.#container.querySelectorAll('[draggable]').forEach(item => {
-			item.addEventListener('dragstart', (event) => this.#handleDragStart(event));
-			item.addEventListener('dragend', () => this.#leaveAll());
-		});
-		[...this.#dropzones].forEach(item => {
-			item.addEventListener('dragover', (event) => this.#handleDragOver(event));
-			item.addEventListener('dragenter', (event) => this.#handleDragEnter(event));
-			item.addEventListener('dragleave', () => this.#leaveAll());
-			item.addEventListener('drop', (event) => this.#handleDrop(event));
-		});
-	}
-
-	#handleChange(target) {
-		if (target.name === this.#instrument.name) {
-			target.closest('[draggable]').draggable = target.value !== '0';
-		}
+		addEventListener('dragstart', (event) => this.#handleDragStart(event));
+		addEventListener('dragend', (event) => this.#handleDragEnd(event));
+		addEventListener('dragover', (event) => this.#handleDragOver(event));
+		addEventListener('dragenter', (event) => this.#handleDragEnter(event));
+		addEventListener('drop', (event) => this.#handleDrop(event));
 	}
 
 	#handleDragStart(event) {
-		event.dataTransfer.setData('text', this.#getIndex(event.target));
+		const index = this.#getIndex(event.target);
+		if (this.#tracks[index].dataset[this.#instrument.name] === '0') {
+			return event.preventDefault();
+		}
+		event.dataTransfer.setData('text/plain', index);
 		event.dataTransfer.setDragImage(event.target, 0, 15);
 		event.dataTransfer.effectAllowed = 'move';
 	}
 
-	#handleDragOver(event) {
-		const sourceIndex = parseInt(event.dataTransfer.getData('text'));
-		const destinationIndex = this.#getIndex(event.target);
-		//if (destinationIndex !== sourceIndex && destinationIndex !== sourceIndex + 1) {
-			event.preventDefault();
-			event.dataTransfer.dropEffect = 'move';
-		//}
+	#handleDragEnd(event) {
+		this.#leaveAll();
 	}
 
 	#handleDragEnter(event) {
-		this.#leaveAll();
-		const sourceIndex = parseInt(event.dataTransfer.getData('text'));
-		const destinationIndex = this.#getIndex(event.target);
-		//if (destinationIndex !== sourceIndex && destinationIndex !== sourceIndex + 1) {
-			this.#tracks.item(destinationIndex).classList.add(this.#draggedClass);
-		//}
+		if (event.target.className == this.#dropzoneClass) {
+			this.#tracks.item(this.#getIndex(event.target)).classList.add(this.#draggedClass);
+		}
+		else {
+			this.#leaveAll();
+		}
+	}
+
+	#handleDragOver(event) {
+		if (event.target.className === this.#dropzoneClass) {
+			event.preventDefault();
+		}
 	}
 
 	#handleDrop(event) {
-		event.stopPropagation();
+		if (event.target.className !== this.#dropzoneClass) return;
 		const sourceIndex = parseInt(event.dataTransfer.getData('text'));
 		const targetIndex = this.#getIndex(event.target);
-		this.#leaveAll();
 		if (targetIndex !== sourceIndex && targetIndex !== sourceIndex + 1) {
 			const draggedTrack = this.#tracks.item(sourceIndex);
 			const targetTrack = this.#tracks.item(targetIndex);

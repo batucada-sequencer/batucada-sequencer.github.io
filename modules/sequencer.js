@@ -1,7 +1,6 @@
 export class Sequencer {
 	#animationQueue = [];
 	#durationWhenHidden;
-	#audioSupported;
 	#audioContext;
 	#masterGain;
 	#maxGain;
@@ -37,10 +36,8 @@ export class Sequencer {
 	#volumeName;
 	#instrumentName;
 	#title;
-	static onClick;
-	static onInput;
 
-	constructor(references, config) {
+	constructor(references, config, instrumentsList) {
 		this.#tics = references.tics;
 		this.#bars = references.bars;
 		this.#beats = references.beats;
@@ -66,29 +63,30 @@ export class Sequencer {
 		this.#volumeName = this.#volumes[0].name;
 		this.#instrumentName = this.#instruments[0].name;
 		this.#maxGain = Number(this.#volumes[0].max);
-	}
-
-	init(instrumentsList) {
 		this.#instrumentsList = instrumentsList;
 		this.#createInstruments();
 		this.#createTracks();
 		this.#setAudio();
-		this.onClick = (event) => this.#handleClick(event.target);
-		this.onInput = (event) => this.#handleChange(event.target);
 		document.addEventListener('visibilitychange', () => this.#handleVisibilityChange());
-		
+		references.container.addEventListener('click', (event) => this.#handleClick(event.target));
+		references.container.addEventListener('input', (event) => this.#handleChange(event.target));
 	}
 
 	#setAudio() {
-		this.#audioSupported = typeof AudioContext === 'function'
-		if (this.#audioSupported) {
-		this.#audioContext = new AudioContext();
-			this.#loadInstrumentSounds();
+		if (typeof AudioContext === 'function') {
+			this.#audioContext = new AudioContext();
 			this.#masterGain = new GainNode(this.#audioContext);
 			this.#masterGain.connect(this.#audioContext.destination);
 			this.#audioContext.addEventListener('statechange', () => this.#handleAudioStateChange());
+			if (document.readyState === 'complete' ) {
+				this.#loadInstrumentSounds();
+			}
+			else {
+				addEventListener('load', () => this.#loadInstrumentSounds());
+			}
 		}
 		else {
+			this.#masterGain = false;
 			this.#audioContext = {
 				get currentTime() { return performance.now() / 1000 },
 				state: 'running',
@@ -147,12 +145,16 @@ export class Sequencer {
 		if (item === this.#startButton) {
 			this.#toggleStartButton();
 		}
+		else if (item === this.#tempo) {
+			this.#bpm.textContent = item.value;
+		}
 	}
 
 	#handleChange(item) {
 		if (item === this.#presetsSelection) {
 			this.#barIndex = 0;
-		} else if (item === this.#tempo) {
+		}
+		else if (item === this.#tempo) {
 			this.#bpm.textContent = item.value;
 		}
 	}
@@ -252,8 +254,8 @@ export class Sequencer {
 	}
 
 	#playNote(instrument, volume, hit, time = this.#audioContext.currentTime) {
-		if (!this.#audioSupported) return;
 		const buffers = this.#instrumentsList[instrument].sounds;
+		if (!buffers) return;
 		const buffer = buffers[hit - 1] || buffers[0];
 		const sound = new AudioBufferSourceNode(this.#audioContext, { buffer });
 		const gain = new GainNode(this.#audioContext, { gain: volume / this.#maxGain });
@@ -316,7 +318,7 @@ export class Sequencer {
 	}
 
 	#muteSchedulesNotes() {
-		if (!this.#audioSupported) return;
+		if (!this.#masterGain) return;
 		const now = this.#audioContext.currentTime;
 		this.#masterGain.gain.cancelScheduledValues(now);
 		this.#masterGain.gain.setValueAtTime(this.#masterGain.gain.value, now);
@@ -389,8 +391,10 @@ export class Sequencer {
 		this.#muteSchedulesNotes();
 		const items = [...this.#tics, ...this.#beats, ...this.#volumes, ...this.#bars, ...this.#instruments, this.#tempo];
 		items.forEach(item => this.#setValue(item, this.#geDefaultValue(item)));
-		this.#title.textContent = '';
-		this.#title.dispatchEvent(new Event('change', { bubbles: true }));
+		if (this.#title.textContent !== '') {
+			this.#title.textContent = '';
+			this.#title.dispatchEvent(new Event('change', { bubbles: true }));
+		}
 	}
 
 }

@@ -9,6 +9,7 @@ export const references = {
 	startClass: 'started',
 	currentClass: 'current',
 	draggedClass: 'dragged',
+	dropzoneClass: 'dropzone',
 	setSearchParam: 'set',
 	tempoSearchParam: 'bpm',
 	volumeSearchParam: 'vol',
@@ -37,6 +38,5 @@ export const references = {
 	beats: container.getElementsByClassName('beat'),
 	tracks: container.getElementsByClassName('track'),
 	volumes: container.getElementsByClassName('volume'),
-	dropzones: container.getElementsByClassName('dropzone'),
 	instruments: container.getElementsByClassName('instrument'),
 }

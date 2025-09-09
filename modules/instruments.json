@@ -2,46 +2,46 @@
 	{
 		"id": 0,
 		"name": "default", 
-		"files": ["default.wav"]
+		"files": ["default.ogg"]
 	},
 	{
 		"id": 4,
 		"name": "Tamborim", 
-		"files": ["tamborim.wav", "tamborim2.wav"]
+		"files": ["tamborim.ogg", "tamborim2.ogg"]
 	},
 	{
 		"id": 1,
 		"name": "Agogo", 
-		"files": ["agogo.wav", "agogo2.wav"]
+		"files": ["agogo.ogg", "agogo2.ogg"]
 	},
 	{
 		"id": 2,
 		"name": "Campana", 
-		"files": ["campana.wav", "campana2.wav"]
+		"files": ["campana.ogg", "campana2.ogg"]
 	},
 	{
 		"id": 3,
 		"name": "Chocalho", 
-		"files": ["chocalho.wav", "chocalho2.wav"]
+		"files": ["chocalho.ogg", "chocalho2.ogg"]
 	},
 	{
 		"id": 8,
 		"name": "Caixa", 
-		"files": ["caixa.wav", "caixa2.wav", "caixa3.wav"]
+		"files": ["caixa.ogg", "caixa2.ogg", "caixa3.ogg"]
 	},
 	{
 		"id": 5,
 		"name": "Couper", 
-		"files": ["couper.wav", "couper2.wav"]
+		"files": ["couper.ogg", "couper2.ogg"]
 	},
 	{
 		"id": 6,
 		"name": "Contra", 
-		"files": ["contra.wav", "contra2.wav"]
+		"files": ["contra.ogg", "contra2.ogg"]
 	},
 	{
 		"id": 7,
 		"name": "Surdo", 
-		"files": ["surdo.wav", "surdo2.wav"]
+		"files": ["surdo.ogg", "surdo2.ogg"]
 	}
 ]

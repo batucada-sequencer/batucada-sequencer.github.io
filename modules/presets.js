@@ -48,7 +48,7 @@ export class Presets {
 		this.#headUntitled = references.headUntitled;
 		this.#headTitlePrefix = document.title.replace(this.#headUntitled, '');
 		this.#getSearchParams();
-		this.#showShared();
+		this.#toggleShared();
 		const user = this.#params.get('user')?.trim() || '0';
 		this.#fileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
 		this.#updateOptions();
@@ -68,7 +68,7 @@ export class Presets {
 
 	#updateParams() {
 		this.#getSearchParams();
-		this.#showShared();
+		this.#toggleShared();
 		this.#setPresetSelection();
 	}
 
@@ -353,26 +353,30 @@ export class Presets {
 		this.#showToastMessage(message, cancel);
 	}
 
-	#showShared(data) {
-		if (!this.#params.has(this.#shareSearchParam)) return;
-		const encoded = decodeURIComponent(data || this.#params.get('share'));
-		const presets = JSON.parse(encoded);
-		if (!presets.length) return
-		this.#sharedList.replaceChildren(
-			...presets.map(({ name, value }) => {
-				const a = document.createElement('a');
-				const li = document.createElement('li');
-				const url = new URL(location.origin + location.pathname);
-				if (name) url.searchParams.set(this.#titleSearchParam, name);
-				if (value) url.searchParams.set(this.#setSearchParam, value);
-				a.href = url.href;
-				a.textContent = name || 'Morceau sans titre';
-				li.appendChild(a);
-				return li;
-			})
-		);
-		this.#shared.showModal();
-		this.#shared.focus();
+	#toggleShared(data) {
+		if (this.#params.has(this.#shareSearchParam)) {
+			const encoded = decodeURIComponent(data || this.#params.get('share'));
+			const presets = JSON.parse(encoded);
+			if (!presets.length) return
+			this.#sharedList.replaceChildren(
+				...presets.map(({ name, value }) => {
+					const a = document.createElement('a');
+					const li = document.createElement('li');
+					const url = new URL(location.origin + location.pathname);
+					if (name) url.searchParams.set(this.#titleSearchParam, name);
+					if (value) url.searchParams.set(this.#setSearchParam, value);
+					a.href = url.href;
+					a.textContent = name || 'Morceau sans titre';
+					li.appendChild(a);
+					return li;
+				})
+			);
+			this.#shared.showModal();
+			this.#shared.focus();
+		}
+		else {
+			this.#shared.close();
+		}
 	}
 
 	#clearShared() {

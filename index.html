@@ -7,42 +7,6 @@
 <link rel="stylesheet" href="style.css"/>
 <link rel="manifest" href="app/app.webmanifest"/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script type="module" defer>
-import config       from './config.json' with { type: "json" };
-import instruments  from './modules/instruments.json' with { type: "json" };
-import {references} from './modules/references.js';
-import {Sequencer}  from './modules/sequencer.js';
-import {Presets}    from './modules/presets.js';
-import {UrlState}   from './modules/url_state.js';
-import {TrackSwap}  from './modules/track_swap.js';
-
-const sequencer = new Sequencer(references, config);
-const urlState  = new UrlState(references);
-const presets   = new Presets(references, config);
-const trackSwap = new TrackSwap(references);
-
-presets  .init();
-sequencer.init(instruments);
-urlState .init(instruments);
-trackSwap.init();
-
-references.container.addEventListener('click', sequencer.onClick);
-references.container.addEventListener('input', sequencer.onInput);
-references.container.addEventListener('input', trackSwap.setDraggable);
-references.container.addEventListener('change', urlState.save);
-references.presetsSelection.addEventListener('change', presets.load);
-references.favoriteButton.addEventListener('click', presets.openSettings);
-addEventListener('load', () => document.body.classList.add('loaded'));
-
-if ('serviceWorker' in navigator) {
-	navigator.serviceWorker.register('sw.js');
-}
-if (!CSS.supports('inset', 'anchor-size(height)')) {
-	import('./modules/toast_positioning.js').then(({ applyPolyfill }) => {
-		applyPolyfill(references);
-	});
-}
-</script>
 </head>
 <body>
 	<div id="sequencer">
@@ -52,7 +16,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 			<tr class="track" data-bars="4" data-beat="4" data-instrument="0" data-volume="30">
 				<th scope="row">
 					<div class="dropzone"></div>
-					<div class="select" draggable="false">
+					<div class="select" draggable="true">
 						<div class="handle" title="Déplacer"></div> 
 						<select name="instrument" class="instrument" aria-label="instrument" autocomplete="off">
 							<option selected disabled hidden value="0">Instrument</option>
@@ -76,7 +40,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 								<option value="8">8/8</option>
 							</optgroup>
 						</select>
-					<div>
+					</div>
 				</th>
 				<td>
 					<div class="sheet">
@@ -114,13 +78,13 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 						<span class="bar"><button name="tic" class="tic" aria-label="note" value="0"></button><span class="sub_bar"><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button><button name="tic" class="tic" aria-label="note" value="0"></button></span></span>
 					</div>
 				</td>
-				<td><input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" min="0" max="60" autocomplete="off"></td>
+				<td><input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" value="30" min="0" max="60" autocomplete="off"></td>
 			</tr>
 		</table>
 		<datalist id="volume">
 			<option value="30"></option>
 		</datalist>
-		<nav id="controls" role="toolbar" tabindex="-1">
+		<div id="controls" role="toolbar" tabindex="-1">
 			<div id="combo_presets" role="group">
 				<button title="Gérer le morceau" popovertarget="settings">Gérer le morceau</button>
 				<select aria-label="morceaux">
@@ -137,20 +101,20 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				<div id="play">Démarrer</div>
 				<div id="pause">Arrêter</div>
 			</button>
-		</nav>
+		</div>
 		<dialog id="settings" popover>
 			<div>
 				<h2>Gérer le morceau</h2>
 				<form id="modify" method="dialog" data-success="Le morceau a été enregistré." hidden>
 					<fieldset>
 						<legend>Enregistrer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" readonly tabindex="-1">
+						<input name="name" aria-label="nom du morceau" disabled>
 						<button>Enregistrer</button>
 					</fieldset>
 				</form>
 				<form id="newOne" method="dialog" data-success="Le morceau a été enregistré.">
 					<fieldset>
-						<legend>Enregistrer un nouveau morceau</legend>
+						<legend>Enregistrer sous</legend>
 						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" autocomplete="off" required>
 						<button>Enregistrer</button>
 					</fieldset>
@@ -165,7 +129,7 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 				<form id="delete" method="dialog" data-success="Le morceau a été supprimé." hidden>
 					<fieldset>
 						<legend>Supprimer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" readonly tabindex="-1">
+						<input name="name" aria-label="nom du morceau" disabled>
 						<button>Supprimer</button>
 					</fieldset>
 				</form>
@@ -196,5 +160,29 @@ if (!CSS.supports('inset', 'anchor-size(height)')) {
 		</dialog>
 		<div id="toast" popover="auto"><p></p><button>Annuler</button></div>
 	</div>
+	<script type="module">
+		import config       from './config.json' with { type: "json" };
+		import instruments  from './modules/instruments.json' with { type: "json" };
+		import {references} from './modules/references.js';
+		import {Sequencer}  from './modules/sequencer.js';
+		import {Presets}    from './modules/presets.js';
+		import {UrlState}   from './modules/url_state.js';
+		import {TrackSwap}  from './modules/track_swap.js';
+
+		const presets   = new Presets(references, config);
+		const sequencer = new Sequencer(references, config, instruments);
+		const urlState  = new UrlState(references, instruments);
+		const trackSwap = new TrackSwap(references);
+
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('sw.js');
+		}
+
+		if (!CSS.supports('inset', 'anchor-size(height)')) {
+			import('./modules/toast_positioning.js').then(({ applyPolyfill }) => {
+				applyPolyfill(references);
+			});
+		}
+	</script>
 </body>
 </html>

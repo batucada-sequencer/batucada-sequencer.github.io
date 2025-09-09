@@ -1,6 +1,6 @@
 const versions = {
-	app: '1.19.20',
-	static: '1.05'
+	app: '1.19.39',
+	static: '1.06'
 };
 
 const dataCache = 'data';
@@ -24,23 +24,23 @@ const assets = {
 		'./favicon.svg',
 		'./app/icon.svg',
 		'./app/app.webmanifest',
-		'./audio/default.wav',
-		'./audio/agogo.wav',
-		'./audio/agogo2.wav',
-		'./audio/campana.wav',
-		'./audio/campana2.wav',
-		'./audio/caixa.wav',
-		'./audio/caixa2.wav',
-		'./audio/caixa3.wav',
-		'./audio/chocalho.wav',
-		'./audio/chocalho2.wav',
-		'./audio/contra.wav',
-		'./audio/contra2.wav',
-		'./audio/couper.wav',
-		'./audio/couper2.wav',
-		'./audio/surdo.wav',
-		'./audio/surdo2.wav',
-		'./audio/tamborim.wav',
+		'./audio/default.ogg',
+		'./audio/agogo.ogg',
+		'./audio/agogo2.ogg',
+		'./audio/campana.ogg',
+		'./audio/campana2.ogg',
+		'./audio/caixa.ogg',
+		'./audio/caixa2.ogg',
+		'./audio/caixa3.ogg',
+		'./audio/chocalho.ogg',
+		'./audio/chocalho2.ogg',
+		'./audio/contra.ogg',
+		'./audio/contra2.ogg',
+		'./audio/couper.ogg',
+		'./audio/couper2.ogg',
+		'./audio/surdo.ogg',
+		'./audio/surdo2.ogg',
+		'./audio/tamborim.ogg',
 	],
 };
 

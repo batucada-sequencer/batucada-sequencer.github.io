@@ -8,11 +8,12 @@ body {
 	/*overscroll-behavior:contain;*/
 }
 #combo_tempo,
-select:not([multiple]),
+select,
 input:not([type]),
 button {
 	color:#000;
 	padding:0 .5em;
+	background:#fff;
 	appearance:none;
 	user-select:none;
 	border-radius:4px;
@@ -20,13 +21,10 @@ button {
 	font-family:sans-serif;
 	border:1px solid hsl(240,10%,60%);
 }
-select:not([multiple]) {
+select {
 	padding-right:.8em;
 	background:white no-repeat right center;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-input {
-	background:#fff;
 }
 button {
 	background:hsl(240,10%,94%) no-repeat;
@@ -88,7 +86,7 @@ tbody {
 	display:flex;
 	position:relative;
 }
-.loaded .track[data-instrument="0"] {
+.track:focus-within ~ .track[data-instrument="0"] {
 	transition:opacity .3s ease-out;
 	transition-behavior:allow-discrete;
 	opacity:1;
@@ -275,7 +273,7 @@ td:has(.volume) {
 	border:1px solid hsl(240,10%,20%);
 	inset:-.32em .2em auto .7em;
 }
-nav {
+#controls {
 	gap:.7em;
 	padding:.2em;
 	display:flex;
@@ -394,9 +392,9 @@ dialog button {
 	min-width:6em;
 	font-size:.9em;
 }
-#settings input:read-only {
+#settings input:disabled {
 	border:none;
-	pointer-events:none;
+	cursor:text;
 }
 #settings fieldset {
 	gap:1em;
@@ -432,11 +430,10 @@ ul {
 }
 #legend {
 	z-index:1;
-	display:flex;
-	line-height:1.4;
 	background:#fff;
+	padding:0 2px 0 0;
 	align-self:flex-start;
-	margin:-.5em 0 -1.75em .72em;
+	margin:-.1em 0 -1.75em .72em;
 }
 #share ul {
 	position:relative;
@@ -454,7 +451,6 @@ input[type="checkbox"] {
 	margin-right:.5em;
 }
 label:has([name="current"]) {
-	margin-bottom:.4em;
 	border:1px solid #555;
 	padding:.3em .3em .3em .7em;
 }
@@ -514,7 +510,7 @@ button[name="share_list"] {
 @media (pointer:fine) and (hover:hover) {
 	input:not([type]):hover,
 	#combo_tempo:hover,
-	select:not([multiple]):hover,
+	select:hover,
 	button:not(.tic):not(:disabled):hover {
 		z-index:1;
 		border-color:hsl(240,10%,20%);
@@ -528,16 +524,19 @@ button[name="share_list"] {
 	.tic[value="0"]:hover {
 		filter:brightness(.9);
 	}
-	.select[draggable="true"]:hover .handle {
+	.select:hover .handle {
 		opacity:.3;
 		cursor:grab;
 		background:no-repeat url('data:image/svg+xml,<svg viewBox="0 0 4 10" xmlns="http://www.w3.org/2000/svg"><path d="m2 1v8" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
 	}
-	.select[draggable="true"]:active .handle {
+	.select:active .handle {
 		cursor:grabbing;
 	}
-	.select[draggable="true"] .handle:hover {
+	.select .handle:hover {
 		opacity:1;
+	}
+	.track[data-instrument="0"] .handle {
+		display:none;
 	}
 }
 @media (min-width:520px) {
@@ -597,7 +596,7 @@ button[name="share_list"] {
 		direction:ltr;
 		writing-mode:horizontal-tb;
 	}
-	nav {
+	#controls {
 		gap:.9em;
 		margin:1em .8em .8em;
 	}
@@ -610,11 +609,4 @@ button[name="share_list"] {
 	legend {
 		font-size:1em;
 	}
-}
-/* webkit */
-@media (max-width:520px) {
-	.volume {
-		-webkit-appearance:slider-vertical;
-	}
-
 }

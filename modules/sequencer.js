@@ -135,6 +135,7 @@ export class Sequencer {
 	}
 
 	async #handleClick(item) {
+		console.log(item)
 		if (item === this.#resetButton) {
 			this.#reset();
 			return;
@@ -151,6 +152,8 @@ export class Sequencer {
 	}
 
 	#handleChange(item) {
+		console.log(item)
+
 		if (item === this.#presetsSelection) {
 			this.#barIndex = 0;
 		}

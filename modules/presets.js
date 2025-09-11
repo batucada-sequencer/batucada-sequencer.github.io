@@ -59,7 +59,7 @@ export class Presets {
 		document.addEventListener('click', (event) => this.#lightDismiss(event.target));
 		this.#sharedList.addEventListener('click', (event) => this.#loadClickedPreset(event));
 		this.#shared.addEventListener('close', (event) => this.#clearShared(event));
-		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event));
+		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event.target));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
 		this.#toastButton.addEventListener('click', () => this.#toastFunction());
 		this.#presetsSelection.addEventListener('change', (event) => this.#loadSelectedPreset(event));
@@ -132,7 +132,7 @@ export class Presets {
 		if (presets.length) {
 			const fragment = document.createDocumentFragment();
 			fragment.appendChild(this.#presetsSelection.options[0].cloneNode(true));
-			presets.forEach(({ name, value }) => fragment.appendChild(new Option(name, value)));
+			presets.forEach(({ name, value }) => fragment.appendChild(new Option(name ? name : this.#headUntitled, value)));
 			this.#presetsSelection.replaceChildren(fragment);
 		} else {
 			this.#presetsSelection.replaceChildren(...this.#presetsSelectionInit.cloneNode(true).options);
@@ -159,8 +159,8 @@ export class Presets {
 		}
 	}
 
-	#showToastMessage(message, button = false) {
-		this.#toastButton.hidden = !button;
+	#showToastMessage(message) {
+		this.#toastButton.hidden = !this.#lastAction;
 		this.#toastMessage.textContent = message;
 		this.#toast.showPopover();
 	}
@@ -176,41 +176,53 @@ export class Presets {
 		else if (event.submitter.name === 'share') {
 			this.#sharePresets(event.target);
 		}
+		else if (event.submitter.name === 'import') {
+			this.#importPresets(this.#params.get(this.#shareSearchParam));
+		}
 	}
 
 	#showShareList(dialog) {
-		const items = [];
-		if (this.#presets.length > 0) {
-			this.#presets.forEach(({ name }, index) => {
+		const canShare = this.#params.has(this.#setSearchParam);
+		const { items, checkedBox, checkBoxShare } = this.#presets.reduce(
+			(data, { name }, index) => {
+				if (!name) return data;
 				const li = document.createElement('li');
 				const label = document.createElement('label');
+				const checked = index === this.#index;
 				const checkBox = Object.assign(document.createElement('input'), {
 					type: 'checkbox',
 					name: 'index',
 					value: index,
-					checked: index === this.#index,
+					checked,
 				});
 				label.append(checkBox, document.createTextNode(name));
 				li.append(label);
-				items.push(li);
-			});
-		} else {
+				data.items.push(li);
+				data.checkBoxShare.push(checkBox);
+				if (checked) data.checkedBox = checkBox;
+				return data;
+			},
+			{ items: [], checkedBox: null, checkBoxShare: [] }
+		);
+		if (!items.length) {
 			const li = document.createElement('li');
-			li.append(document.createTextNode('Aucun morceau'));
+			li.textContent = 'Aucun morceau';
 			items.push(li);
 		}
 		this.#shareList.replaceChildren(...items);
-		this.#checkBoxShare = Array.from(this.#shareList.querySelectorAll('input[type="checkbox"]'));
-		this.#checkBoxMaster.disabled = !this.#presets.length;
-		this.#checkBoxCurrent.disabled = this.#index !== -1 || !this.#params.get(this.#setSearchParam);
+		this.#checkBoxShare = checkBoxShare;
+		this.#checkBoxMaster.disabled = this.#presets.length === 0;
+		this.#checkBoxCurrent.disabled = !!checkedBox || !canShare;
 		this.#checkBoxCurrent.checked = !this.#checkBoxCurrent.disabled;
-		this.#checkValues();
+		this.#shareButton.disabled = !canShare;
 		dialog.showModal();
-		this.#checkBoxShare[this.#index]?.scrollIntoView({ behavior: 'instant', block: 'center' });
+		if (checkedBox) {
+			checkedBox.scrollIntoView({ behavior: 'instant', block: 'center' });
+		}
 	}
 
-	#checkValues(event) {
-		if (event && event.target === this.#checkBoxMaster) {
+	#checkValues(target) {
+		if (target === this.#checkBoxMaster) {
 			this.#checkBoxShare.forEach(checkbox => checkbox.checked = this.#checkBoxMaster.checked);
 		}
 		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
@@ -267,18 +279,24 @@ export class Presets {
 			this.#settingsDialog.close();
 			const indexName = action === 'rename' ? title : name;
 			const index = data.findIndex(preset => preset.name === indexName);
-			this.#lastAction = { data: structuredClone(data), title: this.#title.textContent };
+			const newData = structuredClone(data);
 			switch (action) {
-				case 'newOne': data.push({ name, value }); break;
-				case 'modify': data[index].value = value; break;
-				case 'rename': data[index].name = name; break;
-				case 'delete': data.splice(index, 1); break;
+				case 'newOne': newData.push({ name, value }); break;
+				case 'modify': newData[index].value = value; break;
+				case 'rename': newData[index].name = name; break;
+				case 'delete': newData.splice(index, 1); break;
 			}
 			if (isNewName) {
-				data.sort((a, b) => a.name.localeCompare(b.name));
+				newData.sort((a, b) => a.name.localeCompare(b.name));
 			}
-			await this.#saveData(data);
-			this.#applyChanges(data, action === 'delete' ? '' : name, dataset.success, true);
+			await this.#saveData(newData);
+			this.#lastAction = {
+				data,
+				title,
+				successMsg: 'La modification a été annulée.',
+				failureMsg: '⚠️ La modification ne peut être annulée.',
+			};
+			this.#applyChanges(newData, action === 'delete' ? '' : name, dataset.success);
 		} 
 		catch (error) {
 			if (this.#settingsDialog.open) {
@@ -307,16 +325,40 @@ export class Presets {
 		return true;
 	}
 
+	async #importPresets(sharedJSON) {
+		try {
+			const data = await this.#fetchData(true);
+			if (!sharedJSON) throw new Error();
+			const sharedData = JSON.parse(decodeURIComponent(sharedJSON));
+			if (!Array.isArray(sharedData) || sharedData.length === 0) throw new Error();
+			const dataMap = new Map(data.map(preset => [preset.name, { ...preset }]));
+			for (const { name = '', value = '0' } of sharedData) {
+				dataMap.set(name, { name, value });
+			}
+			const newData = Array.from(dataMap.values());
+			newData.sort((a, b) => a.name.localeCompare(b.name));
+			await this.#saveData(newData);
+			this.#lastAction = {
+				data,
+				successMsg: 'L\'import des morceaux a été annulé.',
+				failureMsg: '⚠️ L\'import des morceaux ne peut être annulé.',
+			};
+			this.#applyChanges(newData, null, 'Tous les morceaux ont été importés.');
+		} 
+		catch (error) {
+			this.#showToastMessage('⚠️ L\'import des morceaux a échoué.');
+		}
+	}
+
 	async #toastFunction() {
 		if (!this.#lastAction) return;
-		const { data, title } = this.#lastAction;
+		const { data, title, successMsg, failureMsg } = this.#lastAction;
+		this.#lastAction = null;
 		try {
 			await this.#saveData(data);
-			this.#applyChanges(data, title, 'La modification a été annulée.');
+			this.#applyChanges(data, title, successMsg);
 		} catch {
-			this.#showToastMessage('⚠️ La modification ne peut être annulée.');
-		} finally {
-			this.#lastAction = null;
+			this.#showToastMessage(failureMsg);
 		}
 	}
 
@@ -324,7 +366,7 @@ export class Presets {
 		const title = this.#title.textContent;
 		const presetIndex = this.#presets.findIndex(({ name }) => name === title);
 		const hasSelection = this.#index !== -1;
-		const exists = presetIndex !== -1;
+		const exists = presetIndex !== -1 && title;
 		const formsValues = [
 			{ formId:'newOne', name: exists ? '' : title, hidden: hasSelection },
 			{ formId:'modify', name: title, hidden: hasSelection || !exists },
@@ -341,21 +383,22 @@ export class Presets {
 	}
 
 	#setTitle(value) {
+		if (typeof value !== 'string' || value === this.#title.textContent) return;
 		this.#title.textContent = value;
 		value ? this.#params.set(this.#titleSearchParam, value) : this.#params.delete(this.#titleSearchParam);
 		document.title = this.#headTitlePrefix + (value ? value : this.#headUntitled);
 		history.replaceState(null, '', this.#params.size ? `?${this.#params}` : '.');
 	}
 
-	#applyChanges(data, title, message, cancel = false) {
+	#applyChanges(data, title, message) {
 		this.#setTitle(title);
 		this.#createOptions(data);
-		this.#showToastMessage(message, cancel);
+		this.#showToastMessage(message);
 	}
 
-	#toggleShared(data) {
+	#toggleShared() {
 		if (this.#params.has(this.#shareSearchParam)) {
-			const encoded = decodeURIComponent(data || this.#params.get('share'));
+			const encoded = decodeURIComponent(this.#params.get('share'));
 			const presets = JSON.parse(encoded);
 			if (!presets.length) return
 			this.#sharedList.replaceChildren(

@@ -14,8 +14,9 @@
     "action": "/",
     "method": "GET",
     "params": {
-      "share": "share"
+      "url": "sharelink"
     }
   }
 
 }
+

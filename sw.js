@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.19.50',
+	app: '1.19.51',
 	static: '1.06'
 };
 
@@ -21,6 +21,7 @@ const assets = {
 	static: [
 		'./favicon.svg',
 		'./app/icon.svg',
+		'./app/share.html',
 		'./app/app.webmanifest',
 		'./audio/default.ogg',
 		'./audio/agogo.ogg',

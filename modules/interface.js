@@ -230,7 +230,7 @@ export class Interface {
 		const validNames = [this.#instrumentName, this.#beatName, this.#barsName, this.#volumeName];
 		if (!validNames.includes(name)) return;
 		currentTarget.dataset[name] = value; //'interface:changeVolume' est dispatché par #changeVolume()
-		if if (name === this.#volumeName) return; 
+		if (name === this.#volumeName) return; 
 		const trackIndex = [...this.#tracks].indexOf(currentTarget);
 		const detail = { detail: { tracks: { [trackIndex]: { [name]: Number(value) } } } };
 		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
@@ -661,3 +661,4 @@ export class Interface {
 	}
 //endpreset
 }
+

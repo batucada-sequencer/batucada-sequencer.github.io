@@ -145,7 +145,7 @@ export class Presets {
 			await this.#saveData(data);
 			this.#lastAction = {
 				data: this.#presets,
-				title: this.#params.get(this.#titleSearchParam),
+				title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
 			};
 			this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
 			promise.resolve();
@@ -250,5 +250,6 @@ export class Presets {
 			promise.reject();
 		}
 	}
+
 
 }

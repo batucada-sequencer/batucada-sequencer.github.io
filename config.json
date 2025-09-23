@@ -1,5 +1,5 @@
 {
-	"local": false,
+	"local": true,
 	"tracksLength": 10,
 	"durationWhenHidden": 600,
 	"untitled": "Morceau sans titre",
@@ -11,4 +11,5 @@
 	"defaultSetValue": "0",
 	"defaultTitleValue": ""
 }
+
 

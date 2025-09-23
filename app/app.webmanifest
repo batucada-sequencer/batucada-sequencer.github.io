@@ -11,7 +11,7 @@
     }
   ],
   "share_target": {
-    "action": "/",
+    "action": "/app/share.html",
     "method": "GET",
     "params": {
       "url": "sharelink"
@@ -19,4 +19,5 @@
   }
 
 }
+
 

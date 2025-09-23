@@ -101,9 +101,9 @@ tbody {
 .track[data-bars="12"] .bar:nth-child(n+13),
 .track[data-bars="16"] .bar:nth-child(n+17),
 .track[data-bars="24"] .bar:nth-child(n+25),
-.track[data-beat="3"] .sub_bar .tic:nth-last-child(-n+5),
-.track[data-beat="4"] .sub_bar .tic:nth-last-child(-n+4),
-.track[data-beat="6"] .sub_bar .tic:nth-last-child(-n+2) {
+.track[data-beat="3"] .sub_bar .step:nth-last-child(-n+5),
+.track[data-beat="4"] .sub_bar .step:nth-last-child(-n+4),
+.track[data-beat="6"] .sub_bar .step:nth-last-child(-n+2) {
 	display:none;
 }
 .track th,
@@ -175,7 +175,7 @@ select.beat {
 .track[data-beat="8"] .sub_bar {
 	width:9.5em;
 }
-.tic {
+.step {
 	padding:0;
 	z-index:1;
 	border:none;
@@ -185,33 +185,33 @@ select.beat {
 	border-radius:.2em;
 	background:hsl(240,10%,92%) no-repeat center;
 }
-.tic[value="1"] {
+.step[value="1"] {
 	background-color:hsl(215,100%,43%);
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white"/></svg>');
 }
-.tic[value="2"] {
+.step[value="2"] {
 	background-color:hsl(215,100%,43%);
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white" fill-opacity=".1" stroke="white" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="white"/></svg>');
 }
-.tic[value="3"] {
+.step[value="3"] {
 	background-color:hsl(215,100%,43%);
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="10" x2="6" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>');
 }
-.bar > .tic[value="0"] {
+.bar > .step[value="0"] {
 	background-color:hsl(240,10%,83%);
 	border:1px solid hsl(240,10%,50%);
 }
-.bar > .tic[value="0"]::after {
+.bar > .step[value="0"]::after {
 	content:counter(bar);
 }
-.tic.current {
+.step.current {
 	outline-offset:-.05em;
 	outline:.2em solid hsl(130,30%,70%);
 }
-.bar > .tic.current {
+.bar > .step.current {
 	outline-color:hsl(130,100%,25%);
 }
-.tic.current:not([value="0"]) {
+.step.current:not([value="0"]) {
 	height:1.5em;
 	align-self:end;
 	background-size:120%;
@@ -219,9 +219,9 @@ select.beat {
 	outline-color:hsl(130,100%,25%);
 	background-color:hsl(130,100%,25%);
 }
-.tic:has(~ .current):not([value="0"]),
-.bar:has(.sub_bar .current) > .tic:not([value="0"]),
-.bar:has(~ .bar .current) .tic:not([value="0"]) {
+.step:has(~ .current):not([value="0"]),
+.bar:has(.sub_bar .current) > .step:not([value="0"]),
+.bar:has(~ .bar .current) .step:not([value="0"]) {
 	background-color:hsl(215,68%,63%);
 }
 .bar::before {
@@ -236,12 +236,10 @@ select.beat {
 td:has(.volume) {
 	width:20px;
 	height:3.6em;
-	padding:.5em 0;
-	/* start -webkit-appearance:slider-vertical compatibility */
 	display:flex;
+	padding:.5em 0;
 	align-items:center;
 	justify-content:center;
-	/* end -webkit-appearance:slider-vertical compatibility */
 }
 .volume {
 	margin:0;
@@ -511,17 +509,17 @@ button[name="share_list"] {
 	input:not([type]):hover,
 	#combo_tempo:hover,
 	select:hover,
-	button:not(.tic):not(:disabled):hover {
+	button:not(.step):not(:disabled):hover {
 		z-index:1;
 		border-color:hsl(240,10%,20%);
 	}
-	button:not(.tic):not(:disabled):hover {
+	button:not(.step):not(:disabled):hover {
 		background-color:hsl(240,10%,85%);
 	}
-	.tic:hover {
+	.step:hover {
 		filter:brightness(1.15);
 	}
-	.tic[value="0"]:hover {
+	.step[value="0"]:hover {
 		filter:brightness(.9);
 	}
 	.select:hover .handle {

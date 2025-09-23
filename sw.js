@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.19.44',
+	app: '1.19.46',
 	static: '1.06'
 };
 
@@ -13,11 +13,9 @@ const assets = {
 		'./style.css',
 		'./config.json',
 		'./modules/instruments.json',
-		'./modules/references.js',
+		'./modules/interface.js',
 		'./modules/presets.js',
 		'./modules/sequencer.js',
-		'./modules/url_state.js',
-		'./modules/track_swap.js',
 		'./modules/toast_positioning.js',
 	],
 	static: [

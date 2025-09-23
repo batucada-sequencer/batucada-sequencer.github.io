@@ -1,6 +1,5 @@
-export function applyPolyfill(references) {
+export function applyPolyfill(toast, anchor) {
 	console.log('[Polyfill] CSS anchor positioning fallback applied');
-	const { toast, container: anchor } = references;
 	const toasts = [toast];
 	const stylesheet = new CSSStyleSheet();
 	const selector = toasts.map(toast => `#${CSS.escape(toast.id)}`).join(', ');

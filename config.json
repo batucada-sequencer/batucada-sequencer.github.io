@@ -1,5 +1,14 @@
 {
-	"local": true,
+	"local": false,
 	"tracksLength": 10,
-	"durationWhenHidden": 600
+	"durationWhenHidden": 600,
+	"untitled": "Morceau sans titre",
+	"setSearchParam": "set",
+	"tempoSearchParam": "bpm",
+	"titleSearchParam": "title",
+	"volumeSearchParam": "vol",
+	"shareSearchParam": "share",
+	"defaultSetValue": "0",
+	"defaultTitleValue": ""
 }
+

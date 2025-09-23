@@ -46,14 +46,6 @@ export class UrlState {
 		this.#bus.addEventListener('interface:presetClicked', ({ detail }) => this.#presetClicked(detail));
 		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#presetSelected(detail));
 		this.#bus.addEventListener('interface:sharedClosed', ({ detail }) => this.#sharedClosed(detail));
-		if (this.#searchParams.has('sharelink')) {
-			console.log('sharelink')
-			const currentURL = new URL(location.href);
-			const shareURL = new URL(this.#searchParams.get('sharelink'));
-			currentURL.search = shareURL.search;
-			this.#searchParams = new URLSearchParams(currentURL.search);
-			window.history.replaceState({}, '', currentURL);
-		}
 		this.#decodeURL();
 	}
 

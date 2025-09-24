@@ -1,6 +1,6 @@
 const versions = {
-	app: '1.19.51',
-	static: '1.06'
+	app: '1.19.59',
+	static: '1.11'
 };
 
 const dataCache = 'data';

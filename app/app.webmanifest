@@ -14,10 +14,12 @@
     "action": "/app/share.html",
     "method": "GET",
     "params": {
-      "url": "sharelink"
+      "text": "text",
+      "url": "url"
     }
   }
 
 }
+
 
 

@@ -64,12 +64,11 @@ export class Presets {
 				statusText: 'OK',
 				headers: { 'Content-Type': 'application/json' }
 			});
-		}
-		else {
 			if (this.#isPersistedStorage === null) {
 				this.#isPersistedStorage = await navigator.storage.persist();
 				console.log(`Persisted storage granted: ${this.#isPersistedStorage}`);
 			}
+		} else {
 			response = await fetch(this.#userFileName, { method: 'PUT', body });
 		}
 		await cache.put(this.#userFileName, response);
@@ -147,6 +146,7 @@ export class Presets {
 				data: this.#presets,
 				title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
 			};
+			console.log(this.#lastAction);
 			this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
 			promise.resolve();
 		} 
@@ -250,6 +250,5 @@ export class Presets {
 			promise.reject();
 		}
 	}
-
 
 }

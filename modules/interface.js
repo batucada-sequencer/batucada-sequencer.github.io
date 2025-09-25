@@ -46,7 +46,7 @@ export class Interface {
 	#instrumentsList;
 	#interfaceData;
 	#trackElementsMap;
-	#animationQueue = new Map();
+	#animationQueue = [];
 
 	constructor(bus, config, instrumentsList) {
 		this.#bus = bus;
@@ -329,36 +329,43 @@ export class Interface {
 	}
 
 	#stop() {
-		this.#animationQueue.forEach((_, step) => step.classList.remove(this.#currentClass));
-		this.#animationQueue.clear();
+		this.#animationQueue.forEach(items => items[0].step?.classList.remove(this.#currentClass));
+		this.#animationQueue = [];
 		this.#bus.dispatchEvent(new CustomEvent('interface:stop'));
 	}
 
 	#pushAnimations({ animations }) {
-		const buffer = 0.03;
 		let frameId;
-		for (const item of animations) {
-			const index = item.step.trackIndex * this.#stepsPerTracks
-				+ item.step.barIndex * this.#subdivision
-				+ item.step.stepIndex;
-			item.active = false;
-			this.#animationQueue.set(this.#steps[index], item);
-		}
+		animations.forEach((items, trackIndex) => {
+			let steps = this.#animationQueue[trackIndex];
+			if (!steps) {
+				// step null pour gérer la première animation
+				steps = [{ step: null }];
+				this.#animationQueue[trackIndex] = steps;
+			}
+			items.forEach(({ barIndex, stepIndex, time }) => {
+				const index = trackIndex * this.#stepsPerTracks + barIndex * this.#subdivision + stepIndex;
+				steps.push({ step: this.#steps[index], time });
+			});
+		});
 		const loop = () => {
 			const now = performance.now();
-			for (const [step, item] of this.#animationQueue) {
-				const withinTime = now >= item.time.timeStart - buffer && now < item.time.timeEnd - buffer;
-				if (withinTime !== item.active) {
-					item.active = step.classList.toggle(this.#currentClass, withinTime);
+			this.#animationQueue.forEach(items => {
+				if (items.length > 1 && now >= items[1].time) {
+					items[0].step?.classList.remove(this.#currentClass);
+					items[1].step.classList.add(this.#currentClass);
+					items.shift();
 				}
-				if (!item.active && now >= item.time.timeEnd - buffer) {
-					this.#animationQueue.delete(step);
-				}
-			}
-			frameId = this.#animationQueue.size > 0 ? requestAnimationFrame(loop) : null;
+			});
+			frameId = this.#animationQueue.length > 0
+				? requestAnimationFrame(loop)
+				: null;
 		};
 		if (!frameId) frameId = requestAnimationFrame(loop);
 	}
+
+
+
 
 	#reset() {
 		this.#initTracks();
@@ -661,4 +668,3 @@ export class Interface {
 	}
 //endpreset
 }
-

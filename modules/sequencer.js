@@ -277,20 +277,17 @@ export class Sequencer {
 				const delta = performance.now() - barTime * 1000;
 				this.#tracks.forEach(({ instrument, bars, beat, volume, sheet }, trackIndex) => {
 					if (trackIndex >= this.#trackCount) return;
+					animations[trackIndex] = [];
 					const secondsPerStep = secondsPerBar / beat;
 					const milliPerStep = secondsPerStep * 1000;
 					const barIndex = this.#barIndex % bars;
 					for (let stepIndex = 0; stepIndex < beat; stepIndex++) {
 						const hit = sheet[barIndex][stepIndex];
-						const stepAudioTime = barTime + stepIndex * secondsPerStep;
-						const timeStart = stepAudioTime * 1000 + delta;
-						const timeEnd = timeStart + milliPerStep;
-						animations.push({
-							step: { trackIndex, barIndex, stepIndex },
-							time: { timeStart, timeEnd },
-						});
+						const audioTime = barTime + stepIndex * secondsPerStep;
+						const animationTime = audioTime * 1000 + delta;
+						animations[trackIndex].push({ barIndex, stepIndex , time: animationTime });
 						if (hit > 0) {
-							this.#playNote(instrument, volume, hit, stepAudioTime);
+							this.#playNote(instrument, volume, hit, audioTime);
 						}
 					}
 				});

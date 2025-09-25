@@ -47,6 +47,7 @@ export class Interface {
 	#interfaceData;
 	#trackElementsMap;
 	#animationQueue = [];
+	#frameId = null;
 
 	constructor(bus, config, instrumentsList) {
 		this.#bus = bus;
@@ -335,7 +336,6 @@ export class Interface {
 	}
 
 	#pushAnimations({ animations }) {
-		let frameId;
 		animations.forEach((items, trackIndex) => {
 			let steps = this.#animationQueue[trackIndex];
 			if (!steps) {
@@ -357,15 +357,12 @@ export class Interface {
 					items.shift();
 				}
 			});
-			frameId = this.#animationQueue.length > 0
+			this.#frameId = this.#animationQueue.length > 0
 				? requestAnimationFrame(loop)
 				: null;
 		};
-		if (!frameId) frameId = requestAnimationFrame(loop);
+		if (!this.#frameId) this.#frameId = requestAnimationFrame(loop);
 	}
-
-
-
 
 	#reset() {
 		this.#initTracks();

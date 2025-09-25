@@ -184,9 +184,8 @@ export class Sequencer {
 								track.sheet.forEach((bars, barIndex) => {
 									bars.forEach((step, stepIndex) => {
 										if (step > maxHit) {
-											step = maxHit;
-											sheetChanges[trackIndex] ??= {};
-											sheetChanges[trackIndex].sheet ??= [];
+											track.sheet[barIndex][stepIndex] = maxHit;
+											sheetChanges[trackIndex] ??= { sheet: [] };
 											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: maxHit });
 										}
 									})
@@ -197,9 +196,8 @@ export class Sequencer {
 									if (barIndex < itemValue) return;
 									bars.forEach((step, stepIndex) => {
 										if (step > 0) {
-											step = 0;
-											sheetChanges[trackIndex] ??= {};
-											sheetChanges[trackIndex].sheet ??= [];
+											track.sheet[barIndex][stepIndex] = 0;
+											sheetChanges[trackIndex] ??= { sheet: [] };
 											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
 										}
 									})
@@ -209,9 +207,8 @@ export class Sequencer {
 								track.sheet.forEach((bars, barIndex) => {
 									bars.forEach((step, stepIndex) => {
 										if (stepIndex >= itemValue && step > 0) {
-											step = 0;
-											sheetChanges[trackIndex] ??= {};
-											sheetChanges[trackIndex].sheet ??= [];
+											track.sheet[barIndex][stepIndex] = 0;
+											sheetChanges[trackIndex] ??= { sheet: [] };
 											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
 										}
 									})

@@ -178,7 +178,7 @@ export class Sequencer {
 						}
 					}
 					for (const [trackItem, itemValue] of Object.entries(trackChanges)) {
-						if (!['instrument', 'bars', 'beat'].includes(trackItem)) continue;
+						if (!['instrument', 'bars', 'beat', 'volume'].includes(trackItem)) continue;
 						track[trackItem] = itemValue;
 						if (trackItem === 'instrument') {
 							const maxHit = this.#instrumentsList[itemValue]?.files.length || 1;

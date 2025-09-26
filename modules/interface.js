@@ -230,11 +230,11 @@ export class Interface {
 		const { name, value } = target;
 		const validNames = [this.#instrumentName, this.#beatName, this.#barsName, this.#volumeName];
 		if (!validNames.includes(name)) return;
-		currentTarget.dataset[name] = value; //'interface:changeVolume' est dispatché par #changeVolume()
-		if (name === this.#volumeName) return; 
+		currentTarget.dataset[name] = value; 
 		const trackIndex = [...this.#tracks].indexOf(currentTarget);
 		const detail = { detail: { tracks: { [trackIndex]: { [name]: Number(value) } } } };
 		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+		if (name === this.#volumeName) return; //'interface:changeVolume' est dispatché par #changeVolume()
 		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
@@ -362,7 +362,7 @@ export class Interface {
 				for (const items of this.#animationQueue) {
 					if (items.length < 2) continue;
 					let currentIndex = 0;
-					//Passe les animations non exécutées (onglet inactif, lag, ...)
+					//Passe les animations non exécutées (onglet inactif, latence, ...)
 					for (let i = 1; i < items.length; i++) {
 						if (now >= items[i].time) {
 							currentIndex = i;

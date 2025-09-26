@@ -172,48 +172,48 @@ export class Sequencer {
 				for (const [index, trackChanges] of Object.entries(itemData)) {
 					const trackIndex = Number(index);
 					const track = this.#tracks[trackIndex];
+					if ('sheet' in trackChanges) {
+						for (const { barIndex, stepIndex, value } of trackChanges.sheet) {
+							track.sheet[barIndex][stepIndex] = value;
+						}
+					}
 					for (const [trackItem, itemValue] of Object.entries(trackChanges)) {
-						if (trackItem === 'sheet') { 
-							for (const { barIndex, stepIndex, value } of itemValue) { 
-								track.sheet[barIndex][stepIndex] = value;
-							}
-						} else {
-							track[trackItem] = itemValue;
-							if (trackItem === 'instrument') {
-								const maxHit = this.#instrumentsList[itemValue]?.files.length || 1;
-								track.sheet.forEach((bars, barIndex) => {
-									bars.forEach((step, stepIndex) => {
-										if (step > maxHit) {
-											track.sheet[barIndex][stepIndex] = maxHit;
-											sheetChanges[trackIndex] ??= { sheet: [] };
-											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: maxHit });
-										}
-									})
+						if (!['instrument', 'bars', 'beat'].includes(trackItem)) continue;
+						track[trackItem] = itemValue;
+						if (trackItem === 'instrument') {
+							const maxHit = this.#instrumentsList[itemValue]?.files.length || 1;
+							track.sheet.forEach((bars, barIndex) => {
+								bars.forEach((step, stepIndex) => {
+									if (step > maxHit) {
+										track.sheet[barIndex][stepIndex] = maxHit;
+										sheetChanges[trackIndex] ??= { sheet: [] };
+										sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: maxHit });
+									}
 								})
-								this.#trackCount = this.#getTrackCount();
-							} else if (trackItem === 'bars') {
-								track.sheet.forEach((bars, barIndex) => {
-									if (barIndex < itemValue) return;
-									bars.forEach((step, stepIndex) => {
-										if (step > 0) {
-											track.sheet[barIndex][stepIndex] = 0;
-											sheetChanges[trackIndex] ??= { sheet: [] };
-											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
-										}
-									})
+							})
+							this.#trackCount = this.#getTrackCount();
+						} else if (trackItem === 'bars') {
+							track.sheet.forEach((bars, barIndex) => {
+								if (barIndex < itemValue) return;
+								bars.forEach((step, stepIndex) => {
+									if (step > 0) {
+										track.sheet[barIndex][stepIndex] = 0;
+										sheetChanges[trackIndex] ??= { sheet: [] };
+										sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
+									}
 								})
-								this.#synchroBar = this.#getSynchroBar();
-							} else if (trackItem === 'beat') {
-								track.sheet.forEach((bars, barIndex) => {
-									bars.forEach((step, stepIndex) => {
-										if (stepIndex >= itemValue && step > 0) {
-											track.sheet[barIndex][stepIndex] = 0;
-											sheetChanges[trackIndex] ??= { sheet: [] };
-											sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
-										}
-									})
+							})
+							this.#synchroBar = this.#getSynchroBar();
+						} else if (trackItem === 'beat') {
+							track.sheet.forEach((bars, barIndex) => {
+								bars.forEach((step, stepIndex) => {
+									if (step > 0 && stepIndex >= itemValue) {
+										track.sheet[barIndex][stepIndex] = 0;
+										sheetChanges[trackIndex] ??= { sheet: [] };
+										sheetChanges[trackIndex].sheet.push({ barIndex, stepIndex, value: 0 });
+									}
 								})
-							}
+							})
 						}
 					}
 				}

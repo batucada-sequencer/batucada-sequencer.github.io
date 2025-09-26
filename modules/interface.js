@@ -350,9 +350,15 @@ export class Interface {
 			);
 		});
 		if (!this.#frameId) {
+			const maxDelay = 100;
 			const loop = () => {
 				const now = performance.now();
 				this.#animationQueue.forEach(items => {
+					//suppression des animations non exectutées (onglet inactif par exemple)
+					while (items.length > 1 && now - items[1].time > maxDelay) {
+						items[0].step?.classList.remove(this.#currentClass);
+						items.shift();
+					}
 					if (items.length > 1 && now >= items[1].time) {
 						items[0].step?.classList.remove(this.#currentClass);
 						items[1].step.classList.add(this.#currentClass);

@@ -357,28 +357,24 @@ export class Interface {
 			}
 		});
 		if (!this.#frameId) {
-			const maxDelay = 100;
 			const loop = () => {
 				const now = performance.now();
-				this.#animationQueue.forEach(items => {
-					while (items.length > 1) {
-						let [previous, current] = items;
-						//Suppression des animations non exectutées (onglet inactif par exemple)
-						if (now - current.time > maxDelay) {
-							previous.step?.classList.remove(this.#currentClass);
-							items.shift();
-							continue;
+				for (const items of this.#animationQueue) {
+					if (items.length < 2) continue;
+					let currentIndex = 0;
+					//Passe les animations non exécutées (onglet inactif, lag, ...)
+					for (let i = 1; i < items.length; i++) {
+						if (now >= items[i].time) {
+							currentIndex = i;
+						} else {
+							break;
 						}
-						//Anination du step en cours
-						if (now >= current.time) {
-							previous.step?.classList.remove(this.#currentClass);
-							current.step.classList.add(this.#currentClass);
-							items.shift();
-							continue;
-						}
-						break;
 					}
-				});
+					if (currentIndex === 0 ) continue;
+					items[0].step?.classList.remove(this.#currentClass);
+					items[currentIndex].step.classList.add(this.#currentClass);
+					items.splice(0, currentIndex);
+				}
 				this.#frameId = this.#animationQueue.length > 0
 					? requestAnimationFrame(loop)
 					: null;

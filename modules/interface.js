@@ -336,33 +336,47 @@ export class Interface {
 	}
 
 	#pushAnimations({ animations }) {
+		//Suppression de track qui ne sont plus actifs
 		this.#animationQueue.slice(animations.length).forEach(steps => steps[0].step?.classList.remove(this.#currentClass));
 		this.#animationQueue.length = animations.length;
+		//Ajout des animations à la pile animationQueue
 		animations.forEach((items, trackIndex) => {
 			let steps = this.#animationQueue[trackIndex];
 			if (!steps) {
-				steps = [{ step: null }];
+				// step fictif pour gérer la première animation
+				steps = [{ step: null }]; 
 				this.#animationQueue[trackIndex] = steps;
 			}
 			const baseIndex = trackIndex * this.#stepsPerTracks;
 			items.forEach(({ barIndex, stepIndex, time }) => 
 				steps.push({ step: this.#steps[baseIndex + barIndex * this.#subdivision + stepIndex], time })
 			);
+			//Evite l'accumulation d'animations qui ne seront pas exectutées (onglet inactif par exemple)
+			if (steps.length > this.#subdivision * 2) {
+				steps.splice(1, steps.length - this.#subdivision * 2);
+			}
 		});
 		if (!this.#frameId) {
 			const maxDelay = 100;
 			const loop = () => {
 				const now = performance.now();
 				this.#animationQueue.forEach(items => {
-					//suppression des animations non exectutées (onglet inactif par exemple)
-					while (items.length > 1 && now - items[1].time > maxDelay) {
-						items[0].step?.classList.remove(this.#currentClass);
-						items.shift();
-					}
-					if (items.length > 1 && now >= items[1].time) {
-						items[0].step?.classList.remove(this.#currentClass);
-						items[1].step.classList.add(this.#currentClass);
-						items.shift();
+					while (items.length > 1) {
+						let [previous, current] = items;
+						//Suppression des animations non exectutées (onglet inactif par exemple)
+						if (now - current.time > maxDelay) {
+							previous.step?.classList.remove(this.#currentClass);
+							items.shift();
+							continue;
+						}
+						//Anination du step en cours
+						if (now >= current.time) {
+							previous.step?.classList.remove(this.#currentClass);
+							current.step.classList.add(this.#currentClass);
+							items.shift();
+							continue;
+						}
+						break;
 					}
 				});
 				this.#frameId = this.#animationQueue.length > 0

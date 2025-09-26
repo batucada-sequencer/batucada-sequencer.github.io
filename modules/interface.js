@@ -130,7 +130,7 @@ export class Interface {
 			defaultInstrument: Number(defaultData[this.#instrumentName]),
 			barsValues: Array.from(this.#bars[0].options).map(option => Number(option.value)),
 			beatValues: Array.from(this.#beats[0].options).map(option => Number(option.value)),
-			tracksLength: this.#tracksLength, //deja dans config
+			tracksLength: this.#tracksLength,
 			tempoStep: Number(this.#tempo.step),
 			maxBars: this.#maxBars,
 			maxGain: Number(this.#volumes[0].max),
@@ -336,32 +336,35 @@ export class Interface {
 	}
 
 	#pushAnimations({ animations }) {
+		this.#animationQueue.slice(animations.length).forEach(steps => steps[0].step?.classList.remove(this.#currentClass));
+		this.#animationQueue.length = animations.length;
 		animations.forEach((items, trackIndex) => {
 			let steps = this.#animationQueue[trackIndex];
 			if (!steps) {
-				// step null pour gérer la première animation
 				steps = [{ step: null }];
 				this.#animationQueue[trackIndex] = steps;
 			}
-			items.forEach(({ barIndex, stepIndex, time }) => {
-				const index = trackIndex * this.#stepsPerTracks + barIndex * this.#subdivision + stepIndex;
-				steps.push({ step: this.#steps[index], time });
-			});
+			const baseIndex = trackIndex * this.#stepsPerTracks;
+			items.forEach(({ barIndex, stepIndex, time }) => 
+				steps.push({ step: this.#steps[baseIndex + barIndex * this.#subdivision + stepIndex], time })
+			);
 		});
-		const loop = () => {
-			const now = performance.now();
-			this.#animationQueue.forEach(items => {
-				if (items.length > 1 && now >= items[1].time) {
-					items[0].step?.classList.remove(this.#currentClass);
-					items[1].step.classList.add(this.#currentClass);
-					items.shift();
-				}
-			});
-			this.#frameId = this.#animationQueue.length > 0
-				? requestAnimationFrame(loop)
-				: null;
-		};
-		if (!this.#frameId) this.#frameId = requestAnimationFrame(loop);
+		if (!this.#frameId) {
+			const loop = () => {
+				const now = performance.now();
+				this.#animationQueue.forEach(items => {
+					if (items.length > 1 && now >= items[1].time) {
+						items[0].step?.classList.remove(this.#currentClass);
+						items[1].step.classList.add(this.#currentClass);
+						items.shift();
+					}
+				});
+				this.#frameId = this.#animationQueue.length > 0
+					? requestAnimationFrame(loop)
+					: null;
+			};
+			this.#frameId = requestAnimationFrame(loop);
+		}
 	}
 
 	#reset() {

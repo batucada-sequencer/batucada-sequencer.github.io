@@ -131,9 +131,9 @@ tbody {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><text x="4" y="15">𝟙</text></svg>');
 }
 .track[data-loop="1"] .trackbutton {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M7 22 l3 -3 l3 3 M10 15 a 4 4 0 0 1 2-2 h 9 a 4 4 0 0 1 4 4 v11 M22 25 l3 3 l3 -3 M25 32 a 4 4 0 0 1-2 2 h-9 a 4 4 0 0 1 -4-4 v-11" stroke-width="2.3" stroke="black" stroke-linecap="round" fill="none"/></svg>');
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 55 55" xmlns="http://www.w3.org/2000/svg"><path d="M7 26 l3 -3 l3 3 M10 19 a 4 4 0 0 1 2-2 h 9 a 4 4 0 0 1 4 4 v11 M22 29 l3 3 l3 -3 M25 36 a 4 4 0 0 1-2 2 h-9 a 4 4 0 0 1 -4-4 v-11" stroke-width="2.3" stroke="black" stroke-linecap="round" fill="none"/></svg>');
 }
-/*12 18*/
+
 .sheet {
 	gap:.3em;
 	display:grid;
@@ -571,6 +571,8 @@ button[name="share_list"] {
 	}
 	.trackbutton {
 		font-size:.9em;
+		background-size:28%;
+		background-position-y:40%;
 	}
 	.track.dragged .dropzone::after {
 		inset:-.32em  1em auto;

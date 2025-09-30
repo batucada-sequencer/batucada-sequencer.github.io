@@ -11,6 +11,7 @@ body {
 select,
 input:not([type]),
 button {
+	margin:0;
 	color:#000;
 	padding:0 .5em;
 	background:#fff;
@@ -32,14 +33,11 @@ button {
 button:disabled {
 	opacity:.6;
 }
-#combo_tempo:focus,
-select:focus,
-input:focus,
-button:focus {
-	z-index:1;
-}
 #sequencer {
 	--margin-top:0em;
+	--track-column-auto:1;
+	--track-first-col-width:7em;
+	--sheet-column:2;
 	background:#fff;
 	border:1px solid #999;
 	border-radius:0 0 .5em .5em;
@@ -83,16 +81,24 @@ tbody {
 }
 .track {
 	top:0;
-	display:flex;
+	display:grid;
 	position:relative;
+	align-items:start;
+	grid-template-rows:min-content 1fr;
+	grid-template-columns:var(--track-first-col-width) repeat(var(--track-column-auto), auto);
 }
-.track:focus-within ~ .track[data-instrument="0"] {
-	transition:opacity .3s ease-out;
-	transition-behavior:allow-discrete;
-	opacity:1;
-	@starting-style {
-		opacity:0;
-	}
+.track th {
+	padding:0 0 0 .7em;
+}
+.track td:first-of-type {
+	grid-column:2;
+	grid-row:span 2;
+	padding:.5em .7em;
+}
+.track td:last-of-type {
+	grid-row:2;
+	grid-column:1;
+	padding:.4em .2em 0 .9em;
 }
 .track[data-instrument="0"] ~ .track,
 .track[data-bars="4"] .bar:nth-child(n+5),
@@ -106,54 +112,37 @@ tbody {
 .track[data-beat="6"] .sub_bar .step:nth-last-child(-n+2) {
 	display:none;
 }
-.track th,
-.track td {
-	padding:0;
-}
 .track .dropzone {
 	height:1em;
 	margin-top:-.5em;
 }
-.track .select {
+.track div[draggable] {
 	display:grid;
-	grid-template-rows:calc(1.78em + 1px) 1.78em;
-	grid-template-columns:0.7em 2.4em 3.1em;
+	height:1.815em;
+	grid-template-columns:0 1fr;
 }
-.track .handle {
-	grid-column:1;
-	grid-row:1 / span 2;
-}
-.track select {
-	font-size:.9em;
-	padding-left:.3em;
-}
-select.instrument {
-	grid-row:1;
-	grid-column:2 / span 2;
-	border-radius:4px 4px 0 0;
-}
-select.bars {
-	grid-row:2;
+.trackbutton {
 	grid-column:2;
-	margin:-1px 0 0 0;
-	border-radius:0 0 0 4px;
+	font-size:.8em;
+	text-align:left;
+	padding-left:1.5em;
 }
-select.beat {
-	grid-row:2;
-	grid-column:3;
-	margin:-1px 0 0 -1px;
-	border-radius:0 0 4px 0;
+.track[data-loop="0"] .trackbutton {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><text x="4" y="15">𝟙</text></svg>');
 }
+.track[data-loop="1"] .trackbutton {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M7 22 l3 -3 l3 3 M10 15 a 4 4 0 0 1 2-2 h 9 a 4 4 0 0 1 4 4 v11 M22 25 l3 3 l3 -3 M25 32 a 4 4 0 0 1-2 2 h-9 a 4 4 0 0 1 -4-4 v-11" stroke-width="2.3" stroke="black" stroke-linecap="round" fill="none"/></svg>');
+}
+/*12 18*/
 .sheet {
-	--column:2;
 	gap:.3em;
 	display:grid;
-	padding:.5em .7em;
-	grid-template-columns:repeat(var(--column),1fr);;
+	font-size:1.1em;
+	grid-template-columns:repeat(var(--sheet-column),1fr);
 }
 .track[data-beat="6"] .sheet,
 .track[data-beat="8"] .sheet {
-	grid-template-columns:repeat(calc(var(--column) / 2),1fr);;
+	grid-template-columns:repeat(calc(var(--sheet-column) / 2),1fr);
 }
 .bar {
 	gap:.3em;
@@ -233,21 +222,10 @@ select.beat {
 	background:hsl(240,10%,60%);
 	inset:-.6em auto auto .45em;
 }
-td:has(.volume) {
-	width:20px;
-	height:3.6em;
-	display:flex;
-	padding:.5em 0;
-	align-items:center;
-	justify-content:center;
-}
 .volume {
 	margin:0;
 	padding:0;
-	height:100%;
-	font-size:100%;
-	direction:rtl;
-	writing-mode:vertical-lr;
+	width:100%;
 }
 .dragged {
 	top:.15em;
@@ -282,6 +260,10 @@ td:has(.volume) {
 	flex:1.2;
 	order:1;
 	display:flex;
+}
+#combo_presets button:focus,
+#combo_presets select:focus {
+	z-index:1;
 }
 #start {
 	order:2;
@@ -366,6 +348,7 @@ dialog {
 	width:calc(100% - 2em);
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
 }
+#track form,
 #settings div,
 #share form,
 #shared > div {
@@ -373,6 +356,19 @@ dialog {
 	padding:1em;
 	display:flex;
 	flex-direction:column;
+}
+#track {
+	max-width:18em
+}
+#track h2+div {
+	gap:.5em;
+	display:grid;
+	align-items:center;
+	grid-template-columns:1.2fr 1fr;
+}
+#track select {
+	height:1.8em;
+	font-size:.9em;
 }
 #settings h2 {
 	margin-bottom: -.5em;
@@ -445,7 +441,7 @@ ul {
 	position:sticky;
 	background:#fff;
 }
-input[type="checkbox"] {
+#share input[type="checkbox"] {
 	margin-right:.5em;
 }
 label:has([name="current"]) {
@@ -469,7 +465,7 @@ button[name="share_list"] {
 #toast {
 	color:white;
 	border:none;
-	padding:1em;
+	padding:0 1em;
 	font-size:.8em;
 	background:#333c;
 	user-select:none;
@@ -492,10 +488,11 @@ button[name="share_list"] {
 	animation:fade-out 1s forwards 2s;
 }
 #toast p {
-	margin:0 1em 0 0;
+	margin:1em 1em 1em 0;
 	display:inline-block;
 }
 #toast button {
+	padding:.2em .5em;
 	font-size: inherit;
 }
 @keyframes fade-out {
@@ -506,11 +503,14 @@ button[name="share_list"] {
 }
 
 @media (pointer:fine) and (hover:hover) {
+	#combo_presets button:hover,
+	#combo_presets select:hover {
+		z-index:1;
+	}
 	input:not([type]):hover,
 	#combo_tempo:hover,
 	select:hover,
 	button:not(.step):not(:disabled):hover {
-		z-index:1;
 		border-color:hsl(240,10%,20%);
 	}
 	button:not(.step):not(:disabled):hover {
@@ -522,15 +522,15 @@ button[name="share_list"] {
 	.step[value="0"]:hover {
 		filter:brightness(.9);
 	}
-	.select:hover .handle {
+	div[draggable]:hover .handle {
 		opacity:.3;
 		cursor:grab;
-		background:no-repeat url('data:image/svg+xml,<svg viewBox="0 0 4 10" xmlns="http://www.w3.org/2000/svg"><path d="m2 1v8" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
+		background:no-repeat url('data:image/svg+xml,<svg viewBox="0 0 5 10" xmlns="http://www.w3.org/2000/svg"><path d="m3 1v8" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
 	}
-	.select:active .handle {
+	div[draggable]:active .handle {
 		cursor:grabbing;
 	}
-	.select .handle:hover {
+	div[draggable] .handle:hover {
 		opacity:1;
 	}
 	.track[data-instrument="0"] .handle {
@@ -543,6 +543,9 @@ button[name="share_list"] {
 	}
 	#sequencer {
 		--margin-top:.5em;
+		--track-column-auto:2;
+		--track-first-col-width:8.2em;
+		--sheet-column:4;
 		border-radius:.5em;
 	}
 	h1 {
@@ -551,48 +554,26 @@ button[name="share_list"] {
 	h2 {
 		font-size:1.2em;
 	}
-	.track .select {
-		margin-left:.2em;
-		grid-template-rows:1.65em;
-		grid-template-columns:.8em 5.5em 1.8em 2.2em;
+	.track th {
+		padding:0;
 	}
-	.track .handle {
-		grid-row:1;
+	.track td:first-of-type {
+		padding:.5em 1em;
 	}
-	select.instrument {
-		grid-column:2;
-		border-radius:4px 0 0 4px;
+	.track td:last-of-type {
+		width:5em;
+		grid-row:auto;
+		grid-column:auto;
+		padding:.8em .9em 0 0;
 	}
-	select.bars {
-		grid-row:1;
-		grid-column:3;
-		font-size:.8em;
-		border-radius:0;
-		margin:0 0 0 -1px;
+	.track div[draggable] {
+		grid-template-columns:1em 1fr;
 	}
-	select.beat {
-		grid-row:1;
-		grid-column:4;
-		font-size:.8em;
-		margin:0 0 0 -1px;
-		border-radius:0 4px 4px 0;
+	.trackbutton {
+		font-size:.9em;
 	}
 	.track.dragged .dropzone::after {
 		inset:-.32em  1em auto;
-	}
-	.sheet {
-		--column:4;
-		padding:.5em 1em;
-	}
-	td:has(.volume) {
-		width:auto;
-		height:1.65em;
-		padding:.5em .9em .5em 0;
-	}
-	.volume {
-		width:5em;
-		direction:ltr;
-		writing-mode:horizontal-tb;
 	}
 	#controls {
 		gap:.9em;

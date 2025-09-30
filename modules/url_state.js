@@ -5,6 +5,7 @@ export class UrlState {
 	#tempoStep;
 	#barsIndex;
 	#beatsIndex;
+	#loopsIndex;
 	#stepsPerTracks;
 	#instrumentsIndex;
 	#changedValuesParams;
@@ -17,10 +18,11 @@ export class UrlState {
 	#defaultTitleValue;
 	#sharedStatus = false;
 	#allocation = {
-		reserved: 4,
+		reserved: 2,
+		loop: 2,
 		bars: 10,
 		beat: 9,
-		instrument: 10, //4 * 10 * 9 * 10 = 3600 > 62 * 62 (outputBase * outputBase)
+		instrument: 10, //2 * 2 * 10 * 9 * 10 = 3600 > 62 * 62 (outputBase * outputBase)
 	};
 	#outputDigits = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	#outputBase = this.#outputDigits.length;
@@ -61,6 +63,7 @@ export class UrlState {
 		this.#stepsPerTracks = data.subdivision * data.maxBars;
 		this.#barsIndex = [data.defaultBars, ...data.barsValues.filter(value => value !== data.defaultBars)];
 		this.#beatsIndex = [data.defaultBeat, ...data.beatValues.filter(value => value !== data.defaultBeat)];
+		this.#loopsIndex = [data.defaultLoop, ...data.loopValues.filter(value => value !== data.defaultLoop)];
 		this.#instrumentsIndex = instrumentsList.map(({ id, files }) => ({ id, base: files.length + 1 }));
 		this.#changedValuesParams = {
 			tracks: this.#setSearchParam,
@@ -192,10 +195,11 @@ export class UrlState {
 
 	#encodeTracks(values, defaultValue) {
 		return values.map(track => {
-			const { instrument: instrumentValue, bars, beat, sheet } = track
+			const { instrument: instrumentValue, bars, beat, loop, sheet } = track
 			const { id: instrument, base: instrumentBase } = this.#instrumentsIndex[instrumentValue];
 			const values = {
 				reserved: 0,
+				loop: this.#loopsIndex.indexOf(loop),
 				bars: this.#barsIndex.indexOf(bars),
 				beat: this.#beatsIndex.indexOf(beat),
 				instrument,
@@ -222,11 +226,12 @@ export class UrlState {
 			const data = (values[trackIndex] || '').padEnd(3, defaultValue);
 
 			const packed = parseInt(this.#stringBaseConvert(data.slice(0, 2), this.#outputBase, 10));
-			const { bars: barsIndex, beat: beatIndex, instrument: instrumentId } = this.#unpack(packed, this.#allocation);
+			const { loop: loopIndex, bars: barsIndex, beat: beatIndex, instrument: instrumentId } = this.#unpack(packed, this.#allocation);
 
 			const instrument = this.#instrumentsIndex.findIndex(i => i.id === instrumentId);
 			const bars = this.#barsIndex[barsIndex];
 			const beat = this.#beatsIndex[beatIndex];
+			const loop = this.#loopsIndex[loopIndex];
 			const instrumentBase = this.#instrumentsIndex[instrument].base;
 
 			const sheetString = this.#stringBaseConvert(data.slice(2), this.#outputBase, instrumentBase);
@@ -241,11 +246,12 @@ export class UrlState {
 				}).filter(Boolean)
 			);
 
-			if (track.instrument !== instrument || track.bars !== bars || track.beat !== beat || sheet.length) {
+			if (track.instrument !== instrument || track.bars !== bars || track.beat !== beat || track.loop !== loop || sheet.length) {
 				changes.tracks[trackIndex] = {
 					...(track.instrument !== instrument && { instrument }),
 					...(track.bars !== bars && { bars }),
 					...(track.beat !== beat && { beat }),
+					...(track.loop !== loop && { loop }),
 					...(sheet.length && { sheet })
 				};
 			}

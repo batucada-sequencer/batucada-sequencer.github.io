@@ -5,6 +5,7 @@ export class Interface {
 	#currentClass = 'current';
 	#draggedClass = 'dragged';
 	#dropzoneClass = 'dropzone';
+	#defaultInstrument;
 	#untitled;
 	#bus;
 	#container;
@@ -32,21 +33,26 @@ export class Interface {
 	#toast;
 	#message;
 	#cancelButton;
-	#steps;
 	#bars;
-	#beats;
+	#beat;
+	#loop;
+	#instrument;
+	#steps;
+	#track;
 	#tracks;
+	#trackIndex;
+	#trackButtons;
 	#volumes;
-	#instruments;
 	#stepName;
 	#barsName;
 	#beatName;
+	#loopName;
+	#trackName;
 	#volumeName;
 	#instrumentName;
 	#instrumentsList;
 	#interfaceData;
-	#trackElementsMap;
-	#animationQueue = [];
+	#animationQueue = new Map();
 	#frameId = null;
 
 	constructor(bus, config, instrumentsList) {
@@ -73,12 +79,25 @@ export class Interface {
 		this.#toast = this.#container.querySelector('#toast');
 		this.#message = this.#container.querySelector('#toast p');
 		this.#cancelButton = this.#container.querySelector('#toast button');
+
+		this.#stepName = 'step';
+		this.#barsName = 'bars';
+		this.#beatName = 'beat';
+		this.#loopName = 'loop';
+		this.#trackName = 'trackbutton';
+		this.#volumeName = 'volume';
+		this.#instrumentName = 'instrument';
+
 		this.#steps = this.#container.getElementsByClassName('step');
-		this.#bars = this.#container.getElementsByClassName('bars');
-		this.#beats = this.#container.getElementsByClassName('beat');
 		this.#tracks = this.#container.getElementsByClassName('track');
+		this.#track = this.#container.querySelector('#track');
+		this.#trackIndex = this.#container.querySelector('#trackindex');
 		this.#volumes = this.#container.getElementsByClassName('volume');
-		this.#instruments = this.#container.getElementsByClassName('instrument');
+		this.#trackButtons = this.#container.getElementsByClassName('trackbutton');
+		this.#bars = this.#container.querySelector('#bars');
+		this.#beat = this.#container.querySelector('#beat');
+		this.#loop = this.#container.querySelector('#loop');
+		this.#instrument = this.#container.querySelector('#instrument');
 		document.addEventListener('click', (event) => this.#lightDismiss(event));
 		document.addEventListener('submit', (event) => this.#submitForm(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
@@ -102,34 +121,26 @@ export class Interface {
 	}
 
 	#initInterface() {
-		this.#stepName = this.#steps[0].name;
-		this.#barsName = this.#bars[0].name;
-		this.#beatName = this.#beats[0].name;
-		this.#volumeName = this.#volumes[0].name;
-		this.#instrumentName = this.#instruments[0].name;
-		this.#trackElementsMap = {
-			[this.#instrumentName]: this.#instruments,
-			[this.#barsName]: this.#bars,
-			[this.#beatName]: this.#beats,
-			[this.#volumeName]: this.#volumes,
-		};
 		this.#headTitlePrefix = `${document.title} - `;
+		this.#defaultInstrument = this.#trackButtons[0].textContent;
 		this.#stepsPerTracks = this.#maxBars * this.#subdivision;
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 		const options = this.#instrumentsList.slice(1).map((instrument, index) => new Option(instrument.name, index + 1));
-		this.#instruments[0].append(...options);
+		this.#instrument.append(...options);
 		this.#firstTrack = this.#tracks[0].cloneNode(true);
 		this.#initTracks();
 		document.title = this.#headTitlePrefix + this.#untitled;
 		const defaultData = this.#firstTrack.dataset;
 		this.#interfaceData = {
+			defaultTempo: Number(this.#tempo.value),
+			defaultGain: Number(this.#volumes[0].value),
 			defaultBars: Number(defaultData[this.#barsName]),
 			defaultBeat: Number(defaultData[this.#beatName]),
-			defaultGain: Number(defaultData[this.#volumeName]),
-			defaultTempo: Number(this.#tempo.value),
+			defaultLoop: Number(defaultData[this.#loopName]),
 			defaultInstrument: Number(defaultData[this.#instrumentName]),
-			barsValues: Array.from(this.#bars[0].options).map(option => Number(option.value)),
-			beatValues: Array.from(this.#beats[0].options).map(option => Number(option.value)),
+			barsValues: Array.from(this.#bars.options).map(option => Number(option.value)),
+			beatValues: Array.from(this.#beat.options).map(option => Number(option.value)),
+			loopValues: Array.from(this.#loop.options).map(option => Number(option.value)),
 			tracksLength: this.#tracksLength,
 			tempoStep: Number(this.#tempo.step),
 			maxBars: this.#maxBars,
@@ -145,7 +156,8 @@ export class Interface {
 		const newTracks = Array.from({ length: this.#tracksLength }, () => this.#firstTrack.cloneNode(true));
 		this.#tracks[0].parentNode.replaceChildren(...newTracks);
 		Array.from(this.#tracks).forEach(track => {
-			track.addEventListener('input', (event) => this.#handleInputTrack(event));
+			track.addEventListener('input', (event) => this.#handleInputVolume(event));
+			track.addEventListener('click', (event) => this.#handleModifyTrack(event));
 			track.addEventListener('dragover', (event) => this.#handleDragOver(event));
 			track.addEventListener('dragstart', (event) => this.#handleDragStart(event));
 			track.addEventListener('dragenter', (event) => this.#handleDragEnter(event));
@@ -156,6 +168,28 @@ export class Interface {
 
 	#sendInterfaceData(callback) {
 		callback(() => structuredClone(this.#interfaceData));
+	}
+
+	#submitForm(event) {
+		const action = event.submitter.name;
+		if (action === 'apply') {
+			this.#setTrack(event.target);
+		}
+		else if (action === 'save') {
+			this.#saveSettings(event.target);
+		}
+		else if (action === 'cancel') {
+			this.#cancelSettings(event.submitter);
+		}
+		else if (action === 'share_list') {
+			this.#showShareList();
+		}
+		else if (action === 'share') {
+			this.#sharePresets(event.target);
+		}
+		else if (action === 'import') {
+			this.#importPresets(event.target);
+		}
 	}
 
 	async #audioRequest() {
@@ -225,17 +259,53 @@ export class Interface {
 		this.#bus.dispatchEvent(event);
 	}
 
-	#handleInputTrack(event) {
+	#handleModifyTrack(event) {
+		if (event.target.name !== this.#trackName) return;
+		const track = event.currentTarget;
+		const values = track.dataset;
+		this.#beat.value = values.beat;
+		this.#bars.value = values.bars;
+		this.#loop.value = values.loop;
+		this.#instrument.value = values.instrument;
+		this.#trackIndex.value = [...this.#tracks].indexOf(track);
+		this.#track.showModal();
+		//this.#track.focus();
+	}
+
+	#setTrack(form) {
+		const changes = {}
+		const trackIndex = Number(this.#trackIndex.value);
+		const values = this.#tracks[trackIndex].dataset;
+		const instrumentIndex = this.#instrument.value === '' ? '0' : this.#instrument.value;
+		if (values.beat !== this.#beat.value) {
+			values.beat = this.#beat.value;
+			changes.beat = Number(this.#beat.value);
+		}
+		if (values.bars !== this.#bars.value) {
+			values.bars = this.#bars.value;
+			changes.bars = Number(this.#bars.value);
+		}
+		if (values.loop !== this.#loop.value) {
+			values.loop = this.#loop.value;
+			changes.loop = Number(this.#loop.value);
+		}
+		if (values.instrument !== instrumentIndex) {
+			values.instrument = instrumentIndex;
+			changes.instrument = Number(instrumentIndex);
+			this.#updateIntrumentName(trackIndex, instrumentIndex);
+		}
+		if (Object.keys(changes).length > 0) {
+			const detail = { detail: { tracks: { [trackIndex]: changes } } };
+			this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+			this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
+		}
+	}
+
+	#handleInputVolume(event) {
 		const { currentTarget, target } = event;
-		const { name, value } = target;
-		const validNames = [this.#instrumentName, this.#beatName, this.#barsName, this.#volumeName];
-		if (!validNames.includes(name)) return;
-		currentTarget.dataset[name] = value; 
 		const trackIndex = [...this.#tracks].indexOf(currentTarget);
-		const detail = { detail: { tracks: { [trackIndex]: { [name]: Number(value) } } } };
+		const detail = { detail: { tracks: { [trackIndex]: { volume: Number(target.value) } } } };
 		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-		if (name === this.#volumeName) return; //'interface:changeVolume' est dispatché par #changeVolume()
-		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
 	#inputTempo(target) {
@@ -244,15 +314,15 @@ export class Interface {
 		const event = new CustomEvent('interface:inputTempo', { detail: Number(value) })
 		this.#bus.dispatchEvent(event);
 	}
-	
+
 	#changeVolume() {
 		this.#bus.dispatchEvent(new CustomEvent('interface:changeVolume'));
 	}
-	
+
 	#changeTempo() {
 		this.#bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
 	}
-	
+
 	#changePreset() {
 		this.#bus.dispatchEvent(new CustomEvent('interface:restart'));
 	}
@@ -260,9 +330,9 @@ export class Interface {
 	#updateInterface(changes) {
 		Object.entries(changes).forEach(([item, value]) => {
 			switch (item) {
-				case 'tracks':  this.#updateTracks(value); break;
 				case 'tempo':   this.#updateTempo(value); break;
 				case 'title':   this.#updatetTitle(value); break;
+				case 'tracks':  this.#updateTracks(value); break;
 				case 'presets': this.#updatePresets(value); break;
 				case 'index':   this.#updatePresetsIndex(value); break;
 			}
@@ -279,12 +349,19 @@ export class Interface {
 					for (const { barIndex, stepIndex, value } of data) {
 						this.#steps[trackOffset + barIndex * this.#subdivision + stepIndex].value = value;
 					}
-				} else if (this.#trackElementsMap[item]) {
-					this.#trackElementsMap[item][trackIndex].value = data;
+				} else if (item in track.dataset) {
 					track.dataset[item] = data;
+					if (item === this.#instrumentName) {
+						this.#updateIntrumentName(trackIndex, data);
+					}
 				}
 			}
 		}
+	}
+
+	#updateIntrumentName(trackIndex, instrumentIndex) {
+		const instrumentName = this.#instrumentsList[instrumentIndex]?.name || this.#defaultInstrument;
+		this.#trackButtons[trackIndex].textContent = instrumentName;
 	}
 
 	#updatetTitle(title) {
@@ -330,52 +407,59 @@ export class Interface {
 	}
 
 	#stop() {
-		this.#animationQueue.forEach(items => items[0].step?.classList.remove(this.#currentClass));
-		this.#animationQueue = [];
+		for (const steps of this.#animationQueue.values()) {
+			steps[0]?.step?.classList.remove(this.#currentClass);
+		}
+		this.#animationQueue.clear();
 		this.#bus.dispatchEvent(new CustomEvent('interface:stop'));
 	}
 
 	#pushAnimations({ animations }) {
-		//Suppression de track qui ne sont plus actifs
-		this.#animationQueue.slice(animations.length).forEach(steps => steps[0].step?.classList.remove(this.#currentClass));
-		this.#animationQueue.length = animations.length;
+		//Supprime les pistes qui ne sont plus actives
+		for (const [trackIndex, steps] of this.#animationQueue.entries()) {
+			if (!animations.has(trackIndex)) {
+				steps[0]?.step?.classList.remove(this.#currentClass);
+				this.#animationQueue.delete(trackIndex);
+			}
+		}
 		//Ajout des animations à la pile animationQueue
 		animations.forEach((items, trackIndex) => {
-			let steps = this.#animationQueue[trackIndex];
+			let steps = this.#animationQueue.get(trackIndex);
 			if (!steps) {
-				// step fictif pour gérer la première animation
-				steps = [{ step: null }]; 
-				this.#animationQueue[trackIndex] = steps;
+				//step fictif pour gérer la première animation
+				steps = [{ step: null }];
+				this.#animationQueue.set(trackIndex, steps);
 			}
 			const baseIndex = trackIndex * this.#stepsPerTracks;
-			items.forEach(({ barIndex, stepIndex, time }) => 
-				steps.push({ step: this.#steps[baseIndex + barIndex * this.#subdivision + stepIndex], time })
-			);
-			//Evite l'accumulation d'animations qui ne seront pas exectutées (onglet inactif par exemple)
-			if (steps.length > this.#subdivision * 2) {
-				steps.splice(1, steps.length - this.#subdivision * 2);
+			items.forEach(({ barIndex, stepIndex, time }) => {
+				const step = this.#steps[baseIndex + barIndex * this.#subdivision + stepIndex];
+				steps.push({ step, time });
+			});
+			//Évite l'accumulation d'animations non exécutées (onglet inactif, latence)
+			const maxLength = this.#subdivision * 2;
+			if (steps.length > maxLength) {
+				steps.splice(1, steps.length - maxLength);
 			}
 		});
 		if (!this.#frameId) {
 			const loop = () => {
 				const now = performance.now();
-				for (const items of this.#animationQueue) {
-					if (items.length < 2) continue;
+				for (const steps of this.#animationQueue.values()) {
+					if (steps.length < 2) continue;
 					let currentIndex = 0;
-					//Passe les animations non exécutées (onglet inactif, latence, ...)
-					for (let i = 1; i < items.length; i++) {
-						if (now >= items[i].time) {
+					for (let i = 1; i < steps.length; i++) {
+						if (now >= steps[i].time) {
 							currentIndex = i;
 						} else {
 							break;
 						}
 					}
-					if (currentIndex === 0 ) continue;
-					items[0].step?.classList.remove(this.#currentClass);
-					items[currentIndex].step.classList.add(this.#currentClass);
-					items.splice(0, currentIndex);
+					if (currentIndex === 0) continue;
+					steps[0]?.step?.classList.remove(this.#currentClass);
+					steps[currentIndex].step?.classList.add(this.#currentClass);
+					steps.splice(0, currentIndex);
 				}
-				this.#frameId = this.#animationQueue.length > 0
+				this.#frameId = this.#animationQueue.size > 0
 					? requestAnimationFrame(loop)
 					: null;
 			};
@@ -503,25 +587,6 @@ export class Interface {
 		}
 		this.#settings.showModal();
 		this.#settings.focus();
-	}
-
-	#submitForm(event) {
-		const action = event.submitter.name;
-		if (action === 'save') {
-			this.#saveSettings(event.target);
-		}
-		else if (action === 'cancel') {
-			this.#cancelSettings(event.submitter);
-		}
-		else if (action === 'share_list') {
-			this.#showShareList();
-		}
-		else if (action === 'share') {
-			this.#sharePresets(event.target);
-		}
-		else if (action === 'import') {
-			this.#importPresets(event.target);
-		}
 	}
 
 	async #saveSettings(form) {

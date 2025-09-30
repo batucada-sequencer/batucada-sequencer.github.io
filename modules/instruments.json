@@ -1,7 +1,6 @@
 [
 	{
 		"id": 0,
-		"name": "default", 
 		"files": ["default.ogg"]
 	},
 	{
@@ -26,7 +25,7 @@
 	},
 	{
 		"id": 8,
-		"name": "Caixa", 
+		"name": "Caisse claire", 
 		"files": ["caixa.ogg", "caixa2.ogg", "caixa3.ogg"]
 	},
 	{

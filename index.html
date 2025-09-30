@@ -13,33 +13,12 @@
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
 		<h1 id="title"></h1>
 		<table>
-			<tr class="track" data-bars="4" data-beat="4" data-instrument="0" data-volume="30">
+			<tr class="track" data-bars="4" data-beat="4" data-instrument="0" data-loop="1">
 				<th scope="row">
 					<div class="dropzone"></div>
 					<div class="select" draggable="true">
-						<div class="handle" title="Déplacer"></div> 
-						<select name="instrument" class="instrument" aria-label="instrument" autocomplete="off">
-							<option selected disabled hidden value="0">Instrument</option>
-						</select>
-						<select name="bars" class="bars" aria-label="nombre de temps" title="Nombre de temps" autocomplete="off">
-							<optgroup label="Nombre de temps">
-								<option selected>4</option>
-								<option>6</option>
-								<option>8</option>
-								<option>12</option>
-								<option>16</option>
-								<option>24</option>
-								<option>32</option>
-							</optgroup>
-						</select>
-						<select name="beat" class="beat" aria-label="mesure" title="Mesure" autocomplete="off">
-							<optgroup label="Mesure">
-								<option value="3">3/4</option>
-								<option selected value="4">4/4</option>
-								<option value="6">6/8</option>
-								<option value="8">8/8</option>
-							</optgroup>
-						</select>
+						<div class="handle" title="Déplacer"></div>
+						<button name="trackbutton" class="trackbutton" title="Modifier la piste">Instrument…</button>
 					</div>
 				</th>
 				<td>
@@ -102,6 +81,42 @@
 				<div id="pause">Arrêter</div>
 			</button>
 		</div>
+		<dialog id="track">
+			<form method="dialog">
+				<h2>Modifier la piste</h2>
+				<div>
+					<label for="instrument">Instrument</label>
+					<select id="instrument" name="instrument" autocomplete="off">
+					</select>
+					<label for="bars">Nombre de temps</label>
+					<select id="bars" name="bars" autocomplete="off">
+						<option selected>4</option>
+						<option>6</option>
+						<option>8</option>
+						<option>12</option>
+						<option>16</option>
+						<option>24</option>
+						<option>32</option>
+					</select>
+					<label for="beat">Division du temps</label>
+					<select id="beat" name="beat" autocomplete="off">
+						<option value="3">3</option>
+						<option value="4" selected>4</option>
+						<option value="6">6</option>
+						<option value="8">8</option>
+					</select>
+					<label for="loop">Phrase</label>
+					<select id="loop" name="loop" autocomplete="off">
+						<option value="0">Intro</option>
+						<option value="1" selected>Tourne</option>
+					</select>
+				</div>
+				<div class="bottom">
+					<button>Annuler</button><button name="apply">Appliquer</button>
+				</div>
+				<input type="hidden" id="trackindex">
+			</form>
+		</dialog>
 		<dialog id="settings">
 			<div>
 				<h2>Gérer le morceau</h2>

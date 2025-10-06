@@ -13,7 +13,7 @@
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
 		<h1 id="title"></h1>
 		<table>
-			<tr class="track" data-bars="4" data-beat="4" data-instrument="0" data-loop="1">
+			<tr class="track" data-bars="[4,4]" data-beat="4" data-instrument="0" data-loop="1">
 				<th scope="row">
 					<div class="dropzone"></div>
 					<div class="select" draggable="true">
@@ -63,6 +63,7 @@
 		<datalist id="volume">
 			<option value="30"></option>
 		</datalist>
+		<hr>
 		<div id="controls" role="toolbar" tabindex="-1">
 			<div id="combo_presets" role="group">
 				<button title="Gérer le morceau">Gérer le morceau</button>
@@ -85,31 +86,38 @@
 			<form method="dialog">
 				<h2>Modifier la piste</h2>
 				<div>
-					<label for="instrument">Instrument</label>
-					<select id="instrument" name="instrument" autocomplete="off">
-					</select>
-					<label for="bars">Nombre de temps</label>
-					<select id="bars" name="bars" autocomplete="off">
-						<option selected>4</option>
-						<option>6</option>
-						<option>8</option>
-						<option>12</option>
-						<option>16</option>
-						<option>24</option>
-						<option>32</option>
-					</select>
-					<label for="beat">Division du temps</label>
-					<select id="beat" name="beat" autocomplete="off">
-						<option value="3">3</option>
-						<option value="4" selected>4</option>
-						<option value="6">6</option>
-						<option value="8">8</option>
-					</select>
-					<label for="loop">Phrase</label>
-					<select id="loop" name="loop" autocomplete="off">
-						<option value="0">Intro</option>
-						<option value="1" selected>Tourne</option>
-					</select>
+					<label>Instrument
+						<select id="instrument" name="instrument" autocomplete="off">
+							<option value="0" disabled hidden selected>Choisir…</option>
+						</select>
+					</label>
+					<label>Type de phrase
+						<select id="loop" name="loop" autocomplete="off">
+							<option value="0">𝟙 Introduction</option>
+							<option value="1" selected>Tourne</option>
+						</select>
+					</label>
+					<label>Nombre de temps
+						<select id="bars" name="bars" autocomplete="off">
+							<option value="[4,4]" selected>4</option>
+							<option value="[6,6]">6</option>
+							<option value="[8,4]">8</option>
+							<option value="[12,4]">12 (3 × 4)</option>
+							<option value="[12,6]">12 (2 × 6)</option>
+							<option value="[16,4]">16</option>
+							<option value="[24,4]">24 (6 × 4)</option>
+							<option value="[24,6]">24 (4 × 6)</option>
+							<option value="[32,4]">32</option>
+						</select>
+					</label>
+					<label>Division du temps
+						<select id="beat" name="beat" autocomplete="off">
+							<option value="3">3</option>
+							<option value="4" selected>4</option>
+							<option value="6">6</option>
+							<option value="8">8</option>
+						</select>
+					</label>
 				</div>
 				<div class="bottom">
 					<button>Annuler</button><button name="apply">Appliquer</button>

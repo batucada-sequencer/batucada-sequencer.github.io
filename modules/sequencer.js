@@ -49,6 +49,7 @@ export class Sequencer {
 
 	#stop() {
 		this.#stopSoundLoop();
+		this.#muteSchedulesNotes();
 		this.#wakeLockRelease();
 	}
 
@@ -77,17 +78,17 @@ export class Sequencer {
 			}
 		});
 		this.#bus.dispatchEvent(event);
-		this.#tempo = data.defaultTempo;
-		this.#defaultTempo = data.defaultTempo;
-		this.#maxGain = data.maxGain;
-		this.#synchroBar = data.defaultBars;
-		this.#emptyTracks = Array.from({ length: data.tracksLength }, () => ({
-			instrument: data.defaultInstrument,
-			bars: data.defaultBars,
-			beat: data.defaultBeat,
-			loop: data.defaultLoop,
-			volume: data.defaultGain,
-			sheet: Array.from({ length: data.maxBars }, () => Array(data.subdivision).fill(0))
+		this.#tempo = Number(data.defaultTempo);
+		this.#defaultTempo = Number(data.defaultTempo);
+		this.#maxGain = Number(data.maxGain);
+		this.#synchroBar = Number(data.defaultBars);
+		this.#emptyTracks = Array.from({ length: Number(data.tracksLength) }, () => ({
+			instrument: JSON.parse(data.defaultInstrument),
+			bars: JSON.parse(data.defaultBars),
+			beat: JSON.parse(data.defaultBeat),
+			loop: JSON.parse(data.defaultLoop),
+			volume: Number(data.defaultGain),
+			sheet: Array.from({ length: Number(data.maxBars) }, () => Array(Number(data.subdivision)).fill(0))
 		}));
 		this.#tracks = structuredClone(this.#emptyTracks);
 		if (typeof AudioContext === 'function') {
@@ -180,19 +181,20 @@ export class Sequencer {
 					}
 					for (const [trackItem, itemValue] of Object.entries(trackChanges)) {
 						if (!['instrument', 'bars', 'beat', 'loop', 'volume'].includes(trackItem)) continue;
-						track[trackItem] = itemValue;
+						const value = JSON.parse(itemValue);
+						track[trackItem] = value;
 						let changes = null;
 						switch (trackItem) {
 							case 'instrument':
-								changes = this.#updateSheetWithInstrument(track, itemValue);
+								changes = this.#updateSheetWithInstrument(track, value);
 								this.#trackCount = this.#getTrackCount();
 								break;
 							case 'bars':
-								changes = this.#updateSheetWithBars(track, itemValue);
+								changes = this.#updateSheetWithBars(track, value);
 								this.#synchroBar = this.#getSynchroBar();
 								break;
 							case 'beat':
-								changes = this.#updateSheetWithBeat(track, itemValue);
+								changes = this.#updateSheetWithBeat(track, value);
 								break;
 						}
 						if (changes?.length) {
@@ -220,9 +222,10 @@ export class Sequencer {
 	}
 
 	#updateSheetWithBars(track, bars) {
+		const barsValue = bars[0];
 		return this.#updateSheetWith(
 			track,
-			(value, barIndex) => barIndex >= bars && value > 0,
+			(value, barIndex) => barIndex >= barsValue && value > 0,
 			0
 		);
 	}
@@ -261,6 +264,7 @@ export class Sequencer {
 	#handleAudioStateChange() {
 		if (this.#audioContext.state !== 'running') {
 			this.#bus.dispatchEvent(new CustomEvent('sequencer:stopped'));
+			this.#stopSoundLoop();
 		}
 	}
 
@@ -272,7 +276,7 @@ export class Sequencer {
 	#getSynchroBar() {
 		const gcd = (a, b) => a ? gcd(b % a, a) : b;
 		const lcm = (a, b) => (a * b) / gcd(a, b);
-		return this.#tracks.map(track => track.bars).reduce((a, b) => lcm(a, b));
+		return this.#tracks.map(track => track.bars[0]).reduce((a, b) => lcm(a, b));
 	}
 
 	#playNote(instrument, gain, hit, time = this.#audioContext.currentTime) {
@@ -286,55 +290,6 @@ export class Sequencer {
 		sound.start(time);
 	}
 
-	#xstartSoundLoop() {
-		let isLoop = false;
-		const buffer = 0.1;
-		this.#barIndex = 0;
-		let barTime = this.#audioContext.currentTime + 0.05;
-		const loopFunction = () => {
-			const secondsPerBar = 60 / this.#tempo;
-			if (this.#audioContext.currentTime + buffer > barTime) {
-				const animations = new Map();
-				const timeDelta = performance.now() - barTime * 1000;
-				let hasCallTracksLeft = false;
-				this.#tracks.forEach(({ instrument, bars, beat, volume, sheet, loop }, trackIndex) => {
-					if (trackIndex >= this.#trackCount) return;
-					if ((!isLoop && loop !== 0) || (isLoop && loop === 0)) return;
-					if (!isLoop && this.#barIndex < bars) {
-						hasCallTracksLeft = true;
-					} else if (!isLoop) {
-						return;
-					}
-					const trackAnimations = [];
-					animations.set(trackIndex, trackAnimations);
-					const secondsPerStep = secondsPerBar / beat;
-					const barIndex = this.#barIndex % bars;
-					for (let stepIndex = 0; stepIndex < beat; stepIndex++) {
-						const hit = sheet[barIndex][stepIndex];
-						const audioTime = barTime + stepIndex * secondsPerStep;
-						const animationTime = audioTime * 1000 + timeDelta;
-						trackAnimations.push({ barIndex, stepIndex, time: animationTime });
-						if (hit > 0) {
-							this.#playNote(instrument, volume, hit, audioTime);
-						}
-					}
-				});
-				this.#bus.dispatchEvent(
-					new CustomEvent('sequencer:pushAnimations', { detail: { animations } })
-				);
-				if (!isLoop && !hasCallTracksLeft) {
-					isLoop = true;
-					this.#barIndex = 0;
-					barTime = this.#audioContext.currentTime;
-				} else {
-					this.#barIndex++;
-				}
-				barTime += secondsPerBar;
-			}
-		};
-		this.#loopID = setInterval(loopFunction, 50);
-	}
-
 	#startSoundLoop() {
 		let isLoop = false;
 		const buffer = 0.1;
@@ -345,19 +300,19 @@ export class Sequencer {
 			if (this.#audioContext.currentTime + buffer <= barTime) return;
 			const animations = new Map();
 			const timeDelta = performance.now() - barTime * 1000;
-			if (!isLoop && !this.#tracks.some(({ loop, bars }) => loop === 0 && this.#barIndex < bars)) {
+			if (!isLoop && !this.#tracks.some(({ loop, bars }) => loop === 0 && this.#barIndex < bars[0])) {
 				isLoop = true;
 				this.#barIndex = 0;
 			}
 			for (const [trackIndex, track] of this.#tracks.entries()) {
 				if (trackIndex >= this.#trackCount) continue;
 				if ((!isLoop && track.loop !== 0) || (isLoop && track.loop === 0)) continue;
-				if (!isLoop && this.#barIndex >= track.bars) continue; // skip si phase call et barre terminÃ©e
+				if (!isLoop && this.#barIndex >= track.bars[0]) continue; // skip si phase call et barre terminée
 
 				const trackAnimations = [];
 				animations.set(trackIndex, trackAnimations);
 
-				const barIndex = this.#barIndex % track.bars;
+				const barIndex = this.#barIndex % track.bars[0];
 				const secondsPerStep = secondsPerBar / track.beat;
 
 				for (let stepIndex = 0; stepIndex < track.beat; stepIndex++) {
@@ -382,14 +337,8 @@ export class Sequencer {
 		this.#loopID = setInterval(loop, 50);
 	}
 
-
-
-
 	#stopSoundLoop() {
 		clearInterval(this.#loopID);
-		if (this.#audioContext.state === 'running') {
-			this.#muteSchedulesNotes();
-		}
 	}
 
 	#muteSchedulesNotes() {
@@ -406,15 +355,24 @@ export class Sequencer {
 	}
 
 	async #wakeLockRequest() {
-		this.#wakeLock = await navigator.wakeLock.request();
-		this.#wakeLock.onrelease = () => {
-			if (this.#audioContext.state === 'running') {
-				this.#playTimer = setTimeout(() => {
+		try {
+			this.#wakeLock = await navigator.wakeLock.request();
+			this.#wakeLock.onrelease = () => {
+				if (this.#audioContext.state !== 'running') return;
+				const hasActiveLoop = this.#tracks.some(({ loop, sheet }) =>
+					loop === 1 && sheet.some(bar => bar.some(step => step > 0))
+				);
+				if (hasActiveLoop) {
+					clearTimeout(this.#playTimer);
+					this.#playTimer = setTimeout(() => {
+						this.#audioContext.suspend();
+						this.#playTimer = null;
+					}, this.#durationWhenHidden * 1000);
+				} else {
 					this.#audioContext.suspend();
-					this.#playTimer = null;
-				}, this.#durationWhenHidden * 1000);
-			}
-		};
+				}
+			};
+		} catch { }
 	}
 
 	#wakeLockRelease() {

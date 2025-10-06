@@ -22,11 +22,10 @@ export class UrlState {
 		loop: 2,
 		bars: 10,
 		beat: 9,
-		instrument: 10, //2 * 2 * 10 * 9 * 10 = 3600 > 62 * 62 (outputBase * outputBase)
-	};
+		instrument: 10, //2 * 2 * 10 * 9 * 10 = 3600 > 3844 (62 * 62) (outputBase * outputBase)
+	}; //2 * 10 * 12 * 16 = 3840
 	#outputDigits = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	#outputBase = this.#outputDigits.length;
-
 	#headUntitled;
 	#headTitle;
 
@@ -199,12 +198,12 @@ export class UrlState {
 			const { id: instrument, base: instrumentBase } = this.#instrumentsIndex[instrumentValue];
 			const values = {
 				reserved: 0,
-				loop: this.#loopsIndex.indexOf(loop),
-				bars: this.#barsIndex.indexOf(bars),
-				beat: this.#beatsIndex.indexOf(beat),
+				loop: this.#loopsIndex.indexOf(JSON.stringify(loop)),
+				bars: this.#barsIndex.indexOf(JSON.stringify(bars)),
+				beat: this.#beatsIndex.indexOf(JSON.stringify(beat)),
 				instrument,
 			}
-			const sheetString = sheet.slice(0, bars)
+			const sheetString = sheet.slice(0, bars[0])
 				.map(bar => bar.slice(0, beat))
 				.flat().reverse().join('');
 			let encodedValues = this.#stringBaseConvert(this.#pack(values, this.#allocation), 10, this.#outputBase);
@@ -246,14 +245,30 @@ export class UrlState {
 				}).filter(Boolean)
 			);
 
-			if (track.instrument !== instrument || track.bars !== bars || track.beat !== beat || track.loop !== loop || sheet.length) {
-				changes.tracks[trackIndex] = {
-					...(track.instrument !== instrument && { instrument }),
-					...(track.bars !== bars && { bars }),
-					...(track.beat !== beat && { beat }),
-					...(track.loop !== loop && { loop }),
-					...(sheet.length && { sheet })
-				};
+			const trackChanges = {};
+
+			if (track.instrument !== instrument) {
+				trackChanges.instrument = String(instrument);
+			}
+
+			if (JSON.stringify(track.bars) !== bars) {
+				trackChanges.bars = bars;
+			}
+
+			if (JSON.stringify(track.beat) !== beat) {
+				trackChanges.beat = beat;
+			}
+
+			if (JSON.stringify(track.loop) !== loop) {
+				trackChanges.loop = loop;
+			}
+
+			if (sheet.length) {
+				trackChanges.sheet = sheet;
+			}
+
+			if (Object.keys(trackChanges).length > 0) {
+				changes.tracks[trackIndex] = trackChanges;
 			}
 		});
 	}

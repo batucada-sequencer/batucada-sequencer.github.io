@@ -19,6 +19,7 @@ button {
 	user-select:none;
 	border-radius:4px;
 	box-sizing:border-box;
+	background:no-repeat;
 	font-family:sans-serif;
 	border:1px solid hsl(240,10%,60%);
 }
@@ -28,7 +29,7 @@ select {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
 button {
-	background:hsl(240,10%,94%) no-repeat;
+	/*background:hsl(240,10%,94%) no-repeat;*/
 }
 button:disabled {
 	opacity:.6;
@@ -36,8 +37,9 @@ button:disabled {
 #sequencer {
 	--margin-top:0em;
 	--track-column-auto:1;
-	--track-first-col-width:7em;
-	--sheet-column:2;
+	--track-first-col-width:7.5em;
+	--sheet-columns:2;
+	--controls-lines:2;
 	background:#fff;
 	border:1px solid #999;
 	border-radius:0 0 .5em .5em;
@@ -74,6 +76,7 @@ h2 {
 }
 table {
 	border-spacing:0;
+	margin-bottom:1.2em;
 }
 tbody {
 	display:flex;
@@ -85,14 +88,7 @@ tbody {
 	position:relative;
 	align-items:start;
 	grid-template-rows:min-content 1fr;
-	background:no-repeat 5.8em 2em / 2.5em;
 	grid-template-columns:var(--track-first-col-width) repeat(var(--track-column-auto), auto);
-}
-.track[data-loop="0"] {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><text x="4" y="18">𝟙</text></svg>');
-}
-.track[data-loop="1"] {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 55 55" xmlns="http://www.w3.org/2000/svg"><path d="M7 26 l3 -3 l3 3 M10 19 a 4 4 0 0 1 2-2 h 9 a 4 4 0 0 1 4 4 v11 M22 29 l3 3 l3 -3 M25 36 a 4 4 0 0 1-2 2 h-9 a 4 4 0 0 1 -4-4 v-11" stroke-width="1.5" stroke="black" stroke-linecap="round" fill="none"/></svg>');
 }
 .track th {
 	padding:0 0 0 .7em;
@@ -100,20 +96,20 @@ tbody {
 .track td:first-of-type {
 	grid-column:2;
 	grid-row:span 2;
-	padding:.5em .7em;
+	padding:.5em 0 .5em 1em;
 }
 .track td:last-of-type {
 	grid-row:2;
 	grid-column:1;
-	padding:.4em 1.4em 0 .7em;
+	padding:.4em 1em 0 1.4em;
 }
 .track[data-instrument="0"] ~ .track,
-.track[data-bars="4"] .bar:nth-child(n+5),
-.track[data-bars="6"] .bar:nth-child(n+7),
-.track[data-bars="8"] .bar:nth-child(n+9),
-.track[data-bars="12"] .bar:nth-child(n+13),
-.track[data-bars="16"] .bar:nth-child(n+17),
-.track[data-bars="24"] .bar:nth-child(n+25),
+.track[data-bars^="[4,"] .bar:nth-child(n+5),
+.track[data-bars^="[6,"] .bar:nth-child(n+7),
+.track[data-bars^="[8,"] .bar:nth-child(n+9),
+.track[data-bars^="[12,"] .bar:nth-child(n+13),
+.track[data-bars^="[16,"] .bar:nth-child(n+17),
+.track[data-bars^="[24,"] .bar:nth-child(n+25),
 .track[data-beat="3"] .sub_bar .step:nth-last-child(-n+5),
 .track[data-beat="4"] .sub_bar .step:nth-last-child(-n+4),
 .track[data-beat="6"] .sub_bar .step:nth-last-child(-n+2) {
@@ -125,23 +121,30 @@ tbody {
 }
 .track div[draggable] {
 	display:grid;
-	height:1.815em;
+	height:1.65em;
 	grid-template-columns:0 1fr;
 }
 .trackbutton {
 	grid-column:2;
 	font-size:.9em;
 	text-align:left;
+	background:no-repeat right center;
+}
+.track[data-loop="0"] .trackbutton {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 10 20" xmlns="http://www.w3.org/2000/svg"><text x="-1" y="16">𝟙</text></svg>');
+}
+.track[data-loop="1"] .trackbutton {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="10" r="2.5"/><circle cx="8" cy="20" r="2.5"/><circle cx="8" cy="30" r="2.5"/></svg>');
 }
 .sheet {
 	gap:.3em;
 	display:grid;
-	font-size:1.1em;
-	grid-template-columns:repeat(var(--sheet-column),1fr);
+	font-size:1em;
+	grid-template-columns:repeat(var(--sheet-columns),1fr);
 }
 .track[data-beat="6"] .sheet,
 .track[data-beat="8"] .sheet {
-	grid-template-columns:repeat(calc(var(--sheet-column) / 2),1fr);
+	grid-template-columns:repeat(calc(var(--sheet-columns) / 2),1fr);
 }
 .bar {
 	gap:.3em;
@@ -149,8 +152,8 @@ tbody {
 	position:relative;
 	counter-increment:bar;
 }
-.track:is([data-bars="8"], [data-bars="16"], [data-bars="32"]) .bar:nth-child(4n+5),
-.track:is([data-bars="6"], [data-bars="12"], [data-bars="24"]) .bar:nth-child(6n+7) {
+.track[data-bars$=",4]"] .bar:nth-child(4n+5),
+.track[data-bars$=",6]"] .bar:nth-child(6n+7) {
 	counter-reset:bar;
 }
 .sub_bar {
@@ -245,19 +248,34 @@ tbody {
 	background:#fff;
 	position:absolute;
 	border-radius:3px;
-	border:1px solid hsl(240,10%,20%);
 	inset:-.32em .2em auto .7em;
+	border:1px solid hsl(240,10%,20%);
+}
+hr {
+	height:0;
+	z-index:2;
+	border:none;
+	padding:.7em;
+	position:sticky;
+	background:#fff;
+	margin:0 0 -2.5em;
+	box-shadow:0 -.9px 0 hsl(240,10%,60%), 0 -4px 8px rgba(0,0,0,.1);
+	bottom:calc(2.5rem * var(--controls-lines) - .2em + .7em * (var(--controls-lines) - 1));
 }
 #controls {
 	gap:.7em;
-	padding:.2em;
+	z-index:2;
+	padding:.7em;
 	display:flex;
+	bottom:-.2em;
 	flex-wrap:wrap;
-	margin:1em .5em .6em;
+	position:sticky;
+	background:#fff;
+	border-radius:0 0 .5em .5em;
 }
 #combo_presets {
-	flex:1.2;
 	order:1;
+	flex:1.4;
 	display:flex;
 }
 #combo_presets button:focus,
@@ -325,7 +343,7 @@ tbody {
 }
 #tempo {
 	flex:1;
-	width:5em;
+	width:100%;
 }
 output[for="tempo"] {
 	width:4em;
@@ -357,17 +375,43 @@ dialog {
 	flex-direction:column;
 }
 #track {
-	max-width:18em
+	max-width:36em;
 }
 #track h2+div {
-	gap:.5em;
+	gap:0 2em;
 	display:grid;
+	margin:-0.25em 0;
+	position:relative;
 	align-items:center;
+	grid-template-columns: repeat(auto-fit, minmax(15.5em, 1fr));
+}
+#track h2+div::before {
+	width:1px;
+	content:'';
+	position:absolute;
+	background:hsl(240,10%,60%);
+	inset:0 auto 0 calc(50% - 0.5px);
+}
+#track label {
+	gap:.5em;
+	z-index:1;
+	display:grid;
+	background:#fff;
+	padding:0.25em 0;
 	grid-template-columns:1.2fr 1fr;
 }
 #track select {
 	height:1.8em;
 	font-size:.9em;
+}
+#track select:has([selected][disabled]:checked)  {
+	color:#757575;
+}
+#track option[value] {
+	color:#000;
+}
+#track option[selected][disabled] {
+	color:revert;
 }
 #settings h2 {
 	margin-bottom: -.5em;
@@ -384,6 +428,7 @@ dialog button {
 	height:2em;
 	min-width:6em;
 	font-size:.9em;
+	background-color:hsl(240,10%,94%);
 }
 #settings input:disabled {
 	border:none;
@@ -400,8 +445,11 @@ legend {
 }
 .bottom {
 	gap:1em;
+	width:100%;
 	display:flex;
 	margin:.5em 0;
+	max-width:22em;
+	align-self:center;
 	justify-content:space-around;
 }
 #share form,
@@ -493,6 +541,7 @@ button[name="share_list"] {
 #toast button {
 	padding:.2em .5em;
 	font-size: inherit;
+	background-color:hsl(240,10%,94%);
 }
 @keyframes fade-out {
 	100% { opacity:0 }
@@ -500,7 +549,6 @@ button[name="share_list"] {
 @keyframes fade-out-button {
 	100% { opacity:0 }
 }
-
 @media (pointer:fine) and (hover:hover) {
 	#combo_presets button:hover,
 	#combo_presets select:hover {
@@ -513,7 +561,7 @@ button[name="share_list"] {
 		border-color:hsl(240,10%,20%);
 	}
 	button:not(.step):not(:disabled):hover {
-		background-color:hsl(240,10%,85%);
+		/*background-color:hsl(240,10%,85%);*/
 	}
 	.step:hover {
 		filter:brightness(1.15);
@@ -543,18 +591,17 @@ button[name="share_list"] {
 	#sequencer {
 		--margin-top:.5em;
 		--track-column-auto:2;
-		--track-first-col-width:8.2em;
-		--sheet-column:4;
+		--track-first-col-width:9.5em;
+		--sheet-columns:4;
+		--controls-lines:1;
 		border-radius:.5em;
+		padding-bottom:.3em;
 	}
 	h1 {
 		font-size:1.4em;
 	}
 	h2 {
 		font-size:1.2em;
-	}
-	.track {
-		background-position:7.4em .1em;
 	}
 	.track th {
 		padding:0;
@@ -563,23 +610,33 @@ button[name="share_list"] {
 		padding:.5em 1em;
 	}
 	.track td:last-of-type {
-		width:5em;
+		width:6em;
+		display:flex;
 		grid-row:auto;
 		grid-column:auto;
-		padding:.8em .9em 0 0;
+		align-self:center;
+		padding:.3em .9em 0 0;
 	}
 	.track div[draggable] {
 		grid-template-columns:1em 1fr;
 	}
 	.trackbutton {
-		margin-right:1em;
+		font-size:1em;
 	}
 	.track.dragged .dropzone::after {
 		inset:-.32em  1em auto;
 	}
+	#track label:nth-child(2) {
+		grid-row:2;
+		grid-column:1;
+	}
+	#track label:nth-child(3) {
+		grid-row:1;
+		grid-column:2;
+	}
 	#controls {
-		gap:.9em;
-		margin:1em .8em .8em;
+		gap:1em;
+		padding:.7em 1em;
 	}
 	#start {
 		order:4;

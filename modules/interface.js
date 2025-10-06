@@ -132,19 +132,19 @@ export class Interface {
 		document.title = this.#headTitlePrefix + this.#untitled;
 		const defaultData = this.#firstTrack.dataset;
 		this.#interfaceData = {
-			defaultTempo: Number(this.#tempo.value),
-			defaultGain: Number(this.#volumes[0].value),
-			defaultBars: Number(defaultData[this.#barsName]),
-			defaultBeat: Number(defaultData[this.#beatName]),
-			defaultLoop: Number(defaultData[this.#loopName]),
-			defaultInstrument: Number(defaultData[this.#instrumentName]),
-			barsValues: Array.from(this.#bars.options).map(option => Number(option.value)),
-			beatValues: Array.from(this.#beat.options).map(option => Number(option.value)),
-			loopValues: Array.from(this.#loop.options).map(option => Number(option.value)),
+			defaultTempo: this.#tempo.value,
+			defaultGain: this.#volumes[0].value,
+			defaultBars: defaultData[this.#barsName],
+			defaultBeat: defaultData[this.#beatName],
+			defaultLoop: defaultData[this.#loopName],
+			defaultInstrument: defaultData[this.#instrumentName],
+			barsValues: Array.from(this.#bars.options).map(option => option.value),
+			beatValues: Array.from(this.#beat.options).map(option => option.value),
+			loopValues: Array.from(this.#loop.options).map(option => option.value),
 			tracksLength: this.#tracksLength,
-			tempoStep: Number(this.#tempo.step),
+			tempoStep: this.#tempo.step,
 			maxBars: this.#maxBars,
-			maxGain: Number(this.#volumes[0].max),
+			maxGain: this.#volumes[0].max,
 			subdivision: this.#subdivision,
 		};
 		if (!CSS.supports('inset', 'anchor-size(height)')) {
@@ -220,7 +220,7 @@ export class Interface {
 		else if (target === this.#settingsButton) {
 			this.#openSettings(event);
 		}
-		else if (target.href) {
+		else if (target.href && !target.startsWith('#')) {
 			this.#loadClickedPreset(event);
 		}
 	}
@@ -279,19 +279,19 @@ export class Interface {
 		const instrumentIndex = this.#instrument.value === '' ? '0' : this.#instrument.value;
 		if (values.beat !== this.#beat.value) {
 			values.beat = this.#beat.value;
-			changes.beat = Number(this.#beat.value);
+			changes.beat = this.#beat.value;
 		}
 		if (values.bars !== this.#bars.value) {
 			values.bars = this.#bars.value;
-			changes.bars = Number(this.#bars.value);
+			changes.bars = this.#bars.value;
 		}
 		if (values.loop !== this.#loop.value) {
 			values.loop = this.#loop.value;
-			changes.loop = Number(this.#loop.value);
+			changes.loop = this.#loop.value;
 		}
 		if (values.instrument !== instrumentIndex) {
 			values.instrument = instrumentIndex;
-			changes.instrument = Number(instrumentIndex);
+			changes.instrument = instrumentIndex;
 			this.#updateIntrumentName(trackIndex, instrumentIndex);
 		}
 		if (Object.keys(changes).length > 0) {
@@ -354,6 +354,8 @@ export class Interface {
 					if (item === this.#instrumentName) {
 						this.#updateIntrumentName(trackIndex, data);
 					}
+				} else if (item === this.#volumeName) {
+					this.#volumes[trackIndex].value = data;
 				}
 			}
 		}
@@ -396,22 +398,15 @@ export class Interface {
 	}
 
 	#toggleStartButton() {
-		const shouldStart = !this.#container.classList.contains(this.#startClass);
+		const shouldStart = !this.#frameId;
+		//Suppression des animations planifiées
+		if (!shouldStart && this.#animationQueue.size > 0) {
+			this.#pushAnimations({ animations: new Map() });
+		}
 		this.#container.classList.toggle(this.#startClass, shouldStart);
 		this.#startButton.setAttribute('aria-checked', String(shouldStart));
-		shouldStart ? this.#start() : this.#stop();
-	}
-
-	#start() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:start'));
-	}
-
-	#stop() {
-		for (const steps of this.#animationQueue.values()) {
-			steps[0]?.step?.classList.remove(this.#currentClass);
-		}
-		this.#animationQueue.clear();
-		this.#bus.dispatchEvent(new CustomEvent('interface:stop'));
+		const event = shouldStart ? 'interface:start' : 'interface:stop';
+		this.#bus.dispatchEvent(new CustomEvent(event));
 	}
 
 	#pushAnimations({ animations }) {

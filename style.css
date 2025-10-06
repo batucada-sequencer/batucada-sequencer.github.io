@@ -134,7 +134,7 @@ tbody {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 10 20" xmlns="http://www.w3.org/2000/svg"><text x="-1" y="16">𝟙</text></svg>');
 }
 .track[data-loop="1"] .trackbutton {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="10" r="2.5"/><circle cx="8" cy="20" r="2.5"/><circle cx="8" cy="30" r="2.5"/></svg>');
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="11" r="2.5"/><circle cx="8" cy="20" r="2.5"/><circle cx="8" cy="29" r="2.5"/></svg>');
 }
 .sheet {
 	gap:.3em;

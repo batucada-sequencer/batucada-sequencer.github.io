@@ -98,6 +98,7 @@ export class Interface {
 		this.#beat = this.#container.querySelector('#beat');
 		this.#loop = this.#container.querySelector('#loop');
 		this.#instrument = this.#container.querySelector('#instrument');
+		addEventListener('popstate', () => this.#toggleStartButton(false));
 		document.addEventListener('click', (event) => this.#lightDismiss(event));
 		document.addEventListener('submit', (event) => this.#submitForm(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
@@ -397,8 +398,10 @@ export class Interface {
 		console.log('Presets index updated');
 	}
 
-	#toggleStartButton() {
-		const shouldStart = !this.#frameId;
+	#toggleStartButton(status) {
+		const isRunning = Boolean(this.#frameId);
+		const shouldStart = status ?? !isRunning;
+		if (status !== undefined && shouldStart === isRunning) return;
 		//Suppression des animations planifiées
 		if (!shouldStart && this.#animationQueue.size > 0) {
 			this.#pushAnimations({ animations: new Map() });

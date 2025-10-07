@@ -359,11 +359,26 @@ dialog {
 	outline:none;
 	margin:0 auto;
 	max-width:24em;
+	position:relative;
 	border-radius:.5em;
 	border:1px solid #555;
 	box-sizing:border-box;
 	width:calc(100% - 2em);
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
+}
+dialog::after {
+	content:'';
+	width:2.5em;
+	height:2.5em;
+	position:absolute;
+	inset:0 0 auto auto;
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m14 16l10 10m0 -10l-10 10" stroke-width="2" stroke="rgb(85,85,85)" stroke-linecap="round"/></svg>');
+}
+dialog:hover::after {
+	filter:brightness(0);
+}
+dialog:has(:hover)::after {
+	filter:none;
 }
 #track form,
 #settings div,

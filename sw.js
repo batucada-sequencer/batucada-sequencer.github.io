@@ -37,9 +37,12 @@ const assets = {
 		'./audio/contra2.ogg',
 		'./audio/couper.ogg',
 		'./audio/couper2.ogg',
+		'./audio/repenique.ogg',
+		'./audio/repenique2.ogg',
 		'./audio/surdo.ogg',
 		'./audio/surdo2.ogg',
 		'./audio/tamborim.ogg',
+		'./audio/tamborim2.ogg',
 	],
 };
 

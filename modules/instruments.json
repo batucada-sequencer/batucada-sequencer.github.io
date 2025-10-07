@@ -4,6 +4,11 @@
 		"files": ["default.ogg"]
 	},
 	{
+		"id": 9,
+		"name": "Répénique", 
+		"files": ["repenique.ogg", "repenique2.ogg"]
+	},
+	{
 		"id": 4,
 		"name": "Tamborim", 
 		"files": ["tamborim.ogg", "tamborim2.ogg"]

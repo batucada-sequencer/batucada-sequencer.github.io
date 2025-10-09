@@ -55,6 +55,7 @@ export class Presets {
 			const cache = await caches.open(this.#cacheName);
 			const cachedResponse = await cache.match(this.#userFileName);
 			if (!cachedResponse) {
+				console.log('Ajout au cache uniquement si non présent')
 				await cache.put(this.#userFileName, response.clone());
 			}
 			return response.json();

@@ -774,8 +774,7 @@ export class Interface {
 		let versions = null;
 		try {
 			const registration = await navigator.serviceWorker.ready;
-			const serviceWorker = registration.active;
-			//const serviceWorker = navigator.serviceWorker.controller;
+			const serviceWorker = registration.active || navigator.serviceWorker.controller;
 			if (!serviceWorker) throw new Error();
 			const channel = new MessageChannel();
 			const responsePromise = new Promise(resolve => {
@@ -784,9 +783,15 @@ export class Interface {
 			serviceWorker.postMessage('getVersions', [channel.port2]);
 			versions = await responsePromise;
 		} catch {}
-		this.#applicationVersion.textContent =  versions?.app;
-		this.#instrumentsVersion.textContent =  versions?.static;
-		this.#dataDate.textContent = `${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour12: false })}`;
+		if (versions?.app) {
+			this.#applicationVersion.textContent = versions?.app;
+		}
+		if (versions?.static) {
+			this.#instrumentsVersion.textContent = versions?.static;
+		}
+		if (date) {
+			this.#dataDate.textContent = `${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour12: false })}`;
+		}
 		this.#about.showModal();
 		this.#about.focus();
 	}

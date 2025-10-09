@@ -10,7 +10,6 @@ export class Interface {
 	#bus;
 	#container;
 	#firstTrack;
-	#tracksLength;
 	#stepsPerTracks;
 	#headTitlePrefix;
 	#bpm;
@@ -52,8 +51,15 @@ export class Interface {
 	#instrumentName;
 	#instrumentsList;
 	#interfaceData;
+	#tracksLength;
 	#animationQueue = new Map();
 	#frameId = null;
+	#about;
+	#aboutButton;
+	#applicationVersion;
+	#instrumentsVersion;
+	#dataDate;
+	#contact;
 
 	constructor(bus, config, instrumentsList) {
 		this.#bus = bus;
@@ -79,6 +85,12 @@ export class Interface {
 		this.#toast = this.#container.querySelector('#toast');
 		this.#message = this.#container.querySelector('#toast p');
 		this.#cancelButton = this.#container.querySelector('#toast button');
+		this.#about =  this.#container.querySelector('#about');
+		this.#aboutButton =  this.#container.querySelector('#aboutButton');
+		this.#applicationVersion =  this.#container.querySelector('#applicationVersion');
+		this.#instrumentsVersion =  this.#container.querySelector('#instrumentsVersion');
+		this.#dataDate =  this.#container.querySelector('#dataDate');
+		this.#contact =  this.#container.querySelector('#contact');
 
 		this.#stepName = 'step';
 		this.#barsName = 'bars';
@@ -118,10 +130,10 @@ export class Interface {
 		this.#bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('urlState:closeShared', ({ detail }) => this.#closeShared(detail));
-		this.#initInterface();
+		this.#initInterface(config);
 	}
 
-	#initInterface() {
+	#initInterface(config) {
 		this.#headTitlePrefix = `${document.title} - `;
 		this.#defaultInstrument = this.#trackButtons[0].textContent;
 		this.#stepsPerTracks = this.#maxBars * this.#subdivision;
@@ -131,6 +143,8 @@ export class Interface {
 		this.#firstTrack = this.#tracks[0].cloneNode(true);
 		this.#initTracks();
 		document.title = this.#headTitlePrefix + this.#untitled;
+		this.#contact.href = `mailto:${config.email}`;
+		this.#contact.textContent = config.email;
 		const defaultData = this.#firstTrack.dataset;
 		this.#interfaceData = {
 			defaultTempo: this.#tempo.value,
@@ -142,7 +156,7 @@ export class Interface {
 			barsValues: Array.from(this.#bars.options).map(option => option.value),
 			beatValues: Array.from(this.#beat.options).map(option => option.value),
 			loopValues: Array.from(this.#loop.options).map(option => option.value),
-			tracksLength: this.#tracksLength,
+			tracksLength: config.tracksLength,
 			tempoStep: this.#tempo.step,
 			maxBars: this.#maxBars,
 			maxGain: this.#volumes[0].max,
@@ -218,10 +232,13 @@ export class Interface {
 		else if (target === this.#startButton) {
 			this.#toggleStartButton();
 		}
+		else if (target === this.#aboutButton) {
+			this.#openAbout();
+		}
 		else if (target === this.#settingsButton) {
 			this.#openSettings(event);
 		}
-		else if (target.href && !target.startsWith('#')) {
+		else if (target.href && !target.href.startsWith('#')) {
 			this.#loadClickedPreset(event);
 		}
 	}
@@ -270,7 +287,7 @@ export class Interface {
 		this.#instrument.value = values.instrument;
 		this.#trackIndex.value = [...this.#tracks].indexOf(track);
 		this.#track.showModal();
-		//this.#track.focus();
+		this.#track.focus();
 	}
 
 	#setTrack(form) {
@@ -746,4 +763,32 @@ export class Interface {
 		this.#shareButton.disabled = checkedCount === 0 && !this.#checkBoxCurrent.checked;
 	}
 //endpreset
+
+	async #openAbout() {
+		const dataDate = await new Promise(resolve => {
+			this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { 
+				detail: resolve
+			}));
+		});
+		const date = new Date(dataDate);
+		let versions = null;
+		try {
+			const registration = await navigator.serviceWorker.ready;
+			const serviceWorker = registration.active;
+			//const serviceWorker = navigator.serviceWorker.controller;
+			if (!serviceWorker) throw new Error();
+			const channel = new MessageChannel();
+			const responsePromise = new Promise(resolve => {
+				channel.port1.onmessage = event => resolve(event.data);
+			});
+			serviceWorker.postMessage('getVersions', [channel.port2]);
+			versions = await responsePromise;
+		} catch {}
+		this.#applicationVersion.textContent =  versions?.app;
+		this.#instrumentsVersion.textContent =  versions?.static;
+		this.#dataDate.textContent = `${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour12: false })}`;
+		this.#about.showModal();
+		this.#about.focus();
+	}
+
 }

@@ -1,6 +1,6 @@
 const versions = {
-	app: '1.20.17',
-	static: '1.13',
+	app: '1.05.29',
+	static: '1.07',
 };
 
 const dataCache = 'data';
@@ -71,6 +71,14 @@ self.addEventListener('activate', event => {
 			);
 		}),
 	);
+});
+
+self.addEventListener('message', event => {
+	const port = event.ports[0];
+	if (!port) return;
+	if (event.data === 'getVersions') {
+		port.postMessage(versions);
+	}
 });
 
 self.addEventListener('fetch', event => {

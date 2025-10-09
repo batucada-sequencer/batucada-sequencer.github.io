@@ -1,5 +1,5 @@
 {
-	"local": true,
+	"local": false,
 	"tracksLength": 12,
 	"durationWhenHidden": 600,
 	"untitled": "Morceau sans titre",
@@ -9,8 +9,7 @@
 	"volumeSearchParam": "vol",
 	"shareSearchParam": "share",
 	"defaultSetValue": "0",
-	"defaultTitleValue": ""
+	"defaultTitleValue": "",
+	"email": "batucadaleszurbamateurs@gmail.com"
 }
-
-
 

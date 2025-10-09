@@ -42,6 +42,7 @@ button:disabled {
 	--track-column-auto:1;
 	--track-first-col-width:7.5em;
 	background:#fff;
+	position:relative;
 	border:1px solid #999;
 	border-radius:0 0 .5em .5em;
 	margin-top:var(--margin-top);
@@ -369,7 +370,6 @@ dialog {
 	outline:none;
 	margin:0 auto;
 	max-width:24em;
-	position:relative;
 	border-radius:.5em;
 	border:1px solid #555;
 	box-sizing:border-box;
@@ -390,10 +390,7 @@ dialog:hover::after {
 dialog:has(:hover)::after {
 	filter:none;
 }
-#track form,
-#settings div,
-#share form,
-#shared > div {
+dialog>:first-child {
 	gap:1em;
 	padding:1em;
 	display:flex;
@@ -472,8 +469,8 @@ legend {
 	gap:1em;
 	width:100%;
 	display:flex;
-	margin:.5em 0;
 	max-width:22em;
+	margin-top:.5em;
 	align-self:center;
 	justify-content:space-around;
 }
@@ -574,6 +571,27 @@ button[name="share_list"] {
 @keyframes fade-out-button {
 	100% { opacity:0 }
 }
+#aboutButton {
+	right:.2em;
+	color:#444;
+	border:none;
+	font-size:.8em;
+	position:absolute;
+	top:calc(100% + .3em);
+}
+#about p {
+	margin:0;
+	line-height:1.2;
+}
+#about p + p {
+	margin-top:.5em;
+}
+#about span {
+	white-space:nowrap;
+}
+#contact {
+	font-size:.9em;
+}
 @media (pointer:fine) and (hover:hover) {
 	.trackbutton:hover,
 	.track label:hover,
@@ -610,6 +628,9 @@ button[name="share_list"] {
 	}
 	.track[data-instrument="0"] .handle {
 		display:none;
+	}
+	#aboutButton:hover {
+		color:#000;
 	}
 }
 @media (min-width:520px) {

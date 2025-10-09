@@ -82,6 +82,7 @@
 				<div id="pause">Arrêter</div>
 			</button>
 		</div>
+		<button id="aboutButton">À propos…</button>
 		<dialog id="track">
 			<form method="dialog">
 				<h2>Modifier la piste</h2>
@@ -200,6 +201,20 @@
 					data-cancel-success="L'import des morceaux a été annulé."
 					data-cancel-failure="⚠️ L'import des morceaux ne peut être annulé.">
 					<button name="import">Importer</button><button>Fermer</button>
+				</form>
+			</div>
+		</dialog>
+		<dialog id="about">
+			<div>
+				<h2>Batucada Sequencer</h2>
+				<div>
+					<p>Version de l'application : <span id="applicationVersion"></span></p>
+					<p>Version des instruments : <span id="instrumentsVersion"></span></p>
+					<p>Version des morceaux : <span id="dataDate"></span></p>
+					<p>Contact : <a id="contact"></a></p>
+				</div>
+				<form class="bottom" method="dialog">
+					<button>Fermer</button>
 				</form>
 			</div>
 		</dialog>

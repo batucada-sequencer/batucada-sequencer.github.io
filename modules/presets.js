@@ -32,6 +32,7 @@ export class Presets {
 		this.#bus.addEventListener('interface:settingsCancel', ({ detail }) => this.#settingsCancel(detail));
 		this.#bus.addEventListener('interface:presetsShare', ({ detail }) => this.#presetsShare(detail));
 		this.#bus.addEventListener('interface:presetsImport', ({ detail }) => this.#presetsImport(detail));
+		this.#bus.addEventListener('interface:getPresetsDate', ({ detail }) => this.#sendPresetsDate(detail));
 		this.#bus.addEventListener('urlState:changed', ({ detail }) => this.#updateParams(detail));
 		this.#bus.addEventListener('urlState:openShared', ({ detail }) => this.#openShared(detail));
 	}
@@ -46,10 +47,16 @@ export class Presets {
 			const response = await cache.match(this.#userFileName);
 			return response ? await response.json() : [];
 		} else {
-			//cache fetch au premier appel puis network fetch pour les suivants
+			// cache fetch au premier appel puis network fetch pour les suivants
 			const options = this.#presets !== null ? { headers: { 'Cache-Control': 'no-cache' } } : {};
 			const response = await fetch(this.#userFileName, options);
 			if (!response.ok) throw new Error();
+			// Ajout au cache uniquement si non présent
+			const cache = await caches.open(this.#cacheName);
+			const cachedResponse = await cache.match(this.#userFileName);
+			if (!cachedResponse) {
+				await cache.put(this.#userFileName, response.clone());
+			}
 			return response.json();
 		}
 	}
@@ -62,7 +69,10 @@ export class Presets {
 			response = new Response(body, {
 				status: 200,
 				statusText: 'OK',
-				headers: { 'Content-Type': 'application/json' }
+				headers: {
+					'Content-Type': 'application/json',
+					'Last-Modified': new Date().toUTCString()
+				}
 			});
 			if (this.#isPersistedStorage === null) {
 				this.#isPersistedStorage = await navigator.storage.persist();
@@ -249,6 +259,13 @@ export class Presets {
 			await navigator.clipboard.writeText(url);
 			promise.reject();
 		}
+	}
+
+	async #sendPresetsDate(callback) {
+		const cache = await caches.open(this.#cacheName);
+		const response = await cache.match(this.#userFileName);
+		const lastModified = response?.headers.get('last-modified') || null;
+		callback(lastModified);
 	}
 
 }

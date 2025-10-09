@@ -110,7 +110,7 @@ export class Interface {
 		this.#beat = this.#container.querySelector('#beat');
 		this.#loop = this.#container.querySelector('#loop');
 		this.#instrument = this.#container.querySelector('#instrument');
-		addEventListener('popstate', () => this.#toggleStartButton(false));
+		addEventListener('popstate', (event) => this.#toggleStartButton(false));
 		document.addEventListener('click', (event) => this.#lightDismiss(event));
 		document.addEventListener('submit', (event) => this.#submitForm(event));
 		this.#toast.addEventListener('animationend', this.#toast.hidePopover);
@@ -120,7 +120,7 @@ export class Interface {
 		this.#shared.addEventListener('close', (event) => this.#sharedClosed(event));
 		this.#presetsSelection.addEventListener('change', (event) => this.#setSelectedPreset(event));
 		this.#checkBoxMaster.form.addEventListener('change', (event) => this.#checkValues(event.target));
-		this.#bus.addEventListener('sequencer:stopped', (event) => this.#toggleStartButton(event));
+		this.#bus.addEventListener('sequencer:stopped', (event) => this.#toggleStartButton(false));
 		this.#bus.addEventListener('sequencer:updateData', ({ detail }) => this.#updateInterface(detail));
 		this.#bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateInterface(detail));
 		this.#bus.addEventListener('sequencer:pushAnimations', ({ detail }) => this.#pushAnimations(detail));

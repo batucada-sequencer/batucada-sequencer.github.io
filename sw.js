@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.05.33',
+	app: '1.05.34',
 	static: '1.07',
 };
 
@@ -60,18 +60,19 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
 	console.log('Service worker: activate');
 	event.waitUntil(
-		caches.keys().then((keyList) => {
+		caches.keys().then(keyList => {
 			return Promise.all(
-				keyList.map((key) => {
-					if (key === appCache || key === dataCache) {
-						return;
-					}
+				keyList.map(key => {
+					if (key === appCache || key === dataCache) return;
 					return caches.delete(key);
-				}),
+				})
 			);
-		}),
+		}).then(() => {
+			return self.clients.claim();
+		})
 	);
 });
+
 
 self.addEventListener('message', event => {
 	const port = event.ports[0];

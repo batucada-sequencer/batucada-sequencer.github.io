@@ -39,23 +39,24 @@ export class Presets {
 
 	async #fetchData() {
 		if (!this.#userFileName) {
-			const user = (new URLSearchParams(location.search)).get('user')?.trim() || '0';
+			const user = new URLSearchParams(location.search).get('user')?.trim() || '0';
 			this.#userFileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
 		}
+		const cache = await caches.open(this.#cacheName);
 		if (this.#local) {
-			const cache = await caches.open(this.#cacheName);
-			const response = await cache.match(this.#userFileName);
-			return response ? await response.json() : [];
+			let response = await cache.match(this.#userFileName);
+			if (response) return await response.json();
+			// Mise en cache d’un tableau vide si absent
+			response = this.#jsonResponse([]);
+			await cache.put(this.#userFileName, response);
+			return [];
 		} else {
-			// cache fetch au premier appel puis network fetch pour les suivants
+			// Cache fetch au premier appel puis network fetch pour les suivants
 			const options = this.#presets !== null ? { headers: { 'Cache-Control': 'no-cache' } } : {};
 			const response = await fetch(this.#userFileName, options);
-			if (!response.ok) throw new Error();
+			if (!response.ok) throw new Error(`Échec du fetch : ${response.status}`);
 			// Ajout au cache uniquement si non présent
-			const cache = await caches.open(this.#cacheName);
-			const cachedResponse = await cache.match(this.#userFileName);
-			if (!cachedResponse) {
-				console.log('Ajout au cache uniquement si non présent')
+			if (!(await cache.match(this.#userFileName))) {
 				await cache.put(this.#userFileName, response.clone());
 			}
 			return response.json();
@@ -64,26 +65,31 @@ export class Presets {
 
 	async #saveData(data) {
 		let response;
-		const body = JSON.stringify(data);
 		const cache = await caches.open(this.#cacheName);
 		if (this.#local) {
-			response = new Response(body, {
-				status: 200,
-				statusText: 'OK',
-				headers: {
-					'Content-Type': 'application/json',
-					'Last-Modified': new Date().toUTCString()
-				}
-			});
+			response = this.#jsonResponse(data);
 			if (this.#isPersistedStorage === null) {
 				this.#isPersistedStorage = await navigator.storage.persist();
 				console.log(`Persisted storage granted: ${this.#isPersistedStorage}`);
 			}
 		} else {
-			response = await fetch(this.#userFileName, { method: 'PUT', body });
+			response = await fetch(this.#userFileName, { method: 'PUT', body: JSON.stringify(data) });
 		}
 		await cache.put(this.#userFileName, response);
 	}
+
+	#jsonResponse(json) {
+		return new Response(JSON.stringify(json), {
+			status: 200,
+			statusText: 'OK',
+			headers: {
+				'Content-Type': 'application/json',
+				'Last-Modified': new Date().toUTCString()
+			}
+		});
+	}
+
+
 
 	#reset() {
 		this.#index = -1;

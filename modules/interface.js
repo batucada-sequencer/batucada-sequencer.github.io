@@ -765,35 +765,42 @@ export class Interface {
 //endpreset
 
 	async #openAbout() {
-		const dataDate = await new Promise(resolve => {
-			this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { 
-				detail: resolve
-			}));
-		});
-		const date = new Date(dataDate);
-		let versions = null;
 		try {
-			const registration = await navigator.serviceWorker.ready;
-			const serviceWorker = registration.active || navigator.serviceWorker.controller;
-			if (!serviceWorker) throw new Error();
-			const channel = new MessageChannel();
-			const responsePromise = new Promise(resolve => {
-				channel.port1.onmessage = event => resolve(event.data);
+			const dataDate = await new Promise(resolve => {
+				this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { detail: resolve }));
 			});
-			serviceWorker.postMessage('getVersions', [channel.port2]);
-			versions = await responsePromise;
-		} catch {}
-		if (versions?.app) {
-			this.#applicationVersion.textContent = versions?.app;
-		}
-		if (versions?.static) {
-			this.#instrumentsVersion.textContent = versions?.static;
-		}
-		if (date) {
-			this.#dataDate.textContent = `${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour12: false })}`;
-		}
-		this.#about.showModal();
-		this.#about.focus();
+			const date = new Date(dataDate);
+			const versions = await this.#getServiceWorkerVersions();
+			if (versions) {
+				this.#applicationVersion.textContent = versions.app;
+				this.#instrumentsVersion.textContent = versions.static;
+			}
+			if (!isNaN(date)) {
+				const localeOpts = { hour12: false };
+				this.#dataDate.textContent =
+					`${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', localeOpts)}`;
+			}
+			this.#about.showModal();
+			this.#about.focus();
+		} catch { }
 	}
+
+	async #getServiceWorkerVersions() {
+		if (!('serviceWorker' in navigator)) return null;
+		try {
+			const reg = await navigator.serviceWorker.ready;
+			const serviceWorker = reg.active || navigator.serviceWorker.controller;
+			if (!serviceWorker) return null;
+			return await new Promise(resolve => {
+				const channel = new MessageChannel();
+				channel.port1.onmessage = event => resolve(event.data);
+				serviceWorker.postMessage('getVersions', [channel.port2]);
+				setTimeout(() => resolve(null), 200);
+			});
+		} catch {
+			return null;
+		}
+	}
+
 
 }

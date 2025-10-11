@@ -579,12 +579,14 @@ button[name="share_list"] {
 	position:absolute;
 	top:calc(100% + .3em);
 }
+#about div div {
+	gap:.5em;
+	display:flex;
+	flex-direction:column;
+}
 #about p {
 	margin:0;
 	line-height:1.2;
-}
-#about p + p {
-	margin-top:.5em;
 }
 #about span {
 	white-space:nowrap;
@@ -592,6 +594,14 @@ button[name="share_list"] {
 #contact {
 	font-size:.9em;
 }
+#update {
+	font-size:.8em;
+	align-self:center;
+}
+#update:disabled {
+	display:none;
+}
+
 @media (pointer:fine) and (hover:hover) {
 	.trackbutton:hover,
 	.track label:hover,

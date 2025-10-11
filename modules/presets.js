@@ -89,8 +89,6 @@ export class Presets {
 		});
 	}
 
-
-
 	#reset() {
 		this.#index = -1;
 		this.#params.delete(this.#setSearchParam);
@@ -269,10 +267,10 @@ export class Presets {
 	}
 
 	async #sendPresetsDate(callback) {
-		const cache = await caches.open(this.#cacheName);
-		const response = await cache.match(this.#userFileName);
-		const lastModified = response?.headers.get('last-modified') || null;
-		callback(lastModified);
+		const response = await caches.match(this.#userFileName, { cacheName: this.#cacheName });
+		if (!response) return callback(null);
+		const lastModified = response.headers.get('last-modified');
+		callback(lastModified ? new Date(lastModified) : null);
 	}
 
 }

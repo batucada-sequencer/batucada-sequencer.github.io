@@ -1,10 +1,10 @@
 const versions = {
-	app: '1.05.34',
-	static: '1.07',
+	app: '1.04.12',
+	static: '1.03',
 };
-
+const versionsPath = './versions.json';
+const appCache = 'app';
 const dataCache = 'data';
-const appCache = versions.app;
 
 const assets = {
 	app: [
@@ -16,7 +16,9 @@ const assets = {
 		'./modules/interface.js',
 		'./modules/presets.js',
 		'./modules/sequencer.js',
+		'./modules/service_worker.js',
 		'./modules/toast_positioning.js',
+		'./modules/url_state.js',
 	],
 	static: [
 		'./favicon.svg',
@@ -46,40 +48,56 @@ const assets = {
 	],
 };
 
+const urls = Object.entries(assets).flatMap(([key, paths]) =>
+	paths.map(path => {
+		const url = new URL(path, self.registration.scope);
+		if (key in versions) url.searchParams.set(key, versions[key]);
+		return url.href;
+	})
+);
+
+const versionsFile = new Response(JSON.stringify(versions), {
+	headers: { 'Content-Type': 'application/json' }
+});
+
+self.addEventListener('message', event => {
+	if (event.data?.action === 'skipWaiting') {
+		self.skipWaiting();
+	}
+});
+
 self.addEventListener('install', event => {
 	console.log('Service worker: install');
-	self.skipWaiting();
-	const URLs = Object.entries(assets).flatMap(([key, paths]) =>
-		paths.map(path => path + ((key in versions) ? '?' + key + '=' + versions[key] : ''))
-	);
 	event.waitUntil(
-		caches.open(appCache).then(cache => cache.addAll(URLs))
+		caches.open(appCache).then(cache => cache.addAll(urls))
 	);
 });
 
 self.addEventListener('activate', event => {
 	console.log('Service worker: activate');
 	event.waitUntil(
-		caches.keys().then(keyList => {
-			return Promise.all(
-				keyList.map(key => {
-					if (key === appCache || key === dataCache) return;
-					return caches.delete(key);
+		(async () => {
+			const cache = await caches.open(appCache);
+			const isUpdate = !!(await cache.match(versionsPath));
+			const cachedRequests = await cache.keys();
+			// Supprime les anciennes entrées du cache
+			await Promise.all(
+				cachedRequests.map(request => {
+					if (!urls.includes(request.url)) {
+						return cache.delete(request);
+					}
 				})
 			);
-		}).then(() => {
-			return self.clients.claim();
-		})
+			// Met à jour le fichier des versions dans le cache
+			await cache.put('./versions.json', versionsFile);
+			// Si c'est une mise à jour, prend le controle des clients et les avertit par message
+			if (isUpdate) {
+				await self.clients.claim();
+				const clientsList = await self.clients.matchAll({ type: 'window' });
+				clientsList.forEach(client => client.postMessage({ type: 'update' }));
+			}
+		})()
 	);
-});
-
-
-self.addEventListener('message', event => {
-	const port = event.ports[0];
-	if (!port) return;
-	if (event.data === 'getVersions') {
-		port.postMessage(versions);
-	}
 });
 
 self.addEventListener('fetch', event => {

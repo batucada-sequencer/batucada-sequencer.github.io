@@ -56,6 +56,7 @@ export class Interface {
 	#frameId = null;
 	#about;
 	#aboutButton;
+	#updateButton;
 	#applicationVersion;
 	#instrumentsVersion;
 	#dataDate;
@@ -86,11 +87,12 @@ export class Interface {
 		this.#message = this.#container.querySelector('#toast p');
 		this.#cancelButton = this.#container.querySelector('#toast button');
 		this.#about =  this.#container.querySelector('#about');
-		this.#aboutButton =  this.#container.querySelector('#aboutButton');
-		this.#applicationVersion =  this.#container.querySelector('#applicationVersion');
-		this.#instrumentsVersion =  this.#container.querySelector('#instrumentsVersion');
-		this.#dataDate =  this.#container.querySelector('#dataDate');
-		this.#contact =  this.#container.querySelector('#contact');
+		this.#aboutButton = this.#container.querySelector('#aboutButton');
+		this.#updateButton = this.#container.querySelector('#update');
+		this.#applicationVersion = this.#container.querySelector('#applicationVersion');
+		this.#instrumentsVersion = this.#container.querySelector('#instrumentsVersion');
+		this.#dataDate = this.#container.querySelector('#dataDate');
+		this.#contact = this.#container.querySelector('#contact');
 
 		this.#stepName = 'step';
 		this.#barsName = 'bars';
@@ -130,6 +132,7 @@ export class Interface {
 		this.#bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('urlState:closeShared', ({ detail }) => this.#closeShared(detail));
+		this.#bus.addEventListener('serviceWorker:newVersion', ({ detail }) => this.#newVersion(detail));
 		this.#initInterface(config);
 	}
 
@@ -237,6 +240,9 @@ export class Interface {
 		}
 		else if (target === this.#settingsButton) {
 			this.#openSettings(event);
+		}
+		else if (target === this.#updateButton) {
+			this.#update();
 		}
 		else if (target.href && !target.href.startsWith('#')) {
 			this.#loadClickedPreset(event);
@@ -766,41 +772,33 @@ export class Interface {
 
 	async #openAbout() {
 		try {
+			this.#bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
 			const dataDate = await new Promise(resolve => {
 				this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { detail: resolve }));
 			});
-			const date = new Date(dataDate);
-			const versions = await this.#getServiceWorkerVersions();
-			if (versions) {
-				this.#applicationVersion.textContent = versions.app;
-				this.#instrumentsVersion.textContent = versions.static;
-			}
-			if (!isNaN(date)) {
+			if (dataDate) {
+				const date = new Date(dataDate);
 				const localeOpts = { hour12: false };
 				this.#dataDate.textContent =
 					`${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', localeOpts)}`;
 			}
+			const versions = await new Promise(resolve => {
+				this.#bus.dispatchEvent(new CustomEvent('interface:getVersions', { detail: resolve }));
+			});
+			if (versions) {
+				this.#applicationVersion.textContent = versions.app;
+				this.#instrumentsVersion.textContent = versions.static;
+			}
 			this.#about.showModal();
 			this.#about.focus();
-		} catch { }
+		} catch {}
 	}
 
-	async #getServiceWorkerVersions() {
-		if (!('serviceWorker' in navigator)) return null;
-		try {
-			const reg = await navigator.serviceWorker.ready;
-			const serviceWorker = reg.active || navigator.serviceWorker.controller;
-			if (!serviceWorker) return null;
-			return await new Promise(resolve => {
-				const channel = new MessageChannel();
-				channel.port1.onmessage = event => resolve(event.data);
-				serviceWorker.postMessage('getVersions', [channel.port2]);
-				setTimeout(() => resolve(null), 200);
-			});
-		} catch {
-			return null;
-		}
+	#newVersion() {
+		this.#updateButton.disabled = false;
 	}
 
-
+	#update() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:install'));
+	}
 }

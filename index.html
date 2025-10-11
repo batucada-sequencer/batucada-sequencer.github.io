@@ -128,7 +128,7 @@
 		</dialog>
 		<dialog id="settings">
 			<div>
-				<h2>Gérer le morceau</h2>
+				<h2 id="name">Nouveau morceau</h2>
 				<form id="modify" method="dialog" hidden
 					data-success="Le morceau a été enregistré."
 					data-failure="⚠️ La modification a échoué."
@@ -208,9 +208,10 @@
 			<div>
 				<h2>Batucada Sequencer</h2>
 				<div>
-					<p>Version de l'application : <span id="applicationVersion"></span></p>
-					<p>Version des instruments : <span id="instrumentsVersion"></span></p>
-					<p>Version des morceaux : <span id="dataDate"></span></p>
+					<p>Version de l'application : <span id="applicationVersion">-</span></p>
+					<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
+					<p>Version des morceaux : <span id="dataDate">-</span></p>
+					<button id="update" disabled>Mettre à jour l'application</button>
 					<p>Contact : <a id="contact"></a></p>
 				</div>
 				<form class="bottom" method="dialog">
@@ -221,22 +222,20 @@
 		<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
 	</div>
 	<script type="module">
-		import config       from './config.json' with { type: 'json' };
-		import instruments  from './modules/instruments.json' with { type: 'json' };
-		import {Interface}  from './modules/interface.js';
-		import {Sequencer}  from './modules/sequencer.js';
-		import {Presets}    from './modules/presets.js';
-		import {UrlState}   from './modules/url_state.js';
+		import config           from './config.json' with { type: 'json' };
+		import instruments      from './modules/instruments.json' with { type: 'json' };
+		import {Interface}      from './modules/interface.js';
+		import {Sequencer}      from './modules/sequencer.js';
+		import {Presets}        from './modules/presets.js';
+		import {UrlState}       from './modules/url_state.js';
+		import {ServiceWorker } from './modules/service_worker.js';
 
 		const bus       = new EventTarget();
 		const ui        = new Interface(bus, config, instruments);
 		const sequencer = new Sequencer(bus, config, instruments);
 		const presets   = new Presets(bus, config);
 		const urlState  = new UrlState(bus, config, instruments);
-
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('sw.js');
-		}
+		const sw        = new ServiceWorker(bus, config);
 	</script>
 </body>
 </html>

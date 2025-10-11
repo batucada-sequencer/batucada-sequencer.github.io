@@ -12,6 +12,7 @@
   ],
   "share_target": {
     "action": "/app/share.html",
+    "enctype": "application/x-www-form-urlencoded",    
     "method": "GET",
     "params": {
       "text": "text",
@@ -19,4 +20,5 @@
     }
   }
 }
+
 

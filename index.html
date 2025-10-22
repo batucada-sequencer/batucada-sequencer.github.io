@@ -16,10 +16,13 @@
 			<tr class="track" data-bars="[4,4]" data-beat="4" data-instrument="0" data-loop="1">
 				<th scope="row">
 					<div class="dropzone"></div>
-					<div class="select" draggable="true">
+					<div draggable="true">
 						<div class="handle" title="Déplacer"></div>
-						<button name="trackbutton" class="trackbutton" title="Modifier la piste">Instrument…</button>
+						<select name="instrument" class="instrument" aria-label="instrument" autocomplete="off">
+							<option selected disabled hidden value="0">Instrument</option>
+						</select>
 					</div>
+					<button name="trackbutton" class="trackbutton" title="Modifier la piste">Réglages</button>
 				</th>
 				<td>
 					<div class="sheet">
@@ -57,7 +60,7 @@
 						<span class="bar"><button name="step" class="step" aria-label="note" value="0"></button><span class="sub_bar"><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button><button name="step" class="step" aria-label="note" value="0"></button></span></span>
 					</div>
 				</td>
-				<td><label><input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" value="30" min="0" max="60" autocomplete="off"></label></td>
+				<td><input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" value="30" min="0" max="60" autocomplete="off"></td>
 			</tr>
 		</table>
 		<datalist id="volume">
@@ -84,22 +87,11 @@
 		</div>
 		<button id="aboutButton">À propos…</button>
 		<dialog id="track">
-			<form method="dialog">
-				<h2>Modifier la piste</h2>
+			<form method="dialog" autocomplete="off">
+				<h2 id=instrument>Instrument</h2>
 				<div>
-					<label>Instrument
-						<select id="instrument" name="instrument" autocomplete="off">
-							<option value="0" disabled hidden selected>Choisir…</option>
-						</select>
-					</label>
-					<label>Type de phrase
-						<select id="loop" name="loop" autocomplete="off">
-							<option value="0">𝟙 Introduction</option>
-							<option value="1" selected>Tourne</option>
-						</select>
-					</label>
 					<label>Nombre de temps
-						<select id="bars" name="bars" autocomplete="off">
+						<select id="bars" name="bars">
 							<option value="[4,4]" selected>4</option>
 							<option value="[6,6]">6</option>
 							<option value="[8,4]">8</option>
@@ -112,24 +104,29 @@
 						</select>
 					</label>
 					<label>Division du temps
-						<select id="beat" name="beat" autocomplete="off">
+						<select id="beat" name="beat">
 							<option value="3">3</option>
 							<option value="4" selected>4</option>
 							<option value="6">6</option>
 							<option value="8">8</option>
 						</select>
 					</label>
+					<label>Type de phrase
+						<select id="loop" name="loop">
+							<option value="0">Introduction</option>
+							<option value="1" selected>Tourne</option>
+						</select>
+					</label>
 				</div>
 				<div class="bottom">
 					<button>Annuler</button><button name="apply">Appliquer</button>
 				</div>
-				<input type="hidden" id="trackindex">
 			</form>
 		</dialog>
 		<dialog id="settings">
 			<div>
-				<h2 id="name">Nouveau morceau</h2>
-				<form id="modify" method="dialog" hidden
+				<h2 id="preset">Nouveau morceau</h2>
+				<form id="modify" method="dialog" autocomplete="off" hidden
 					data-success="Le morceau a été enregistré."
 					data-failure="⚠️ La modification a échoué."
 					data-cancel-success="La modification a été annulée."
@@ -140,29 +137,29 @@
 						<button name="save">Enregistrer</button>
 					</fieldset>
 				</form>
-				<form id="newOne" method="dialog"
+				<form id="newOne" method="dialog" autocomplete="off"
 					data-success="Le morceau a été enregistré."
 					data-failure="⚠️ La modification a échoué."
 					data-cancel-success="La modification a été annulée."
 					data-cancel-failure="⚠️ La modification ne peut être annulée.">
 					<fieldset>
 						<legend>Enregistrer sous</legend>
-						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" autocomplete="off" required>
+						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
 						<button name="save">Enregistrer</button>
 					</fieldset>
 				</form>
-				<form id="rename" method="dialog" hidden
+				<form id="rename" method="dialog" autocomplete="off" hidden
 					data-success="Le morceau a été renommé."
 					data-failure="⚠️ La modification a échoué."
 					data-cancel-success="La modification a été annulée."
 					data-cancel-failure="⚠️ La modification ne peut être annulée.">
 					<fieldset>
 						<legend>Renommer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" autocomplete="off" required>
+						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
 						<button name="save">Renommer</button>
 					</fieldset>
 				</form>
-				<form id="delete" method="dialog" hidden
+				<form id="delete" method="dialog" autocomplete="off" hidden
 					data-success="Le morceau a été supprimé."
 					data-failure="⚠️ La modification a échoué."
 					data-cancel-success="La modification a été annulée."
@@ -174,12 +171,12 @@
 					</fieldset>
 				</form>
 				<form class="bottom" method="dialog">
-					<button name="share_list">Partager</button><button>Fermer</button>
+					<button name="share_list">Partager</button><button>Annuler</button>
 				</form>
 			</div>
 		</dialog>
 		<dialog id="share">
-			<form method="dialog" data-failure="🔗 Lien de partage copié dans le presse-papier.">
+			<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
 				<h2>Partager</h2>
 				<label><input type="checkbox" name="current">Morceau en cours</label>
 				<label id="legend" title="Tout sélectionner / désélectionner">
@@ -211,10 +208,10 @@
 					<p>Version de l'application : <span id="applicationVersion">-</span></p>
 					<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
 					<p>Version des morceaux : <span id="dataDate">-</span></p>
-					<button id="update" disabled>Mettre à jour l'application</button>
+					<button id="update" hidden>Mettre à jour l'application</button>
 					<p>Contact : <a id="contact"></a></p>
 				</div>
-				<form class="bottom" method="dialog">
+				<form method="dialog" class="bottom">
 					<button>Fermer</button>
 				</form>
 			</div>
@@ -222,20 +219,21 @@
 		<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
 	</div>
 	<script type="module">
-		import config           from './config.json' with { type: 'json' };
+		import app_config       from './config/app_config.json'   with { type: 'json' };
+		import core_config      from './config/core_config.json'  with { type: 'json' };
 		import instruments      from './modules/instruments.json' with { type: 'json' };
 		import {Interface}      from './modules/interface.js';
+		import {ServiceWorker } from './modules/service_worker.js';
 		import {Sequencer}      from './modules/sequencer.js';
 		import {Presets}        from './modules/presets.js';
 		import {UrlState}       from './modules/url_state.js';
-		import {ServiceWorker } from './modules/service_worker.js';
 
 		const bus       = new EventTarget();
-		const ui        = new Interface(bus, config, instruments);
-		const sequencer = new Sequencer(bus, config, instruments);
-		const presets   = new Presets(bus, config);
-		const urlState  = new UrlState(bus, config, instruments);
-		const sw        = new ServiceWorker(bus, config);
+		const ui        = new Interface({ bus, app_config, core_config, instruments });
+		const sw        = new ServiceWorker({ bus, app_config, core_config });
+		const sequencer = new Sequencer({ bus, app_config, core_config, instruments });
+		const presets   = new Presets({ bus, app_config, core_config });
+		const urlState  = new UrlState({ bus, core_config, instruments });
 	</script>
 </body>
 </html>

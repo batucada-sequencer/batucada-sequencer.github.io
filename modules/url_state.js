@@ -16,48 +16,45 @@ export class UrlState {
 	#shareSearchParam;
 	#defaultSetValue;
 	#defaultTitleValue;
-	#sharedStatus = false;
 	#allocation = {
 		reserved: 2,
 		loop: 2,
 		bars: 10,
 		beat: 9,
 		instrument: 10, //2 * 2 * 10 * 9 * 10 = 3600 > 3844 (62 * 62) (outputBase * outputBase)
-	}; //2 * 10 * 12 * 16 = 3840
+	};	//4 * 8 * 10 * 12   -> phrase * division * temps * instruments
 	#outputDigits = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	#outputBase = this.#outputDigits.length;
 	#headUntitled;
 	#headTitle;
 
-	constructor(bus, config, instrumentsList) {
+	constructor({ bus, core_config, instruments }) {
 		this.#bus = bus;
-		this.#setSearchParam = config.setSearchParam;
-		this.#tempoSearchParam = config.tempoSearchParam;
-		this.#titleSearchParam = config.titleSearchParam;
-		this.#volumeSearchParam = config.volumeSearchParam;
-		this.#shareSearchParam = config.shareSearchParam;
-		this.#defaultSetValue = config.defaultSetValue;
-		this.#defaultTitleValue = config.defaultTitleValue;
-		this.#initData(instrumentsList);
+		this.#setSearchParam = core_config.setSearchParam;
+		this.#tempoSearchParam = core_config.tempoSearchParam;
+		this.#titleSearchParam = core_config.titleSearchParam;
+		this.#volumeSearchParam = core_config.volumeSearchParam;
+		this.#shareSearchParam = core_config.shareSearchParam;
+		this.#defaultSetValue = core_config.defaultSetValue;
+		this.#defaultTitleValue = core_config.defaultTitleValue;
 		this.#searchParams = new URLSearchParams(location.search);
-		addEventListener('popstate', () => this.#decodeURL(true));
-		this.#bus.addEventListener('interface:reset', () => this.#reset());
 		this.#bus.addEventListener('presets:changed', ({ detail }) => this.#encodeURL(detail));
 		this.#bus.addEventListener('sequencer:changed', ({ detail }) => this.#encodeURL(detail));
 		this.#bus.addEventListener('interface:presetClicked', ({ detail }) => this.#presetClicked(detail));
 		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#presetSelected(detail));
 		this.#bus.addEventListener('interface:sharedClosed', ({ detail }) => this.#sharedClosed(detail));
+		this.#init(instruments);
+	}
+
+	async #init(instruments) {
+		await this.#initData(instruments);
 		this.#decodeURL();
 	}
 
-	#initData(instrumentsList) {
-		let data;
-		const event = new CustomEvent('urlState:getInterfaceData', { 
-			detail: callback => {
-				data = callback();
-			}
-		});
-		this.#bus.dispatchEvent(event);
+	async #initData(instrumentsList) {
+		const data = await new Promise(resolve => {
+				this.#bus.dispatchEvent(new CustomEvent('urlState:getInterfaceData', { detail: resolve }));
+			});
 		this.#tempoStep = data.tempoStep;
 		this.#stepsPerTracks = data.subdivision * data.maxBars;
 		this.#barsIndex = [data.defaultBars, ...data.barsValues.filter(value => value !== data.defaultBars)];
@@ -89,7 +86,6 @@ export class UrlState {
 				decode: this.#decodeTempo.bind(this),
 			},
 			[this.#titleSearchParam]: {
-				searchParam: 'title',
 				defaultValue: this.#defaultTitleValue,
 				encode: this.#encodeTitle.bind(this),
 				decode: this.#decodeTitle.bind(this),
@@ -97,31 +93,23 @@ export class UrlState {
 		};
 	}
 
-	#reset(values) {
-		this.#searchParams.delete(this.#setSearchParam);
-		this.#searchParams.delete(this.#tempoSearchParam);
-		this.#searchParams.delete(this.#titleSearchParam);
-		this.#searchParams.delete(this.#volumeSearchParam);
-		history.pushState(null, '', this.#searchParams.size ? `?${this.#searchParams}` : '.');
-	}
-
 	#presetSelected({ name, value }) {
 		this.#searchParams.set(this.#setSearchParam, value || this.#defaultSetValue);
 		this.#searchParams.set(this.#titleSearchParam, name || this.#defaultTitleValue);
-		history.pushState(null, '', `?${this.#searchParams}`);
+		history.replaceState(null, '', `?${this.#searchParams}`);
 		this.#decodeURL();
 	}
 
 	#presetClicked(url) {
 		this.#searchParams = new URLSearchParams(url);
-		history.pushState(null, '', url);
+		history.replaceState(null, '', url);
 		this.#decodeURL();
 	}
 
 	#sharedClosed() {
 		if (this.#searchParams.has(this.#shareSearchParam)) {
 			this.#searchParams.delete(this.#shareSearchParam);
-			history.pushState(null, '', this.#searchParams.size ? `?${this.#searchParams}` : '.');
+			history.replaceState(null, '', this.#searchParams.size ? `?${this.#searchParams}` : '.');
 		}
 	}
 
@@ -150,17 +138,11 @@ export class UrlState {
 	}
 
 	#decodeURL(isPopstate) {
-		if (isPopstate) {
-			this.#searchParams = new URLSearchParams(location.search);
-		}
 		const shared = this.#searchParams.get(this.#shareSearchParam);
 		if (shared) {
 			this.#bus.dispatchEvent(new CustomEvent('urlState:openShared', { detail: shared }));
-		} else if (this.#sharedStatus) {
-			this.#bus.dispatchEvent(new CustomEvent('urlState:closeShared'));
+			return;
 		}
-		this.#sharedStatus = Boolean(shared);
-		if (shared) return;
 		let tracks;
 		const event = new CustomEvent('urlState:getTracksData', { 
 			detail: callback => {
@@ -176,8 +158,7 @@ export class UrlState {
 			this.#searchParams.set(this.#volumeSearchParam, volume.slice(0, setLength));
 		}
 		for (const [param, { defaultValue, decode }] of Object.entries(this.#params)) {
-			//si isPopstate on decode tous les searchParams possibles
-			const value = isPopstate ? (this.#searchParams.get(param) || defaultValue) : this.#searchParams.get(param);
+			const value = this.#searchParams.get(param);
 			if (value !== null) {
 				decode(value, defaultValue, changes, tracks);
 				if (value === defaultValue) {

@@ -7,7 +7,12 @@ body {
 	font:400 4.92svw/1.4 sans-serif;
 	/*overscroll-behavior:contain;*/
 }
-.track label,
+body::after {
+	top:2em;
+	z-index:-1;
+	position:absolute;
+	content:'Chargement de l\'application…';
+}
 #combo_tempo,
 select,
 input:not([type]),
@@ -25,12 +30,9 @@ button {
 	border:1px solid hsl(240,10%,60%);
 }
 select {
-	padding-right:.8em;
+	padding-right:.9em;
 	background:white no-repeat right center;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-button {
-	/*background:hsl(240,10%,94%) no-repeat;*/
 }
 button:disabled {
 	opacity:.6;
@@ -39,8 +41,9 @@ button:disabled {
 	--margin-top:0em;
 	--sheet-columns:2;
 	--controls-lines:2;
+	--drag-handle-width:0;
 	--track-column-auto:1;
-	--track-first-col-width:7.5em;
+	--track-first-col-width:7.7em;
 	background:#fff;
 	position:relative;
 	border:1px solid #999;
@@ -50,15 +53,16 @@ button:disabled {
 	anchor-name:--sequencer;
 }
 #skip {
-	font-size:0;
-	position:absolute;
+	display:block;
+	font-size:.9em;
+	width:fit-content;
+	margin-bottom:-1.4em;
+	clip-path:inset(100%);
 }
 #skip:focus {
-	font-size:.9em;
+	clip-path:none;
 	padding:0 .2em;
-	position:static;
 	margin:.5em .5em 0;
-	display:inline-block;
 }
 h1 {
 	font-size:1.2em;
@@ -89,21 +93,35 @@ tbody {
 	display:grid;
 	position:relative;
 	align-items:start;
-	grid-template-rows:min-content 1fr;
+	grid-template-rows:2.4em 1fr;
 	grid-template-columns:var(--track-first-col-width) repeat(var(--track-column-auto), auto);
 }
 .track th {
+	gap:0 .5em;
+	display:grid;
 	padding:0 0 0 .7em;
+	grid-template-columns:1fr;
+	grid-template-rows:.5em 1.65em .3em 1.65em;
 }
 .track td:first-of-type {
 	grid-column:2;
 	grid-row:span 2;
-	padding:.5em 0 .5em 1em;
+	padding:.5em 0 .5em .9em;
 }
 .track td:last-of-type {
 	grid-row:2;
 	grid-column:1;
-	padding:0 0 0 .7em;
+	height:1.5em;
+	display:flex;
+	padding:0 0 0 3.5em;
+}
+.track:focus-within ~ .track[data-instrument="0"] {
+	transition:opacity .3s ease-out;
+	transition-behavior:allow-discrete;
+	opacity:1;
+	@starting-style {
+		opacity:0;
+	}
 }
 .track[data-instrument="0"] ~ .track,
 .track[data-bars^="[4,"] .bar:nth-child(n+5),
@@ -118,26 +136,41 @@ tbody {
 	display:none;
 }
 .track .dropzone {
-	height:1em;
 	margin-top:-.5em;
+	grid-column:1 / -1;
 }
 .track div[draggable] {
 	display:grid;
-	height:calc(1.8em + .5px);
-	grid-template-columns:0 1fr;
+	position:relative;
+	grid-template-columns:var(--drag-handle-width) 1fr;
+}
+.track[data-loop="0"] div[draggable]::after {
+	top:-.3em;
+	content:'';
+	width:.8em;
+	height:.8em;
+	right:-.3em;
+	position:absolute;
+	border-radius:100%;
+	box-shadow:0 0 0 2px #fff;
+	background:#000 url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m24 8v23h-5v-16l-6 2v-4z " fill="white"/></svg>');
 }
 .trackbutton {
+	z-index:1;
+	width:2em;
+	grid-row:4;
+	font-size:1em;
+	overflow:hidden;
+	color:transparent;
+	background:center no-repeat url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M10 10v6h3v6h-6v-6h3m0 6v14M23 10v14h3v6h-6v-6h3m0 6v6M36 10v10h3v6h-6v-6h3m0 6v10" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+.instrument {
+	font-size:1em;
 	grid-column:2;
-	font-size:.9em;
-	text-align:left;
-	border-radius:4px 4px 0 0;
-	background:no-repeat right center;
+	padding-left:.3em;
 }
-.track[data-loop="0"] .trackbutton {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 10 20" xmlns="http://www.w3.org/2000/svg"><text x="-1" y="16">𝟙</text></svg>');
-}
-.track[data-loop="1"] .trackbutton {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 40" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="11" r="2.5"/><circle cx="8" cy="20" r="2.5"/><circle cx="8" cy="29" r="2.5"/></svg>');
+.instrument::after{
+	content:'1'
 }
 .sheet {
 	gap:.3em;
@@ -227,18 +260,10 @@ tbody {
 	background:hsl(240,10%,60%);
 	inset:-.6em auto auto .45em;
 }
-.track label {
-	display:flex;
-	margin-top:-1px;
-	align-items:center;
-	height:calc(1.8em + .5px);
-	border-radius:0 0 4px 4px;
-}
 .volume {
 	margin:0;
 	padding:0;
 	width:100%;
-	height:1.6em;
 }
 .dragged {
 	top:.15em;
@@ -285,7 +310,6 @@ hr {
 	border-radius:0 0 .5em .5em;
 }
 #combo_presets {
-	order:1;
 	flex:1.4;
 	display:flex;
 }
@@ -308,9 +332,10 @@ hr {
 #start,
 #combo_presets button {
 	padding:0;
-	font-size:0;
 	width:2.5rem;
 	height:2.5rem;
+	overflow:hidden;
+	color:transparent;
 }
 #play,
 #pause {
@@ -396,30 +421,22 @@ dialog>:first-child {
 	display:flex;
 	flex-direction:column;
 }
+dialog h2 {
+	margin:0 1em;
+}
 #track {
-	max-width:36em;
+	max-width:18em;
 }
 #track h2+div {
-	gap:0 2em;
-	display:grid;
-	margin:-0.25em 0;
-	position:relative;
-	align-items:center;
-	grid-template-columns: repeat(auto-fit, minmax(15.5em, 1fr));
-}
-#track h2+div::before {
-	width:1px;
-	content:'';
-	position:absolute;
-	background:hsl(240,10%,60%);
-	inset:0 auto 0 calc(50% - 0.5px);
+	gap:.5em;
+	display:flex;
+	flex-direction:column;
 }
 #track label {
 	gap:.5em;
 	z-index:1;
 	display:grid;
 	background:#fff;
-	padding:0.25em 0;
 	grid-template-columns:1.2fr 1fr;
 }
 #track select {
@@ -435,7 +452,7 @@ dialog>:first-child {
 #track option[selected][disabled] {
 	color:revert;
 }
-#settings h2 {
+#preset {
 	margin-bottom: -.5em;
 }
 #settings select,
@@ -579,7 +596,7 @@ button[name="share_list"] {
 	position:absolute;
 	top:calc(100% + .3em);
 }
-#about div div {
+#about div {
 	gap:.5em;
 	display:flex;
 	flex-direction:column;
@@ -598,19 +615,13 @@ button[name="share_list"] {
 	font-size:.8em;
 	align-self:center;
 }
-#update:disabled {
-	display:none;
-}
 
 @media (pointer:fine) and (hover:hover) {
-	.trackbutton:hover,
-	.track label:hover,
 	#combo_presets button:hover,
 	#combo_presets select:hover {
 		z-index:1;
 	}
 	input:not([type]):hover,
-	.track label:hover,
 	#combo_tempo:hover,
 	select:hover,
 	button:not(.step):not(:disabled):hover {
@@ -650,7 +661,8 @@ button[name="share_list"] {
 	#sequencer {
 		--margin-top:.5em;
 		--track-column-auto:2;
-		--track-first-col-width:8.5em;
+		--drag-handle-width:1em;
+		--track-first-col-width:10.6em;
 		--sheet-columns:4;
 		--controls-lines:1;
 		border-radius:.5em;
@@ -664,29 +676,21 @@ button[name="share_list"] {
 	}
 	.track th {
 		padding:0;
+		grid-template-rows:.5em 1.65em;
+		grid-template-columns:1fr 2em;
 	}
 	.track td:first-of-type {
 		padding:.5em 1em;
 	}
 	.track td:last-of-type {
-		width:7em;
+		width:4.9em;
 		grid-row:auto;
 		grid-column:auto;
 		padding:.5em 1em 0 0;
 	}
-	.track div[draggable] {
-		height:1.65em;
-		grid-template-columns:1em 1fr;
-	}
 	.trackbutton {
-		font-size:1em;
-		border-radius:4px;
-	}
-	.track label {
-		margin:0;
-		display:flex;
-		height:1.65em;
-		border-radius:4px;
+		width:auto;
+		grid-row:auto;
 	}
 	.track.dragged .dropzone::after {
 		inset:-.32em  1em auto;

@@ -1,14 +1,17 @@
 export class ServiceWorker {
 	#bus;
-	#installed;
+	#appCache;
+	#startUrl;
+	#versions;
+	#versionsFile;
 	#registration;
-	#versions = null;
-	#appCache = 'app';
-	#versionsFile = 'versions.json';
+	#hasUpdate = false;
 
-	constructor(bus) {
+	constructor({ bus, core_config }) {
 		if (!('serviceWorker' in navigator)) return;
 		this.#bus = bus;
+		this.#appCache = core_config.appCache;
+		this.#versionsFile = core_config.versionsFile;
 		navigator.serviceWorker.addEventListener('message', ({ data }) => this.#readMessage(data));
 		this.#bus.addEventListener('interface:findUpdate', ({ detail }) => this.#update(detail));
 		this.#bus.addEventListener('interface:getVersions', ({ detail }) => this.#sendVersions(detail));
@@ -17,43 +20,53 @@ export class ServiceWorker {
 	}
 
 	async #init() {
+		this.#startUrl = location.origin + location.pathname;
+		this.#versions = await this.#getInstalledVersion();
 		this.#registration = await navigator.serviceWorker.register('./sw.js');
-		if (this.#registration.waiting && this.#registration.active) {
-			this.#bus.dispatchEvent(new CustomEvent('serviceWorker:newVersion'));
-		}
+		this.#hasUpdate = !!(this.#registration.waiting && this.#registration.active);
 		this.#registration.addEventListener('updatefound', () => {
-			const newWorker = this.#registration.installing;
-			newWorker.addEventListener('statechange', async () => {
-				const versionsExists = await caches.match(this.#versionsFile, { cacheName: this.#appCache });
-				if (newWorker.state === 'installed' && versionsExists) {
-					this.#bus.dispatchEvent(new CustomEvent('serviceWorker:newVersion'));
-				}
-			});
+			this.#registration.installing.addEventListener('statechange', () => this.#checkUpdate());
 		});
 	}
 
-	#readMessage(message) {
+	async #getInstalledVersion() {
+		const response = await caches.match(this.#versionsFile, { cacheName: this.#appCache });
+		return response ? await response.json() : null;
+	}
+
+	#checkUpdate() {
+		// Si un service worker est en attente alors qu'un service worker est déja actif,
+		// alors il s'agit une mise à jour.
+		if (this.#registration.waiting && this.#registration.active) {
+			this.#hasUpdate = true;
+			this.#bus.dispatchEvent(new CustomEvent('serviceWorker:newVersion'));
+		}
+	}
+
+	async #readMessage(message) {
 		if (message.type === 'update') {
-			window.location.reload();
+			window.location.replace(this.#startUrl);
+		}
+		else if (message.type === 'install') {
+			this.#versions = await this.#getInstalledVersion();
 		}
 	}
 
 	#update() {
-		this.#registration.update();
+		this.#registration?.update();
 	}
 
 	#install() {
-		this.#registration.waiting.postMessage({ action: 'skipWaiting' });
+		const { waiting } = this.#registration;
+		if (waiting) {
+			waiting.postMessage({ action: 'skipWaiting' });
+			return;
+		}
+		window.location.replace(this.#startUrl);
 	}
 
-	async #sendVersions(callback) {
-		if (this.#versions === null) {
-			const response = await caches.match(this.#versionsFile, { cacheName: this.#appCache });
-			if (response?.ok) {
-				this.#versions = await response.json();
-			}
-		}
-		callback(this.#versions);
+	#sendVersions(callback) {
+		callback({ ...this.#versions, hasUpdate: this.#hasUpdate });
 	}
 
 }

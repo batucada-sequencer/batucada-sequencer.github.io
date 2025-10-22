@@ -1,0 +1,14 @@
+{
+	"appCache": "app",
+	"dataCache": "data",
+	"presetsFile": "presets.json",
+	"versionsFile": "versions.json",
+	"defaultSetValue": "0",
+	"defaultTitleValue": "",
+	"setSearchParam": "set",
+	"tempoSearchParam": "bpm",
+	"titleSearchParam": "title",
+	"volumeSearchParam": "vol",
+	"shareSearchParam": "share"
+}
+

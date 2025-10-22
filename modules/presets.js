@@ -5,8 +5,8 @@ export class Presets {
 	#presets = null;
 	#params;
 	#lastAction = null;
-	#cacheName = 'data';
-	#fileName = 'presets.json';
+	#fileName;
+	#cacheName;
 	#userFileName = null;
 	#isPersistedStorage = null;
 	#setSearchParam;
@@ -16,18 +16,20 @@ export class Presets {
 	#defaultTitleValue;
 	#sharedPresets = null;
 
-	constructor(bus, config) {
+	constructor({ bus, app_config, core_config }) {
 		this.#bus = bus;
-		this.#local = config.local;
-		this.#setSearchParam = config.setSearchParam;
-		this.#shareSearchParam = config.shareSearchParam;
-		this.#titleSearchParam = config.titleSearchParam;
-		this.#defaultSetValue = config.defaultSetValue;
-		this.#defaultTitleValue = config.defaultTitleValue;
+		this.#local = app_config.local;
+		this.#fileName = core_config.presetsFile;
+		this.#cacheName = core_config.dataCache;
+		this.#setSearchParam = core_config.setSearchParam;
+		this.#shareSearchParam = core_config.shareSearchParam;
+		this.#titleSearchParam = core_config.titleSearchParam;
+		this.#defaultSetValue = core_config.defaultSetValue;
+		this.#defaultTitleValue = core_config.defaultTitleValue;
 		this.#params = new Map(new URLSearchParams(location.search));
 		this.#softUpdatePresets();
 		addEventListener('focus', () => this.#softUpdatePresets());
-		this.#bus.addEventListener('interface:reset', () => this.#reset());
+		this.#bus.addEventListener('interface:reset', ({ detail }) => this.#reset({ detail }));
 		this.#bus.addEventListener('interface:settingsSave', ({ detail }) => this.#settingsSave(detail));
 		this.#bus.addEventListener('interface:settingsCancel', ({ detail }) => this.#settingsCancel(detail));
 		this.#bus.addEventListener('interface:presetsShare', ({ detail }) => this.#presetsShare(detail));
@@ -89,12 +91,6 @@ export class Presets {
 		});
 	}
 
-	#reset() {
-		this.#index = -1;
-		this.#params.delete(this.#setSearchParam);
-		this.#params.delete(this.#titleSearchParam);
-	}
-
 	async #softUpdatePresets() {
 		try {
 			const presets = await this.#fetchData();
@@ -104,6 +100,10 @@ export class Presets {
 		}
 	}
 
+	#reset() {
+		this.#updatePresets(null, this.#defaultTitleValue);
+	}
+
 	#updateParams(params) {
 		this.#params = params;
 		this.#updatePresets();
@@ -111,7 +111,7 @@ export class Presets {
 
 	#updatePresets(presets = null, title = null) {
 		const changes = {}
-		if (presets !== null && JSON.stringify(presets) !== JSON.stringify(this.#presets) ) {
+		if (presets !== null && JSON.stringify(presets) !== JSON.stringify(this.#presets)) {
 			this.#presets = presets;
 			changes.presets = presets;
 		}
@@ -161,7 +161,6 @@ export class Presets {
 				data: this.#presets,
 				title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
 			};
-			console.log(this.#lastAction);
 			this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
 			promise.resolve();
 		} 

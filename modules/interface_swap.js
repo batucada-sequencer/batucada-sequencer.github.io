@@ -50,37 +50,38 @@ export function init(ui) {
 	}
 
 	function handleDrop({ tracks, bus } , event) {
-			if (event.target.className !== dropzoneClass) return;
-			removeTrackOver();
-			const sourceIndex = Number(event.dataTransfer.getData('text'));
-			const targetTrack = event.currentTarget;
-			const targetIndex = [...tracks].indexOf(targetTrack);
-			if (targetIndex !== sourceIndex && targetIndex !== sourceIndex + 1) {
-				const draggedTrack = tracks.item(sourceIndex);
-				const oldPositions = getTracksYPositions(tracks);
-				targetTrack.before(draggedTrack);
-				const newPositions =  getTracksYPositions(tracks);
-				newPositions.forEach((newPosition, track) => {
-					if (track === draggedTrack) {
+		if (event.target.className !== dropzoneClass) return;
+		removeTrackOver();
+		const sourceIndex = Number(event.dataTransfer.getData('text'));
+		const targetTrack = event.currentTarget;
+		const targetIndex = [...tracks].indexOf(targetTrack);
+		if (targetIndex !== sourceIndex && targetIndex !== sourceIndex + 1) {
+			const draggedTrack = tracks.item(sourceIndex);
+			const oldPositions = getTracksYPositions(tracks);
+			targetTrack.before(draggedTrack);
+			const newPositions =  getTracksYPositions(tracks);
+			newPositions.forEach((newPosition, track) => {
+				const oldPosition = oldPositions.get(track);
+				const deltaY = oldPosition - newPosition;
+				if (track === draggedTrack) {
+					const clipFrom = deltaY > 0 ? 'inset(0 0 50% 0)' : 'inset(90% 0 0 0)';
+					track.animate([
+						{ clipPath: clipFrom },
+						{ clipPath: 'inset(-1em)' }
+					], { duration: 500, easing: 'ease' });
+				}
+				else {
+					if (deltaY !== 0) {
 						track.animate([
-							{ opacity: 0, transform: 'scaleY(0.3)' },
-							{ opacity: 1, transform: 'scaleY(1)' }
-						], { duration: 200, easing: 'ease' });
+							{ transform: `translateY(${deltaY}px)` },
+							{ transform: 'translateY(0)' }
+						], { duration: 300, easing: 'ease' });
 					}
-					else {
-						const oldPosition = oldPositions.get(track);
-						const deltaY = oldPosition - newPosition;
-						if (deltaY !== 0) {
-							track.animate([
-								{ transform: `translateY(${deltaY}px)` },
-								{ transform: 'translateY(0)' }
-							], { duration: 300, easing: 'ease' });
-						}
-					}
-				});
-				bus.dispatchEvent(new CustomEvent('interface:swapTracks', { detail: { sourceIndex, targetIndex } }));
-			}
+				}
+			});
+			bus.dispatchEvent(new CustomEvent('interface:swapTracks', { detail: { sourceIndex, targetIndex } }));
 		}
+	}
 
 	function removeTrackOver() {
 		while (overTracks.length) {

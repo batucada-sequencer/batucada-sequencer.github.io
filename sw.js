@@ -1,6 +1,6 @@
 const versions = {
-	app: '1.04.45',
-	static: '1.03',
+	app: '1.05.07',
+	static: '1.04',
 };
 
 // En attendant la prise ne comptes des modules par firefox
@@ -56,6 +56,7 @@ const assets = {
 		'./audio/surdo2.ogg',
 		'./audio/tamborim.ogg',
 		'./audio/tamborim2.ogg',
+		'./audio/unisson.ogg',
 	],
 };
 

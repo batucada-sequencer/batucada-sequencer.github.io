@@ -44,7 +44,7 @@ export function init(ui) {
 		if (!url) return;
 		event.preventDefault();
 		shared.close();
-		iu.bus.dispatchEvent(new CustomEvent('interface:presetClicked', { detail: url }));
+		ui.bus.dispatchEvent(new CustomEvent('interface:presetClicked', { detail: url }));
 	}
 
 	function openSettings() {

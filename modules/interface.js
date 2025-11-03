@@ -1,21 +1,15 @@
 export class Interface {
 	#maxBars = 32;
 	#subdivision = 8;
-
 	#bus;
 	#email;
 	#untitled;
-	#container;
-
 	#stepsPerTrack;
 	#headTitlePrefix;
+	#container;
 	#bpm;
 	#tempo;
 	#title;
-
-	#presetsSelection;
-	#presetsSelectionInit;
-
 	#bars;
 	#beat;
 	#loop;
@@ -33,8 +27,9 @@ export class Interface {
 	#volumeName;
 	#instrumentName;
 	#instrumentsList;
+	#presetsSelection;
+	#presetsSelectionInit;
 	#interfaceData;
-
 	#modules;
 	
 	constructor({ bus, app_config, instruments }) {
@@ -43,7 +38,6 @@ export class Interface {
 		this.#email = app_config.email;
 		this.#untitled = app_config.untitled;
 
-		
 		this.#container = document.querySelector('#sequencer');
 		this.#bpm = this.#container.querySelector('#combo_tempo span');
 		this.#tempo = this.#container.querySelector('#tempo');
@@ -67,7 +61,6 @@ export class Interface {
 		this.#bars = this.#container.querySelector(`#${this.#barsName}`);
 		this.#beat = this.#container.querySelector(`#${this.#beatName}`);
 		this.#loop = this.#container.querySelector(`#${this.#loopName}`);
-
 
 		this.#modules = {
 			presets: {
@@ -124,6 +117,7 @@ export class Interface {
 				params: {
 					bus: this.#bus,
 					tracks: this.#tracks,
+					container: this.#container,
 					isDraggable: this.#isTrackDraggable.bind(this),
 				}
 			},
@@ -216,18 +210,21 @@ export class Interface {
 			const trackIndex = Number(index);
 			const track = this.#tracks[trackIndex];
 			for (const [item, data] of Object.entries(trackChanges)) {
+
 				if (item === 'sheet') {
 					for (const { barIndex, stepIndex, value } of data) {
 						this.#getStepFromIndexes({ trackIndex, barIndex, stepIndex }).value = value;
 					}
 				} else if (item in track.dataset) {
 					track.dataset[item] = data;
-					if (item === this.#instrumentName) {
-						this.#instruments[trackIndex].value = data;
-					}
+				}
+
+				if (item === this.#instrumentName) {
+					this.#instruments[trackIndex].value = data;
 				} else if (item === this.#volumeName) {
 					this.#volumes[trackIndex].value = data;
 				}
+
 			}
 		}
 	}

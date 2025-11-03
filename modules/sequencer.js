@@ -32,6 +32,7 @@ export class Sequencer {
 		this.#bus.addEventListener('interface:changeNote', ({ detail }) => this.#changeNote(detail));
 		this.#bus.addEventListener('interface:changeTempo', ({ detail }) => this.#changeTempo(detail));
 		this.#bus.addEventListener('interface:changeTrack', ({ detail }) => this.#changeTrack(detail));
+		this.#bus.addEventListener('interface:removeTrack', ({ detail }) => this.#removeTrack(detail));
 		this.#bus.addEventListener('interface:changeVolume', ({ detail }) => this.#changeVolume(detail));
 		this.#bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateData(detail));
 		this.#bus.addEventListener('urlState:getTracksData', ({ detail }) => this.#sendTracksData(detail));
@@ -112,33 +113,44 @@ export class Sequencer {
 			changes.tempo = this.#tempo;
 		}
 		const tracksChange = {};
-		for (const [trackIndex, track] of this.#tracks.entries()) {
-			const trackChanges = {};
-			['bars', 'beat', 'loop', 'volume', 'instrument'].forEach(item => {
-				if (track[item] !== this.#defaultData[item]) {
-					track[item] = this.#defaultData[item];
-					trackChanges[item] = JSON.stringify(track[item]);
-				}
-			});
-			const sheetChanges = [];
-			track.sheet.forEach((bar, barIndex) => {
-				bar.forEach((step, stepIndex) => {
-					if (step !== this.#emptyStroke) {
-						bar[stepIndex] = this.#emptyStroke;
-						sheetChanges.push({ barIndex, stepIndex, value: this.#emptyStroke });
-					}
-				});
-			});
-			if (sheetChanges.length > 0) trackChanges.sheet = sheetChanges;
-			if (Object.keys(trackChanges).length > 0) tracksChange[trackIndex] = trackChanges;
+		for (const trackIndex in this.#tracks) {
+			const trackChanges = this.#resetTrack(trackIndex);
+			if (Object.keys(trackChanges).length > 0) {
+				tracksChange[trackIndex] = trackChanges;
+			}
 		}
-		if (Object.keys(tracksChange).length > 0) changes.tracks = tracksChange;
+		if (Object.keys(tracksChange).length > 0) {
+			changes.tracks = tracksChange;
+		}
 		const tracks = structuredClone(this.#tracks);
 		const volumes = this.#tracks.map(track => track.volume);
 		this.#bus.dispatchEvent(new CustomEvent('sequencer:updateData', { detail: changes }));
 		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tracks, volumes, tempo: this.#tempo } }));
 	}
 
+	#resetTrack(index) {
+		const track = this.#tracks[index];
+		const trackChanges = {};
+		['bars', 'beat', 'loop', 'volume', 'instrument'].forEach(item => {
+			if (track[item] !== this.#defaultData[item]) {
+				track[item] = this.#defaultData[item];
+				trackChanges[item] = JSON.stringify(track[item]);
+			}
+		});
+		const sheetChanges = [];
+		track.sheet.forEach((bar, barIndex) => {
+			bar.forEach((step, stepIndex) => {
+				if (step !== this.#emptyStroke) {
+					bar[stepIndex] = this.#emptyStroke;
+					sheetChanges.push({ barIndex, stepIndex, value: this.#emptyStroke });
+				}
+			});
+		});
+		if (sheetChanges.length > 0) {
+			trackChanges.sheet = sheetChanges;
+		}
+		return trackChanges;
+	}
 
 	#sendTracksData(callback) {
 		callback(() => structuredClone(this.#tracks));
@@ -187,6 +199,23 @@ export class Sequencer {
 		this.#tracks.splice(targetIndex, 0, track);
 		const tracks = structuredClone(this.#tracks);
 		const volumes = this.#tracks.map(track => track.volume);
+		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tracks, volumes } }));
+	}
+
+	#removeTrack(index) {
+		//ajouter un mute du track
+		
+		// Déplace la piste à la fin du tableau
+		this.#tracks.push(this.#tracks.splice(index, 1)[0]);
+		const newIndex = this.#tracks.length - 1;
+
+		// Réinitialise la piste
+		const changes = { tracks: { [newIndex]: this.#resetTrack(newIndex) } };
+		const tracks = structuredClone(this.#tracks);
+		const volumes = this.#tracks.map(track => track.volume);
+		
+		// Envoye les événements
+		this.#bus.dispatchEvent(new CustomEvent('sequencer:updateData', { detail: changes }));
 		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tracks, volumes } }));
 	}
 

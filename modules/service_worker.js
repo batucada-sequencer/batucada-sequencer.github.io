@@ -1,7 +1,6 @@
 export class ServiceWorker {
 	#bus;
 	#appCache;
-	#startUrl;
 	#versions;
 	#versionsFile;
 	#registration;
@@ -20,7 +19,11 @@ export class ServiceWorker {
 	}
 
 	async #init() {
-		this.#startUrl = location.origin + location.pathname;
+		const searchParams = new URLSearchParams(location.search);
+		if (searchParams.has('update')) {
+			searchParams.delete('update')
+			history.replaceState(null, '', '.');
+		}
 		this.#versions = await this.#getInstalledVersion();
 		this.#registration = await navigator.serviceWorker.register('./sw.js');
 		this.#hasUpdate = !!(this.#registration.waiting && this.#registration.active);
@@ -45,7 +48,7 @@ export class ServiceWorker {
 
 	async #readMessage(message) {
 		if (message.type === 'update') {
-			window.location.replace(this.#startUrl);
+			this.#reload();
 		}
 		else if (message.type === 'install') {
 			this.#versions = await this.#getInstalledVersion();
@@ -62,7 +65,13 @@ export class ServiceWorker {
 			waiting.postMessage({ action: 'skipWaiting' });
 			return;
 		}
-		window.location.replace(this.#startUrl);
+		this.#reload();
+	}
+
+	#reload() {
+		const url = new URL(location.origin + location.pathname);
+		url.searchParams.set('update', Date.now());
+		window.location.replace(url);
 	}
 
 	#sendVersions(callback) {

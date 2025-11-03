@@ -17,12 +17,11 @@ export class UrlState {
 	#defaultSetValue;
 	#defaultTitleValue;
 	#allocation = {
-		reserved: 2,
-		loop: 2,
+		loop: 4,
+		beat: 8,
 		bars: 10,
-		beat: 9,
-		instrument: 10, //2 * 2 * 10 * 9 * 10 = 3600 > 3844 (62 * 62) (outputBase * outputBase)
-	};	//4 * 8 * 10 * 12   -> phrase * division * temps * instruments
+		instrument: 12,
+	};	//4 * 8 * 10 * 12 = 3840 > 3844 (62 * 62) (outputBase * outputBase), soit un encodage sur 2 caractères
 	#outputDigits = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	#outputBase = this.#outputDigits.length;
 	#headUntitled;

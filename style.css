@@ -29,6 +29,13 @@ button {
 	font-family:sans-serif;
 	border:1px solid hsl(240,10%,60%);
 }
+select:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+select:focus-visible {
+  outline:auto;
+}
 select {
 	padding-right:.9em;
 	background:white no-repeat right center;
@@ -738,4 +745,5 @@ button[name="share_list"] {
 	legend {
 		font-size:1em;
 	}
+
 }

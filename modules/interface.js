@@ -137,7 +137,6 @@ export class Interface {
 		this.#bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
 		this.#bus.addEventListener('serviceWorker:newVersion', ({ detail }) => this.#modules.about.showUpdateButton(detail));
-		document.addEventListener('click', (event) => this.#handleClick(event));
 
 		this.#loadModules();
 		this.#initInterface(app_config.tracksLength);
@@ -184,13 +183,20 @@ export class Interface {
 			subdivision: this.#subdivision,
 			tracksLength,
 		};
-	}
 
-	#handleClick({ target }) {
-		// Light dismiss des boites modales
-		if (target.tagName === 'DIALOG') {
-			target.close();
-		}
+		// Suppression de l'effet :focus-visible sur <select> avec chrome
+		document.querySelectorAll('select').forEach(select => {
+			select.addEventListener('pointerdown', () => select.style.outline = 'none', { passive: true });
+			select.addEventListener('blur', () => select.style.outline = '');
+		});
+
+		//
+		document.addEventListener('click', ({ target }) => {
+			if (target instanceof HTMLDialogElement) {
+				target.close();
+			}
+		});
+
 	}
 
 	#updateInterface(changes) {

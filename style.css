@@ -419,7 +419,9 @@ output[for="tempo"] {
 	line-height:2.5rem;
 }
 dialog::backdrop {
+	overflow:hidden;
 	background:rgba(0,0,0,.4);
+	overscroll-behavior:contain;
 }
 dialog {
 	inset:1em;
@@ -431,6 +433,7 @@ dialog {
 	border:1px solid #555;
 	box-sizing:border-box;
 	width:calc(100% - 2em);
+	overscroll-behavior:contain;
 	box-shadow:0 0 .5em rgba(0,0,0,.3);
 }
 dialog::after {

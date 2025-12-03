@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.05.10',
+	app: '1.05.13',
 	static: '1.04',
 };
 
@@ -8,7 +8,7 @@ const versions = {
 const config = {
 	appCache: 'app',
 	dataCache: 'data',
-	versionsFile: "versions.json",
+	versionsFile: 'versions.json',
 };
 
 const assets = {

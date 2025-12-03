@@ -575,17 +575,17 @@
 		import core_config      from './config/core_config.json'  with { type: 'json' };
 		import instruments      from './modules/instruments.json' with { type: 'json' };
 		import {Interface}      from './modules/interface.js';
-		import {ServiceWorker } from './modules/service_worker.js';
+		import {ServiceWorker}  from './modules/service_worker.js';
 		import {Sequencer}      from './modules/sequencer.js';
 		import {Presets}        from './modules/presets.js';
 		import {UrlState}       from './modules/url_state.js';
 
-		const bus       = new EventTarget();
-		const ui        = new Interface({ bus, app_config, core_config, instruments });
-		const sw        = new ServiceWorker({ bus, app_config, core_config });
-		const sequencer = new Sequencer({ bus, app_config, core_config, instruments });
-		const presets   = new Presets({ bus, app_config, core_config });
-		const urlState  = new UrlState({ bus, core_config, instruments });
+		const bus = new EventTarget();
+		new Interface({ bus, app_config, core_config, instruments });
+		new ServiceWorker({ bus, app_config, core_config });
+		new Sequencer({ bus, app_config, core_config, instruments });
+		new Presets({ bus, app_config, core_config });
+		new UrlState({ bus, core_config, instruments });
 	</script>
 </body>
 </html>

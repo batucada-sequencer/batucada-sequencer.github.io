@@ -25,7 +25,7 @@ export class ServiceWorker {
 			history.replaceState(null, '', '.');
 		}
 		this.#versions = await this.#getInstalledVersion();
-		this.#registration = await navigator.serviceWorker.register('./sw.js');
+		this.#registration = await navigator.serviceWorker.register('./sw.js', { type: 'module' });
 		this.#hasUpdate = !!(this.#registration.waiting && this.#registration.active);
 		this.#registration.addEventListener('updatefound', () => {
 			this.#registration.installing.addEventListener('statechange', () => this.#checkUpdate());

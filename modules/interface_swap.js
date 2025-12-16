@@ -5,7 +5,7 @@ export function init(ui) {
 	const overClass = 'over';
 	const trashClass = 'trash';
 	const dropzoneClass = 'dropzone';
-	const trash = ui.container.querySelector('#trash');
+	const trash = document.querySelector('#trash');
 
 	for (const track of ui.tracks) {
 		track.addEventListener('dragstart', (event) => handleDragStart(ui, event));

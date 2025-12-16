@@ -1,8 +1,6 @@
 export class Interface {
 	#maxBars = 32;
 	#subdivision = 8;
-	#bus;
-	#email;
 	#untitled;
 	#stepsPerTrack;
 	#headTitlePrefix;
@@ -16,34 +14,29 @@ export class Interface {
 	#steps;
 	#tracks;
 	#trackIndex;
-	#trackButtons;
-	#instruments;
 	#volumes;
 	#stepName;
 	#barsName;
 	#beatName;
 	#loopName;
-	#trackButtonName;
 	#volumeName;
+	#trackButtonName;
 	#instrumentName;
-	#instrumentsList;
+	#instruments;
 	#presetsSelection;
 	#presetsSelectionInit;
 	#interfaceData;
 	#modules;
 	
 	constructor({ bus, app_config, instruments }) {
-		this.#bus = bus;
-		this.#instrumentsList = instruments;
-		this.#email = app_config.email;
+		const email =  app_config.email;
+		const container = document.querySelector('main');
 		this.#untitled = app_config.untitled;
+		this.#bpm = document.querySelector('#combo_tempo span');
+		this.#tempo = document.querySelector('#tempo');
+		this.#title = document.querySelector('h1');
 
-		this.#container = document.querySelector('#sequencer');
-		this.#bpm = this.#container.querySelector('#combo_tempo span');
-		this.#tempo = this.#container.querySelector('#tempo');
-		this.#title = this.#container.querySelector('h1');
-
-		this.#presetsSelection = this.#container.querySelector('#combo_presets select');
+		this.#presetsSelection = document.querySelector('#combo_presets select');
 
 		this.#stepName = 'step';
 		this.#barsName = 'bars';
@@ -53,34 +46,32 @@ export class Interface {
 		this.#instrumentName = 'instrument';
 		this.#trackButtonName = 'trackbutton';
 
-		this.#tracks = this.#container.getElementsByClassName('track');
-		this.#steps = this.#container.getElementsByClassName(this.#stepName);
-		this.#volumes = this.#container.getElementsByClassName(this.#volumeName);
-		this.#instruments = this.#container.getElementsByClassName(this.#instrumentName);
-		this.#trackButtons = this.#container.getElementsByClassName(this.#trackButtonName);
-		this.#bars = this.#container.querySelector(`#${this.#barsName}`);
-		this.#beat = this.#container.querySelector(`#${this.#beatName}`);
-		this.#loop = this.#container.querySelector(`#${this.#loopName}`);
+		this.#tracks = document.getElementsByClassName('track');
+		this.#steps = document.getElementsByClassName(this.#stepName);
+		this.#volumes = document.getElementsByClassName(this.#volumeName);
+		this.#instruments = document.getElementsByClassName(this.#instrumentName);
+		this.#bars = document.querySelector(`#${this.#barsName}`);
+		this.#beat = document.querySelector(`#${this.#beatName}`);
+		this.#loop = document.querySelector(`#${this.#loopName}`);
 
 		this.#modules = {
 			presets: {
 				path: './interface_presets.js',
 				params: {
-					bus: this.#bus,
-					email: this.#email,
+					bus,
+					email,
+					container,
 					title: this.#title,
 					untitled: this.#untitled,
 					hasStroke: this.#hasStroke.bind(this),
-					container: this.#container,
 					presetsSelection: this.#presetsSelection,
 				},
 			},
 			controls: {
 				path: './interface_controls.js',
 				params: {
-					bus: this.#bus,
-					container: this.#container,
-					isRunning: this.#isRunning.bind(this),
+					bus,
+					container,
 					bpm: this.#bpm,
 					beat: this.#beat,
 					bars: this.#bars,
@@ -92,6 +83,7 @@ export class Interface {
 					instrumentName: this.#instrumentName,
 					trackButtonName: this.#trackButtonName,
 					presetsSelection: this.#presetsSelection,
+					isRunning: this.#isRunning.bind(this),
 					getInstrumentName: this.#getInstrumentName.bind(this),
 					getIndexesFromStep: this.#getIndexesFromStep.bind(this),
 				}
@@ -99,15 +91,15 @@ export class Interface {
 			about: {
 				path: './interface_about.js',
 				params: {
-					bus: this.#bus,
-					email: this.#email,
-					container: this.#container,
+					bus,
+					email,
+					container,
 				}
 			},
 			animation: {
 				path: './interface_animation.js',
 				params: {
-					bus: this.#bus,
+					bus,
 					queueLimit: this.#subdivision * 2,
 					getStepFromIndexes: this.#getStepFromIndexes.bind(this),
 				}
@@ -115,9 +107,9 @@ export class Interface {
 			swap: {
 				path: './interface_swap.js',
 				params: {
-					bus: this.#bus,
+					bus,
 					tracks: this.#tracks,
-					container: this.#container,
+					container,
 					isDraggable: this.#isTrackDraggable.bind(this),
 				}
 			},
@@ -127,19 +119,19 @@ export class Interface {
 			module.ready = new Promise(resolve => module.resolve = resolve);
 		}
 
-		this.#bus.addEventListener('sequencer:stopped', (event) => this.#modules.controls.toggleStartButton(false));
-		this.#bus.addEventListener('sequencer:updateData', ({ detail }) => this.#updateInterface(detail));
-		this.#bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateInterface(detail));
-		this.#bus.addEventListener('sequencer:pushAnimations', ({ detail }) => this.#modules.animation.setAnimations(detail));
-		this.#bus.addEventListener('presets:changed', ({ detail }) => this.#updateInterface(detail));
-		this.#bus.addEventListener('presets:openShared', ({ detail }) => this.#modules.presets.ready.then((module) => module.openShared(detail)));
-		this.#bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#modules.presets.reportNameValidity(detail));
-		this.#bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
-		this.#bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
-		this.#bus.addEventListener('serviceWorker:newVersion', ({ detail }) => this.#modules.about.showUpdateButton(detail));
+		bus.addEventListener('sequencer:stopped', (event) => this.#modules.controls.toggleStartButton(false));
+		bus.addEventListener('sequencer:updateData', ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('sequencer:pushAnimations', ({ detail }) => this.#modules.animation.setAnimations(detail));
+		bus.addEventListener('presets:changed', ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('presets:openShared', ({ detail }) => this.#modules.presets.ready.then((module) => module.openShared(detail)));
+		bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#modules.presets.reportNameValidity(detail));
+		bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
+		bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
+		bus.addEventListener('serviceWorker:newVersion', ({ detail }) => this.#modules.about.showUpdateButton(detail));
 
 		this.#loadModules();
-		this.#initInterface(app_config.tracksLength);
+		this.#initInterface(instruments, app_config.tracksLength);
 	}
 
 	async #loadModules() {
@@ -152,7 +144,7 @@ export class Interface {
 		await Promise.all(loaders);
 	}
 
-	#initInterface(tracksLength) {
+	#initInterface(instruments, tracksLength) {
 		this.#headTitlePrefix = `${document.title} - `;
 		document.title = this.#headTitlePrefix + this.#untitled;
 
@@ -160,7 +152,7 @@ export class Interface {
 		
 		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
 
-		const options = this.#instrumentsList.slice(1).map((instrument, index) => new Option(instrument.name, index + 1));
+		const options = instruments.slice(1).map((instrument, index) => new Option(instrument.name, index + 1));
 		this.#instruments[0].append(...options);
 
 		const newTracks = Array.from({ length: tracksLength }, () =>  this.#tracks[0].cloneNode(true));
@@ -190,7 +182,7 @@ export class Interface {
 			select.addEventListener('blur', () => select.style.outline = '');
 		});
 
-		//
+		// Lightdismiss des <dialog> (closedby="any" transmet le click sur les éléments derrières le backdrop sur mobile)
 		document.addEventListener('click', ({ target }) => {
 			if (target instanceof HTMLDialogElement) {
 				target.close();

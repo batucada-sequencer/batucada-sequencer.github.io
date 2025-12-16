@@ -2,10 +2,10 @@ export function init(ui) {
 
 	let trackIndex;
 	const startClass = 'started';
-	const startButton = ui.container.querySelector('#start');
-	const resetButton = ui.container.querySelector('#reset');
-	const trackSettings = ui.container.querySelector('#track');
-	const instrumentName = ui.container.querySelector('#instrument');
+	const startButton = document.querySelector('#start');
+	const resetButton = document.querySelector('#reset');
+	const trackSettings = document.querySelector('#track');
+	const instrumentName = document.querySelector('#instrument');
 
 	document.addEventListener('click', handleClick);
 	ui.container.addEventListener('input', handleInput);

@@ -1,19 +1,18 @@
 export function init(ui) {
 
 	let checkBoxShare;
-	const share = ui.container.querySelector('#share');
-	const shared = ui.container.querySelector('#shared');
-	const shareList = ui.container.querySelector('#share ul');
-	const sharedList = ui.container.querySelector('#shared ul');
-	const shareButton = ui.container.querySelector('#share button[name="share"]');
-	const checkBoxMaster = ui.container.querySelector('#legend input');
-	const checkBoxCurrent = ui.container.querySelector('#share input[name="current"]');
-	const settings = ui.container.querySelector('#settings');
-	const settingsButton = ui.container.querySelector('#combo_presets button');
-	const presetName = ui.container.querySelector('#preset');
-	const toast = ui.container.querySelector('#toast');
-	const toastMessage = ui.container.querySelector('#toast p');
-	const cancelButton = ui.container.querySelector('#toast button');
+	const share = document.querySelector('#share');
+	const shared = document.querySelector('#shared');
+	const shareList = document.querySelector('#share ul');
+	const sharedList = document.querySelector('#shared ul');
+	const shareButton = document.querySelector('#share button[name="share"]');
+	const checkBoxMaster = document.querySelector('#check_all input');
+	const settings = document.querySelector('#settings');
+	const settingsButton = document.querySelector('#combo_presets button');
+	const presetName = document.querySelector('#preset');
+	const toast = document.querySelector('#toast');
+	const toastMessage = document.querySelector('#toast p');
+	const cancelButton = document.querySelector('#toast button');
 
 	document.addEventListener('submit', submitForm);
 	shared.addEventListener('close', sharedClosed);
@@ -71,47 +70,54 @@ export function init(ui) {
 	}
 
 	function openShareList() {
-		const hasStroke = ui.hasStroke();
-		const { items, checkedBox, checkBoxList } = Array.from(ui.presetsSelection.options).reduce(
-			(data, option, index) => {
-				const name = option.text;
-				// Conserve uniquement les morceaux avec un nom
-				if (option.disabled || name === ui.untitled) return data;
-				const li = document.createElement('li');
-				const label = document.createElement('label');
-				const checked = option.selected;
-				const checkBox = Object.assign(document.createElement('input'), {
-					type: 'checkbox',
-					name: 'index',
-					value: index - 1,
-					checked,
-				});
-				label.append(checkBox, document.createTextNode(name));
-				li.append(label);
-				data.items.push(li);
-				data.checkBoxList.push(checkBox);
-				if (checked) data.checkedBox = checkBox;
-				return data;
-			},
-			{ items: [], checkedBox: null, checkBoxList: [] }
-		);
-		if (!items.length) {
-			const li = document.createElement('li');
-			li.textContent = 'Aucun morceau';
-			items.push(li);
+		const unsaved = ui.presetsSelection.selectedIndex < 1 && ui.hasStroke();
+		const data = { items: [], checkBoxList: [], checkedBox: false };
+		if (unsaved) {
+			const { li, input } = createCheckItem({
+				name: 'Morceau en cours',
+				value: -1,
+				checked: true,
+			});
+			data.items.push(li);
+			data.checkedBox = input;
+			data.checkBoxList.push(input);
 		}
+		Array.from(ui.presetsSelection.options).forEach((option, index) => {
+			const name = option.text;
+			// Conserve uniquement les morceaux avec un nom
+			if (option.disabled || name === ui.untitled) return;
+			const { li, input } = createCheckItem({
+				name,
+				value: index - 1,
+				checked: option.selected,
+			});
+			data.items.push(li);
+			data.checkBoxList.push(input);
+			if (input.checked) data.checkedBox = input;
+		});
+		const { items, checkedBox, checkBoxList } = data;
 		shareList.replaceChildren(...items);
 		checkBoxShare = checkBoxList;
-		checkBoxMaster.checked = items.length === 1 && checkedBox;
-		checkBoxMaster.disabled = items.length === 0;
-		checkBoxCurrent.disabled = !!checkedBox || !hasStroke;
-		checkBoxCurrent.checked = !checkBoxCurrent.disabled;
-		shareButton.disabled = !hasStroke;
+		checkValues();
 		share.showModal();
 		if (checkedBox) {
 			checkedBox.scrollIntoView({ behavior: 'instant', block: 'center' });
 		}
 	}
+
+	const createCheckItem = ({ name, value, checked }) => {
+		const li = document.createElement('li');
+		const label = document.createElement('label');
+		const input = Object.assign(document.createElement('input'), {
+			type: 'checkbox',
+			name: 'index',
+			value,
+			checked,
+		});
+		label.append(input, document.createTextNode(name));
+		li.append(label);
+		return { li, input };
+	};
 
 	function openShared(links) {
 		sharedList.replaceChildren(
@@ -132,13 +138,13 @@ export function init(ui) {
 		ui.bus.dispatchEvent(new CustomEvent('interface:sharedClosed'));
 	}
 
-	function checkValues(event) {
+	function checkValues(event = { target: false }) {
 		if (event.target === checkBoxMaster) {
 			checkBoxShare.forEach(checkbox => checkbox.checked = checkBoxMaster.checked);
 		}
-		const checkedCount =checkBoxShare.filter(checkbox => checkbox.checked).length;
+		const checkedCount = checkBoxShare.filter(checkbox => checkbox.checked).length;
 		checkBoxMaster.checked = checkedCount > 0 && checkedCount === checkBoxShare.length;
-		shareButton.disabled = checkedCount === 0 && !checkBoxCurrent.checked;
+		checkBoxMaster.setCustomValidity('');
 	}
 
 	function submitForm(event) {
@@ -153,7 +159,7 @@ export function init(ui) {
 			openShareList();
 		}
 		else if (action === 'share') {
-			sharePresets(event.target);
+			sharePresets(event);
 		}
 		else if (action === 'import') {
 			importPresets(event.target);
@@ -195,18 +201,23 @@ export function init(ui) {
 		}
 	}
 
-	async function sharePresets(form) {
-		const data = new FormData(form);
+	async function sharePresets(event) {
+		const data = new FormData(event.target);
 		const presetsIndex = data.getAll('index');
-		const hasCurrent = checkBoxCurrent.checked;
+		if (!presetsIndex.length) {
+			checkBoxMaster.setCustomValidity('Sélectionnez au moins un morceau.');
+			checkBoxMaster.reportValidity();
+			event.preventDefault();
+			return;
+		}
 		try {
 			await new Promise((resolve, reject) => {
 				ui.bus.dispatchEvent(new CustomEvent('interface:presetsShare', { 
-					detail: { presetsIndex, hasCurrent, promise: { resolve, reject } }
+					detail: { presetsIndex, promise: { resolve, reject } }
 				}));
 			});
 		} catch (error) {
-			showToast(form.dataset.failure);
+			showToast(event.target.dataset.failure);
 		}
 	}
 

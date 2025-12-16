@@ -9,7 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 </head>
 <body>
-	<div id="sequencer">
+	<main>
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
 		<h1 id="title"></h1>
 		<table>
@@ -437,139 +437,138 @@
 			</button>
 			<div id="trash">Déposer ici pour supprimer</div>
 		</div>
+	</main>
+	<footer>
 		<button id="aboutButton">À propos…</button>
-		<dialog id="track">
-			<form method="dialog" autocomplete="off">
-				<h2 id=instrument>Instrument</h2>
-				<div>
-					<label>Nombre de temps
-						<select id="bars" name="bars">
-							<option value="[4,4]" selected>4</option>
-							<option value="[6,6]">6</option>
-							<option value="[8,4]">8</option>
-							<option value="[12,4]">12 (3 × 4)</option>
-							<option value="[12,6]">12 (2 × 6)</option>
-							<option value="[16,4]">16</option>
-							<option value="[24,4]">24 (6 × 4)</option>
-							<option value="[24,6]">24 (4 × 6)</option>
-							<option value="[32,4]">32</option>
-						</select>
-					</label>
-					<label>Division du temps
-						<select id="beat" name="beat">
-							<option value="3">3</option>
-							<option value="4" selected>4</option>
-							<option value="6">6</option>
-							<option value="8">8</option>
-						</select>
-					</label>
-					<label>Type de phrase
-						<select id="loop" name="loop">
-							<option value="0">Introduction</option>
-							<option value="1" selected>Tourne</option>
-						</select>
-					</label>
-				</div>
-				<div class="bottom">
-					<button>Annuler</button><button name="apply">Appliquer</button>
-				</div>
-			</form>
-		</dialog>
-		<dialog id="settings">
+	</footer>
+	<dialog id="track">
+		<form method="dialog" autocomplete="off">
+			<h2 id=instrument>Instrument</h2>
 			<div>
-				<h2 id="preset">Nouveau morceau</h2>
-				<form id="modify" method="dialog" autocomplete="off" hidden
-					data-success="Le morceau a été enregistré."
-					data-failure="⚠️ La modification a échoué."
-					data-cancel-success="La modification a été annulée."
-					data-cancel-failure="⚠️ La modification ne peut être annulée.">
-					<fieldset>
-						<legend>Enregistrer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" disabled>
-						<button name="save">Enregistrer</button>
-					</fieldset>
-				</form>
-				<form id="newOne" method="dialog" autocomplete="off"
-					data-success="Le morceau a été enregistré."
-					data-failure="⚠️ La modification a échoué."
-					data-cancel-success="La modification a été annulée."
-					data-cancel-failure="⚠️ La modification ne peut être annulée.">
-					<fieldset>
-						<legend>Enregistrer sous</legend>
-						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
-						<button name="save">Enregistrer</button>
-					</fieldset>
-				</form>
-				<form id="rename" method="dialog" autocomplete="off" hidden
-					data-success="Le morceau a été renommé."
-					data-failure="⚠️ La modification a échoué."
-					data-cancel-success="La modification a été annulée."
-					data-cancel-failure="⚠️ La modification ne peut être annulée.">
-					<fieldset>
-						<legend>Renommer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
-						<button name="save">Renommer</button>
-					</fieldset>
-				</form>
-				<form id="delete" method="dialog" autocomplete="off" hidden
-					data-success="Le morceau a été supprimé."
-					data-failure="⚠️ La modification a échoué."
-					data-cancel-success="La modification a été annulée."
-					data-cancel-failure="⚠️ La modification ne peut être annulée.">
-					<fieldset>
-						<legend>Supprimer le morceau</legend>
-						<input name="name" aria-label="nom du morceau" disabled>
-						<button name="save">Supprimer</button>
-					</fieldset>
-				</form>
-				<form class="bottom" method="dialog">
-					<button name="share_list">Partager</button><button>Annuler</button>
-				</form>
-			</div>
-		</dialog>
-		<dialog id="share">
-			<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
-				<h2>Partager</h2>
-				<label><input type="checkbox" name="current">Morceau en cours</label>
-				<label id="legend" title="Tout sélectionner / désélectionner">
-					<input type="checkbox" disabled>Morceaux enregistrés
+				<label>Nombre de temps
+					<select id="bars" name="bars">
+						<option value="[4,4]" selected>4</option>
+						<option value="[6,6]">6</option>
+						<option value="[8,4]">8</option>
+						<option value="[12,4]">12 (3 × 4)</option>
+						<option value="[12,6]">12 (2 × 6)</option>
+						<option value="[16,4]">16</option>
+						<option value="[24,4]">24 (6 × 4)</option>
+						<option value="[24,6]">24 (4 × 6)</option>
+						<option value="[32,4]">32</option>
+					</select>
 				</label>
-				<ul role="group" aria-labelledby="legend"></ul>
-				<div class="bottom">
-					<button name="share" disabled>Valider</button><button>Annuler</button>
-				</div>
+				<label>Division du temps
+					<select id="beat" name="beat">
+						<option value="3">3</option>
+						<option value="4" selected>4</option>
+						<option value="6">6</option>
+						<option value="8">8</option>
+					</select>
+				</label>
+				<label>Type de phrase
+					<select id="loop" name="loop">
+						<option value="0">Introduction</option>
+						<option value="1" selected>Tourne</option>
+					</select>
+				</label>
+			</div>
+			<div class="bottom">
+				<button formnovalidate>Annuler</button><button name="apply">Appliquer</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog id="settings">
+		<div>
+			<h2 id="preset">Nouveau morceau</h2>
+			<form id="modify" method="dialog" autocomplete="off" hidden
+				data-success="Le morceau a été enregistré."
+				data-failure="⚠️ La modification a échoué."
+				data-cancel-success="La modification a été annulée."
+				data-cancel-failure="⚠️ La modification ne peut être annulée.">
+				<fieldset>
+					<legend>Enregistrer le morceau</legend>
+					<input name="name" aria-label="nom du morceau" disabled>
+					<button name="save">Enregistrer</button>
+				</fieldset>
 			</form>
-		</dialog>
-		<dialog id="shared">
-			<div>
-				<h2>Morceaux partagés</h2>
-				<ul></ul>
-				<form class="bottom" method="dialog" 
-					data-success="Tous les morceaux ont été importés."
-					data-failure="⚠️ L'import des morceaux a échoué."
-					data-cancel-success="L'import des morceaux a été annulé."
-					data-cancel-failure="⚠️ L'import des morceaux ne peut être annulé.">
-					<button name="import">Importer</button><button>Fermer</button>
-				</form>
+			<form id="newOne" method="dialog" autocomplete="off"
+				data-success="Le morceau a été enregistré."
+				data-failure="⚠️ La modification a échoué."
+				data-cancel-success="La modification a été annulée."
+				data-cancel-failure="⚠️ La modification ne peut être annulée.">
+				<fieldset>
+					<legend>Enregistrer sous</legend>
+					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
+					<button name="save">Enregistrer</button>
+				</fieldset>
+			</form>
+			<form id="rename" method="dialog" autocomplete="off" hidden
+				data-success="Le morceau a été renommé."
+				data-failure="⚠️ La modification a échoué."
+				data-cancel-success="La modification a été annulée."
+				data-cancel-failure="⚠️ La modification ne peut être annulée.">
+				<fieldset>
+					<legend>Renommer le morceau</legend>
+					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
+					<button name="save">Renommer</button>
+				</fieldset>
+			</form>
+			<form id="delete" method="dialog" autocomplete="off" hidden
+				data-success="Le morceau a été supprimé."
+				data-failure="⚠️ La modification a échoué."
+				data-cancel-success="La modification a été annulée."
+				data-cancel-failure="⚠️ La modification ne peut être annulée.">
+				<fieldset>
+					<legend>Supprimer le morceau</legend>
+					<input name="name" aria-label="nom du morceau" disabled>
+					<button name="save">Supprimer</button>
+				</fieldset>
+			</form>
+			<form class="bottom" method="dialog">
+				<button name="share_list">Partager</button><button formnovalidate>Annuler</button>
+			</form>
+		</div>
+	</dialog>
+	<dialog id="share">
+		<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
+			<h2>Partager</h2>
+			<label id="check_all"><input type="checkbox">Tout sélectionner</label>
+			<ul></ul>
+			<div class="bottom">
+				<button name="share">Valider</button><button formnovalidate>Annuler</button>
 			</div>
-		</dialog>
-		<dialog id="about">
+		</form>
+	</dialog>
+	<dialog id="shared">
+		<div>
+			<h2>Morceaux partagés</h2>
+			<ul></ul>
+			<form class="bottom" method="dialog" 
+				data-success="Tous les morceaux ont été importés."
+				data-failure="⚠️ L'import des morceaux a échoué."
+				data-cancel-success="L'import des morceaux a été annulé."
+				data-cancel-failure="⚠️ L'import des morceaux ne peut être annulé.">
+				<button name="import">Importer</button><button formnovalidate>Fermer</button>
+			</form>
+		</div>
+	</dialog>
+	<dialog id="about">
+		<div>
+			<h2>Batucada Sequencer</h2>
 			<div>
-				<h2>Batucada Sequencer</h2>
-				<div>
-					<p>Version de l'application : <span id="applicationVersion">-</span></p>
-					<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
-					<p>Version des morceaux : <span id="dataDate">-</span></p>
-					<button id="update" hidden>Mettre à jour l'application</button>
-					<p>Contact : <a id="contact"></a></p>
-				</div>
-				<form method="dialog" class="bottom">
-					<button>Fermer</button>
-				</form>
+				<p>Version de l'application : <span id="applicationVersion">-</span></p>
+				<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
+				<p>Version des morceaux : <span id="dataDate">-</span></p>
+				<button id="update" hidden>Mettre à jour l'application</button>
+				<p>Contact : <a id="contact"></a></p>
 			</div>
-		</dialog>
-		<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
-	</div>
+			<form method="dialog" class="bottom">
+				<button formnovalidate>Fermer</button>
+			</form>
+		</div>
+	</dialog>
+	<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
 	<script type="module">
 		import app_config       from './config/app_config.json'   with { type: 'json' };
 		import core_config      from './config/core_config.json'  with { type: 'json' };

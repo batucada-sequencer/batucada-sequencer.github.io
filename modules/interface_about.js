@@ -1,12 +1,12 @@
 export function init(ui) {
 
-	const about =  ui.container.querySelector('#about');
-	const contact = ui.container.querySelector('#contact');
-	const dataDate = ui.container.querySelector('#dataDate');
-	const aboutButton = ui.container.querySelector('#aboutButton');
-	const updateButton = ui.container.querySelector('#update');
-	const applicationVersion = ui.container.querySelector('#applicationVersion');
-	const instrumentsVersion = ui.container.querySelector('#instrumentsVersion');
+	const about = document.querySelector('#about');
+	const contact = document.querySelector('#contact');
+	const dataDate = document.querySelector('#dataDate');
+	const aboutButton = document.querySelector('footer button');
+	const updateButton = document.querySelector('#update');
+	const applicationVersion = document.querySelector('#applicationVersion');
+	const instrumentsVersion = document.querySelector('#instrumentsVersion');
 
 	aboutButton.addEventListener('click', openAbout);
 	updateButton.addEventListener('click', update);
@@ -19,7 +19,8 @@ export function init(ui) {
 	}
 
 	function update() {
-		ui.container.hidden = true;
+		about.close();
+		document.body.inert = true;
 		ui.bus.dispatchEvent(new CustomEvent('interface:install'));
 	}
 

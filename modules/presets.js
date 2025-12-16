@@ -235,15 +235,16 @@ export class Presets {
 		}
 	}
 
-	async #presetsShare({ presetsIndex, hasCurrent, promise }) {
+	async #presetsShare({ presetsIndex, promise }) {
+		if (presetsIndex.length === 0) return;
 		const selection = presetsIndex.map(i => {
-			const { name, value } = this.#presets[Number(i)];
+			const index = Number(i);
+			if (index === -1) {
+				return { value: this.#params.get(this.#setSearchParam) }
+			}
+			const { name, value } = this.#presets[index];
 			return value === '0' ? { name } : { name, value };
 		});
-		if (hasCurrent) {
-			selection.unshift({ value: this.#params.get(this.#setSearchParam) });
-		}
-		if (selection.length === 0) return;
 		const url = new URL(location.origin + location.pathname);
 		if (selection.length > 1) {
 			url.searchParams.set(this.#shareSearchParam, encodeURIComponent(JSON.stringify(selection)));

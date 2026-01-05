@@ -35,7 +35,9 @@ export function init(ui) {
 		const { value, selectedIndex, options } = event.target;
 		const { text } = options[selectedIndex];
 		const name = text === ui.untitled ? undefined : text;
-		ui.bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value } }));
+		document.startViewTransition(() => {
+			ui.bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value } }));
+		});
 	}
 
 	function loadClickedPreset(event) {
@@ -74,7 +76,7 @@ export function init(ui) {
 		const data = { items: [], checkBoxList: [], checkedBox: false };
 		if (unsaved) {
 			const { li, input } = createCheckItem({
-				name: 'Morceau en cours',
+				name: ui.unsaved,
 				value: -1,
 				checked: true,
 			});
@@ -205,7 +207,7 @@ export function init(ui) {
 		const data = new FormData(event.target);
 		const presetsIndex = data.getAll('index');
 		if (!presetsIndex.length) {
-			checkBoxMaster.setCustomValidity('Sélectionnez au moins un morceau.');
+			checkBoxMaster.setCustomValidity(checkBoxMaster.dataset.invalidEmpty);
 			checkBoxMaster.reportValidity();
 			event.preventDefault();
 			return;
@@ -237,11 +239,16 @@ export function init(ui) {
 
 	function reportNameValidity({ action, customValidity }) {
 		const input = document.forms[action].elements.name;
-		if (customValidity === '') {
+		const datasetNames = {
+			empty: invalidEmpty,
+			duplicated: invalidDuplicated,
+		}
+		const validity = input.dataset[datasetNames[customValidity]] ?? '';
+		if (validity === '') {
 			settings.close();
 		}
 		else {
-			input.setCustomValidity(customValidity);
+			input.setCustomValidity(validity);
 			input.reportValidity();
 			input.addEventListener('input', () => {
 				input.setCustomValidity('');

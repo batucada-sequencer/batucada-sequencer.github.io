@@ -4,6 +4,7 @@ export function init(ui) {
 	const swapClass = 'swap';
 	const overClass = 'over';
 	const trashClass = 'trash';
+	const draggedClass = 'dragged';
 	const dropzoneClass = 'dropzone';
 	const trash = document.querySelector('#trash');
 
@@ -16,10 +17,11 @@ export function init(ui) {
 	ui.container.addEventListener('dragleave', (event) => handleDragLeave(event));
 	ui.container.addEventListener('dragend',   (event) => handleDragEnd(event));
 	trash.addEventListener('dragenter', (event) => handleDragEnter(event));
-	trash.addEventListener('drop', (event) => handleDropToTrash(ui, event));
+	trash.addEventListener('drop', (event) => handleDrop(ui, event));
 
 	function handleDragStart({ tracks, isDraggable }, event) {
 		const track = event.currentTarget;
+		track.classList.add(draggedClass);
 		if (isDraggable(track)) {
 			ui.container.classList.add(swapClass);
 		}
@@ -58,57 +60,33 @@ export function init(ui) {
 		removeOver();
 	}
 
-	function handleDropToTrash({ tracks, bus } , event) {
+	function handleDrop({ tracks, bus } , event) {
 		removeOver();
-		const index = Number(event.dataTransfer.getData('text'))
-		const track = tracks.item(index);
-		let animation;
-		if (!ui.container.classList.contains(swapClass) || index === tracks.length) {
-			animation = track.animate([{ opacity: .5 }], { duration: 100, easing: 'ease' });
+		const isTrash = event.currentTarget === trash;
+		const sourceIndex = Number(event.dataTransfer.getData('text'))
+		const draggedTrack = tracks.item(sourceIndex);
+		const targetTrack = isTrash ? null : event.currentTarget;
+		const targetIndex = isTrash ? null : [...tracks].indexOf(targetTrack);
+		const isLastTrack = sourceIndex === tracks.length - 1;
+		const canSwap = ui.container.classList.contains(swapClass);
+		// useAnimation si on déplace à la corbeille le dernière piste affichée
+		const useAnimation = isTrash && (!canSwap || isLastTrack);
+		const moveTrack = () => {
+			if (isTrash) {
+				draggedTrack.parentNode.appendChild(draggedTrack);
+			}
+			else {
+				targetTrack.before(draggedTrack);
+			}
+			bus.dispatchEvent(
+				new CustomEvent('interface:moveTrack', { detail: { sourceIndex, targetIndex } })
+			);
+		};
+		if (useAnimation) {
+			draggedTrack.animate([{ opacity: 0 }], { duration: 200, easing: 'ease' }).finished.then(moveTrack);
 		}
 		else {
-			animation = track.animate([
-				{ opacity: 0, height: `${track.offsetHeight}px`, offset: .05 },
-				{ opacity: 0, height: '0px', offset: 1 }
-			], { duration: 300, easing: 'ease' });
-		}
-		animation.finished.then(() => {
-			track.parentNode.appendChild(track);
-			bus.dispatchEvent(new CustomEvent('interface:removeTrack', { detail: index }));
-		});
-	}
-
-	function handleDrop({ tracks, bus } , event) {
-		if (event.target.className !== dropzoneClass) return;
-		removeOver();
-		const sourceIndex = Number(event.dataTransfer.getData('text'));
-		const targetTrack = event.currentTarget;
-		const targetIndex = [...tracks].indexOf(targetTrack);
-		if (targetIndex !== sourceIndex && targetIndex !== sourceIndex + 1) {
-			const draggedTrack = tracks.item(sourceIndex);
-			const oldPositions = getTracksYPositions(tracks);
-			targetTrack.before(draggedTrack);
-			const newPositions =  getTracksYPositions(tracks);
-			newPositions.forEach((newPosition, track) => {
-				const oldPosition = oldPositions.get(track);
-				const deltaY = oldPosition - newPosition;
-				if (track === draggedTrack) {
-					const clipFrom = deltaY > 0 ? 'inset(0 0 50% 0)' : 'inset(90% 0 0 0)';
-					track.animate([
-						{ clipPath: clipFrom },
-						{ clipPath: 'inset(-1em)' }
-					], { duration: 500, easing: 'ease' });
-				}
-				else {
-					if (deltaY !== 0) {
-						track.animate([
-							{ transform: `translateY(${deltaY}px)` },
-							{ transform: 'translateY(0)' }
-						], { duration: 300, easing: 'ease' });
-					}
-				}
-			});
-			bus.dispatchEvent(new CustomEvent('interface:swapTracks', { detail: { sourceIndex, targetIndex } }));
+			document.startViewTransition(moveTrack);
 		}
 	}
 
@@ -116,12 +94,6 @@ export function init(ui) {
 		while (over.length) {
 			over.pop().classList.remove(overClass);
 		}
-	}
-
-	function getTracksYPositions(tracks) {
-		return new Map(
-			Array.from(tracks).map(track => [track, track.getBoundingClientRect().top])
-		);
 	}
 
 }

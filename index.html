@@ -4,11 +4,754 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Batucada Sequencer</title>
-<link rel="stylesheet" href="style.css"/>
 <link rel="manifest" href="app/app.webmanifest"/>
-<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<style>
+body {
+	--body-margin:0;
+	--main-margin:.7em;
+	--sheet-columns:2;
+	--controls-lines:2;
+	--drag-handle-width:0;
+	--track-column-auto:1;
+	--track-first-col-width:7.7em;
+	gap:.2em;
+	display:grid;
+	margin:0 0 2.8em;
+	background:#bbb;
+	user-select:none;
+	justify-content:center;
+	padding:var(--body-margin);
+	padding-bottom:0;
+	font:400 4.92svw/1.4 sans-serif;
+	grid-template-columns:minmax(0, 780px);
+}
+body[inert]::after {
+	inset:0;
+	z-index:2;
+	background:#bbb;
+	padding-top:2em;
+	position:absolute;
+	text-align:center;
+	content:'Chargement de l\'application…';
+}
+#combo_tempo,
+select,
+input:not([type]),
+button {
+	margin:0;
+	color:#000;
+	padding:0 .5em;
+	background:#fff;
+	appearance:none;
+	user-select:none;
+	border-radius:4px;
+	background:no-repeat;
+	box-sizing:border-box;
+	font-family:sans-serif;
+	border:1px solid hsl(240,10%,60%);
+}
+select {
+	padding-right:.9em;
+	background:white no-repeat right center;
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+button:disabled {
+	opacity:.6;
+}
+main {
+	background:#fff;
+	position:relative;
+	border:1px solid #999;
+	border-radius:0 0 .5em .5em;
+	box-shadow:0 0 .5em rgba(0,0,0,.2);
+	anchor-name:--sequencer;
+}
+#skip {
+	z-index:2;
+	height:2em;
+	display:flex;
+	background:#fff;
+	position:absolute;
+	align-items:center;
+	justify-content:center;
+	inset:-4em .5em auto .5em;
+}
+#skip:focus {
+	top:.5em;
+}
+h1 {
+	font-size:1.2em;
+	margin:.5em 0 0;
+	padding:0 0 .3em;
+	text-align:center;
+	font-weight:normal;
+}
+h2 {
+	margin:0;
+	font-size:1.1em;
+	text-align:center;
+	font-weight:normal;
+}
+table {
+	border-spacing:0;
+	margin:-.5em 0 1.8em;
+}
+tbody {
+	display:flex;
+	flex-direction:column;
+}
+.track {
+	top:0;
+	display:grid;
+	position:relative;
+	align-items:start;
+	contain:layout style;
+	view-transition-name:match-element;
+	grid-template-rows:1em 1.65em 1fr;
+	grid-template-columns:var(--track-first-col-width) repeat(var(--track-column-auto), auto);
+}
+.dropzone {
+	z-index:1;
+	padding:0;
+	height:1em;
+	grid-column:1 / -1;
+}
+.track th {
+	gap:0 .5em;
+	display:grid;
+	padding:0 0 0 .7em;
+	grid-template-rows:1.65em .3em 1.65em;
+}
+.sheet {
+	gap:.3em;
+	padding:0;
+	display:grid;
+	font-size:1em;
+	grid-column:2;
+	grid-row:span 2;
+	margin:0 .7em 0 .9em;
+	contain:layout style;
+	grid-template-columns:repeat(var(--sheet-columns),1fr);
+}
+.track td:last-of-type {
+	width:4.2em;
+	height:1.5em;
+	display:flex;
+	align-items:center;
+	padding:.3em 0 0 .7em;
+}
+.track:focus-within ~ .track[data-instrument="0"] {
+	transition:opacity .5s ease-out;
+	transition-behavior:allow-discrete;
+	opacity:1;
+	@starting-style {
+		opacity:0;
+	}
+}
+.track[data-instrument="0"] ~ .track,
+.track[data-bars^="[4,"] .bar:nth-child(n+5),
+.track[data-bars^="[6,"] .bar:nth-child(n+7),
+.track[data-bars^="[8,"] .bar:nth-child(n+9),
+.track[data-bars^="[12,"] .bar:nth-child(n+13),
+.track[data-bars^="[16,"] .bar:nth-child(n+17),
+.track[data-bars^="[24,"] .bar:nth-child(n+25),
+.track[data-beat="3"] .sub_bar .step:nth-last-child(-n+5),
+.track[data-beat="4"] .sub_bar .step:nth-last-child(-n+4),
+.track[data-beat="6"] .sub_bar .step:nth-last-child(-n+2) {
+	display:none;
+}
+.track div[draggable] {
+	display:grid;
+	position:relative;
+	grid-template-columns:var(--drag-handle-width) 1fr;
+}
+.track[data-loop="0"] div[draggable]::after {
+	width:1em;
+	height:1em;
+	position:absolute;
+	inset:-.45em -.4em auto auto;
+	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m28 12v23h-5v-16l-6 2v-4z " fill="white"/></svg>');
+}
+.trackbutton {
+	width:2em;
+	grid-row:3;
+	font-size:1em;
+	overflow:hidden;
+	color:transparent;
+	justify-self:right;
+	background:center no-repeat url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M10 10v6a4 4 0 1 0 .01 0m0 8v12M23 10v12a4 4 0 1 0 .01 0m0 8v6M36 10v8a4 4 0 1 0 .01 0m0 8v10" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+.instrument {
+	font-size:1em;
+	padding-left:.3em;
+}
+.track[data-beat="6"] .sheet,
+.track[data-beat="8"] .sheet {
+	grid-template-columns:repeat(calc(var(--sheet-columns) / 2),1fr);
+}
+.bar {
+	gap:.3em;
+	display:flex;
+	position:relative;
+	counter-increment:bar;
+}
+.track[data-bars$=",4]"] .bar:nth-child(4n+5),
+.track[data-bars$=",6]"] .bar:nth-child(6n+7) {
+	counter-reset:bar;
+}
+.sub_bar {
+	gap:.3em;
+	width:3.9em;
+	display:flex;
+	justify-content:space-evenly;
+}
+.track[data-beat="6"] .sub_bar,
+.track[data-beat="8"] .sub_bar {
+	width:9.5em;
+}
+.step {
+	padding:0;
+	z-index:1;
+	border:none;
+	width:1.1em;
+	height:1.65em;
+	font-size:1em;
+	overflow:hidden;
+	color:transparent;
+	border-radius:.2em;
+	background:hsl(240,10%,92%) no-repeat center;
+}
+.step[value="1"] {
+	background-color:hsl(215,100%,43%);
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white"/></svg>');
+}
+.step[value="2"] {
+	background-color:hsl(215,100%,43%);
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white" fill-opacity=".1" stroke="white" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="white"/></svg>');
+}
+.step[value="3"] {
+	background-color:hsl(215,100%,43%);
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="10" x2="6" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>');
+}
+.bar > .step[value="0"] {
+	background-color:hsl(240,10%,83%);
+	border:1px solid hsl(240,10%,50%);
+}
+.bar > .step[value="0"]::before {
+	color:#000;
+	display:block;
+	line-height:1.65em;
+	content:counter(bar);
+}
+.step.current {
+	outline-offset:-.05em;
+	outline:.2em solid hsl(130,30%,70%);
+}
+.bar > .step.current {
+	outline-color:hsl(130,100%,25%);
+}
+.step.current:not([value="0"]) {
+	height:1.5em;
+	align-self:end;
+	background-size:120%;
+	background-position:center 70%;
+	outline-color:hsl(130,100%,25%);
+	background-color:hsl(130,100%,25%);
+}
+.step:has(~ .current):not([value="0"]),
+.bar:has(.sub_bar .current) > .step:not([value="0"]),
+.bar:has(~ .bar .current) .step:not([value="0"]) {
+	background-color:hsl(215,68%,63%);
+}
+.bar::before {
+	content:'';
+	width:.21em;
+	height:2.86em;
+	position:absolute;
+	border-radius:.2em;
+	background:hsl(240,10%,60%);
+	inset:-.6em auto auto .45em;
+}
+.volume {
+	margin:0;
+	padding:0;
+	width:100%;
+}
+.track.over .dropzone {
+	height:1.3em;
+	margin-top:-.15em;
+}
+.dropzone::after {
+	display:block;
+	margin:calc(.5em - 1px) var(--main-margin) 0;
+}
+.track.over .dropzone::after {
+	content:'';
+	height:.3em;
+	background:#fff;
+	border-radius:3px;
+	border:1px solid hsl(240,10%,20%);
+}
+.swap .dropzone::after {
+	content:'';
+	border-top:1.5px dashed hsl(240,10%,60%);
+}
+hr {
+	height:0;
+	z-index:2;
+	border:none;
+	padding:.7em;
+	position:sticky;
+	background:#fff;
+	margin:0 0 -2.5em;
+	view-transition-name:hr;
+	box-shadow:0 -.9px 0 hsl(240,10%,60%), 0 -4px 8px rgba(0,0,0,.1);
+	bottom:calc(2.5rem * var(--controls-lines) - .2em + 1px + .7em * (var(--controls-lines) - 1));
+}
+#controls {
+	z-index:2;
+	display:flex;
+	bottom:-.2em;
+	flex-wrap:wrap;
+	position:sticky;
+	background:#fff;
+	gap:var(--main-margin);
+	border-radius:0 0 .5em .5em;
+	view-transition-name:controls;
+	padding:.7em var(--main-margin);
+}
+::view-transition-group(hr),
+::view-transition-group(controls) {
+	z-index:2;
+	animation:none;
+}
+#trash {
+	display:none;
+	background:#fff;
+	border-radius:4px;
+	box-sizing:border-box;
+	border:1.5px dashed hsl(240,10%,60%);
+	height:calc(2.5rem * var(--controls-lines) + .7em * (var(--controls-lines) - 1));
+}
+#trash::after {
+	width:2rem;
+	height:2rem;
+	content:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m12 12l1.5 16a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2l1.5-16m1.5-.5h-21m8 0v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2m1.7 6l-.6 9m-3.6 0v-9m-4.2 0l.6 9" stroke-width="1.3" stroke="black" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>');
+}
+.trash #trash {
+	flex:1;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+#trash.over {
+	border:1px solid hsl(240,10%,20%);
+}
+.trash #start,
+.trash #reset,
+.trash #combo_tempo,
+.trash #combo_presets {
+	display:none;
+}
+#combo_presets {
+	flex:1.4;
+	display:flex;
+}
+#combo_presets button:focus,
+#combo_presets select:focus {
+	z-index:1;
+}
+#start {
+	order:2;
+}
+#combo_tempo {
+	flex:1;
+	order:3;
+	display:flex;
+	height:2.5rem;
+}
+#reset {
+	order:4;
+}
+#start,
+#combo_presets button {
+	padding:0;
+	width:2.5rem;
+	height:2.5rem;
+	overflow:hidden;
+	color:transparent;
+}
+#play,
+#pause {
+	width:100%;
+	height:100%;
+	pointer-events:none;
+}
+#play {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m14 12l9 6-9 6z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
+}
+#pause {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m13.3 11v14h2v-14zm7 0v14h2v-14z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
+}
+#pause,
+.started #play {
+	display:none;
+}
+.started #pause {
+	display:block;
+}
+#combo_presets button {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+#combo_presets:has([value]:checked) button {
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="hsl(215,80%,43%)" fill="hsl(215,80%,43%)" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+#combo_presets select,
+#reset {
+	height:2.5rem;
+	font-size:1em; 
+}
+#combo_presets select {
+	flex:1;
+	width:9em;
+	margin-left:-1px;
+	text-overflow:ellipsis;
+	border-radius:0 4px 4px 0;
+}
+#combo_presets button {
+	border-radius:4px 0 0 4px;
+}
+#tempo {
+	flex:1;
+	width:3em;
+}
+output[for="tempo"] {
+	width:4em;
+	margin-left:.5em;
+	line-height:2.5rem;
+}
+dialog::backdrop {
+	overflow:hidden;
+	background:rgba(0,0,0,.4);
+	overscroll-behavior:contain;
+}
+dialog {
+	inset:1em;
+	padding:0;
+	outline:none;
+	margin:0 auto;
+	max-width:24em;
+	border-radius:.5em;
+	border:1px solid #555;
+	box-sizing:border-box;
+	width:calc(100% - 2em);
+	overscroll-behavior:contain;
+	box-shadow:0 0 .5em rgba(0,0,0,.3);
+}
+dialog::after {
+	content:'';
+	width:2.5em;
+	height:2.5em;
+	position:absolute;
+	inset:0 0 auto auto;
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m14 16l10 10m0 -10l-10 10" stroke-width="2" stroke="rgb(85,85,85)" stroke-linecap="round"/></svg>');
+}
+dialog:hover::after {
+	filter:brightness(0);
+}
+dialog:has(:hover)::after {
+	filter:none;
+}
+dialog>:first-child {
+	gap:1em;
+	padding:1em;
+	display:flex;
+	flex-direction:column;
+}
+dialog h2 {
+	margin:0 1em;
+}
+#track h2+div {
+	gap:.5em;
+	margin:auto;
+	display:flex;
+	max-width:18em;
+	flex-direction:column;
+}
+#track label {
+	gap:.5em;
+	z-index:1;
+	display:grid;
+	background:#fff;
+	grid-template-columns:1.2fr 1fr;
+}
+#track select {
+	height:1.8em;
+	font-size:.9em;
+}
+/* IOS */
+#track select:has([selected][disabled]:checked) {
+	color:#757575;
+}
+#track option[value] {
+	color:#000;
+}
+#track option[selected][disabled] {
+	color:revert;
+}
+/* End IOS */
+#preset {
+	margin-bottom:-.5em;
+}
+#settings select,
+#settings input {
+	flex:1;
+	width:100%;
+	height:2em;
+	font-size:.9em;
+	text-overflow:ellipsis;
+}
+dialog button {
+	min-width:6em;
+	font-size:.9em;
+	background-color:hsl(240,10%,94%);
+}
+#settings input:disabled {
+	border:none;
+	cursor:text;
+}
+#settings fieldset {
+	gap:1em;
+	margin:0;
+	display:flex;
+	border:1px solid #555;
+}
+legend {
+	font-size:.9em;
+}
+.bottom {
+	gap:1em;
+	width:100%;
+	height:1.8em;
+	display:flex;
+	flex-shrink:0;
+	max-width:22em;
+	margin-top:.5em;
+	justify-content:space-around;
+}
+#share form,
+#shared > div {
+	box-sizing:border-box;
+	max-height:calc(100dvh - 2.5em);
+}
+dialog ul {
+	margin:0;
+	min-width:0;
+	padding:.3em;
+	min-height:4em;
+	overflow-y:auto;
+	border:1px solid #555;
+}
+ul {
+	margin:0;
+	padding:0;
+}
+#check_all {
+	z-index:1;
+	background:#fff;
+	padding:0 2px 0 0;
+	align-self:flex-start;
+	margin:-.1em 0 -1.75em .72em;
+}
+#share ul {
+	position:relative;
+	padding:0 .3em .3em .5em;
+}
+#share ul::before {
+	top:0;
+	content:'';
+	height:.8em;
+	display:block;
+	position:sticky;
+	background:#fff;
+}
+#share ul:empty::after {
+	content:'Aucun morceau'
+}
+#share input[type="checkbox"] {
+	margin-right:.5em;
+}
+dialog li {
+	font-size:.9em;
+	overflow:hidden;
+	text-wrap:nowrap;
+	padding:0 0 .2em .2em;
+	text-overflow:ellipsis;
+}
+button[name="share_list"] {
+	padding-left:2em;
+	background-image:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="12" r="4"/><circle cx="14" cy="20" r="4"/><circle cx="29" cy="28" r="4"/><path d="m27 13l-13 7l13 7" stroke-width="2" stroke="black" fill="none"/></svg>');
+}
+#toast {
+	color:white;
+	border:none;
+	padding:0 1em;
+	font-size:.8em;
+	background:#333c;
+	user-select:none;
+	border-radius:.4em;
+	backdrop-filter:blur(2px);
+	--anchor-size-height:100svh;
+	box-shadow:0 0 .5em rgba(0,0,0,.2);
+	inset:auto 0 max(0.8em, calc(100svh - var(--anchor-size-height) - 4.2em - var(--body-margin)));
+}
+@supports (anchor-name:--sequencer) {
+	#toast {
+		position-anchor:--sequencer;
+		--anchor-size-height:anchor-size(height);
+	}
+}
+#toast:popover-open {
+	animation:fade-out 1s forwards 5s;
+}
+#toast:has(button[hidden]):popover-open {
+	animation:fade-out 1s forwards 2s;
+}
+#toast p {
+	margin:1em 1em 1em 0;
+	display:inline-block;
+}
+#toast button {
+	padding:.2em .5em;
+	font-size: inherit;
+	background-color:hsl(240,10%,94%);
+}
+@keyframes fade-out {
+	100% { opacity:0 }
+}
+footer {
+	display:flex;
+	justify-content:right;
+}
+footer button {
+	color:#444;
+	border:none;
+	font-size:.8em;
+}
+#about div {
+	gap:.5em;
+	display:flex;
+	flex-direction:column;
+}
+#about p {
+	margin:0;
+	line-height:1.2;
+}
+#about span {
+	white-space:nowrap;
+}
+#contact {
+	font-size:.9em;
+}
+#update {
+	max-width:fit-content;
+}
+#about button[formnovalidate] {
+	flex:1;
+	max-width:6em;
+	min-width:auto;
+}
+@media (pointer:fine) and (hover:hover) {
+	#combo_presets button:hover,
+	#combo_presets select:hover {
+		z-index:1;
+	}
+	input:not([type]):hover,
+	#combo_tempo:hover,
+	select:hover,
+	button:not(.step):not(:disabled):hover {
+		border-color:hsl(240,10%,20%);
+	}
+	.step:hover {
+		filter:brightness(1.15);
+	}
+	.step[value="0"]:hover {
+		filter:brightness(.9);
+	}
+	div[draggable]:hover .handle {
+		opacity:.3;
+		cursor:grab;
+		background:no-repeat url('data:image/svg+xml,<svg viewBox="0 0 5 10" xmlns="http://www.w3.org/2000/svg"><path d="m3 1v8" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
+	}
+	div[draggable]:active .handle {
+		cursor:grabbing;
+	}
+	div[draggable] .handle:hover {
+		opacity:1;
+	}
+	footer button:hover {
+		color:#000;
+	}
+}
+@media (min-width:520px) {
+	body {
+		--body-margin:.5em;
+		--main-margin:1em;
+		--sheet-columns:4;
+		--controls-lines:1;
+		--drag-handle-width:1em;
+		--track-column-auto:2;
+		--track-first-col-width:10.6em;
+		font-size:clamp(.6em,2.4svw,1.2em);
+	}
+	main {
+		border-radius:.5em;
+		padding-bottom:.3em;
+	}
+	h1 {
+		font-size:1.4em;
+	}
+	h2 {
+		font-size:1.2em;
+	}
+	.track th {
+		padding:0;
+		grid-template-rows:1.65em;
+		grid-template-columns:1fr 2em;
+	}
+	.sheet {
+		margin:0 1em;
+	}
+	.track td:last-of-type {
+		width:4.9em;
+		padding:0 1em 0 0;
+	}
+	.trackbutton {
+		width:auto;
+		grid-row:auto;
+		justify-self:auto;
+	}
+	#track label:nth-child(2) {
+		grid-row:2;
+		grid-column:1;
+	}
+	#track label:nth-child(3) {
+		grid-row:1;
+		grid-column:2;
+	}
+	#start {
+		order:4;
+	}
+	#reset {
+		order:3;
+	}
+	legend {
+		font-size:1em;
+	}
+}
+</style>
 </head>
-<body>
+<body data-untitled="Morceau sans titre" data-unsaved="Morceau en cours">
 	<main>
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
 		<h1 id="title"></h1>
@@ -414,15 +1157,12 @@
 				</td>
 			</tr>
 		</table>
-		<datalist id="volume">
-			<option value="30"></option>
-		</datalist>
 		<hr>
 		<div id="controls" role="toolbar" tabindex="-1">
 			<div id="combo_presets" role="group">
 				<button title="Gérer le morceau">Gérer le morceau</button>
 				<select aria-label="morceaux" title="Choisir le morceau">
-					<option disabled hidden selected>Morceau</option>
+					<option disabled hidden selected>Morceaux enregistrés</option>
 					<option disabled>Aucun morceau</option>
 				</select>
 			</div>
@@ -439,8 +1179,11 @@
 		</div>
 	</main>
 	<footer>
-		<button id="aboutButton">À propos…</button>
+		<button>À propos…</button>
 	</footer>
+	<datalist id="volume">
+		<option value="30"></option>
+	</datalist>
 	<dialog id="track">
 		<form method="dialog" autocomplete="off">
 			<h2 id=instrument>Instrument</h2>
@@ -474,7 +1217,7 @@
 				</label>
 			</div>
 			<div class="bottom">
-				<button formnovalidate>Annuler</button><button name="apply">Appliquer</button>
+				<button name="apply">Appliquer</button><button formnovalidate>Annuler</button>
 			</div>
 		</form>
 	</dialog>
@@ -499,7 +1242,9 @@
 				data-cancel-failure="⚠️ La modification ne peut être annulée.">
 				<fieldset>
 					<legend>Enregistrer sous</legend>
-					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
+					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required
+						data-invalid-empty="Doit contenir au moins un caractère."
+						data-invalid-duplicated="Ce nom existe déjà.">
 					<button name="save">Enregistrer</button>
 				</fieldset>
 			</form>
@@ -510,7 +1255,9 @@
 				data-cancel-failure="⚠️ La modification ne peut être annulée.">
 				<fieldset>
 					<legend>Renommer le morceau</legend>
-					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required>
+					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required
+						data-invalid-empty="Doit contenir au moins un caractère."
+						data-invalid-duplicated="Ce nom existe déjà.">
 					<button name="save">Renommer</button>
 				</fieldset>
 			</form>
@@ -533,7 +1280,9 @@
 	<dialog id="share">
 		<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
 			<h2>Partager</h2>
-			<label id="check_all"><input type="checkbox">Tout sélectionner</label>
+			<label id="check_all">
+				<input type="checkbox" data-invalid-empty="Sélectionnez au moins un morceau.">Tout sélectionner
+			</label>
 			<ul></ul>
 			<div class="bottom">
 				<button name="share">Valider</button><button formnovalidate>Annuler</button>
@@ -560,24 +1309,23 @@
 				<p>Version de l'application : <span id="applicationVersion">-</span></p>
 				<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
 				<p>Version des morceaux : <span id="dataDate">-</span></p>
-				<button id="update" hidden>Mettre à jour l'application</button>
 				<p>Contact : <a id="contact"></a></p>
 			</div>
 			<form method="dialog" class="bottom">
-				<button formnovalidate>Fermer</button>
+				<button id="update" hidden>Mettre à jour l'application</button><button formnovalidate>Fermer</button>
 			</form>
 		</div>
 	</dialog>
 	<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
 	<script type="module">
-		import app_config       from './config/app_config.json'   with { type: 'json' };
-		import core_config      from './config/core_config.json'  with { type: 'json' };
-		import instruments      from './modules/instruments.json' with { type: 'json' };
-		import {Interface}      from './modules/interface.js';
-		import {ServiceWorker}  from './modules/service_worker.js';
-		import {Sequencer}      from './modules/sequencer.js';
-		import {Presets}        from './modules/presets.js';
-		import {UrlState}       from './modules/url_state.js';
+		import app_config      from './config/app_config.json'   with { type: 'json' };
+		import core_config     from './config/core_config.json'  with { type: 'json' };
+		import instruments     from './modules/instruments.json' with { type: 'json' };
+		import {Interface}     from './modules/interface.js';
+		import {ServiceWorker} from './modules/service_worker.js';
+		import {Sequencer}     from './modules/sequencer.js';
+		import {Presets}       from './modules/presets.js';
+		import {UrlState}      from './modules/url_state.js';
 
 		const bus = new EventTarget();
 		new Interface({ bus, app_config, core_config, instruments });

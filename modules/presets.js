@@ -173,12 +173,12 @@ export class Presets {
 		const existingNames = new Set(data.map(item => item.name));
 		existingNames.delete(this.#params.get(this.#titleSearchParam));
 		if (!/\S/.test(name)) {
-			return 'Doit contenir au moins un caractère.';
+			return 'empty';
 		}
 		else if (existingNames.has(name)) {
-			return 'Ce nom existe déjà.';
+			return 'duplicated';
 		}
-		return '';
+		return 'valid';
 	}
 
 	async #settingsCancel(promise) {

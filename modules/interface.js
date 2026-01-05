@@ -1,6 +1,7 @@
 export class Interface {
 	#maxBars = 32;
 	#subdivision = 8;
+	#unsaved;
 	#untitled;
 	#stepsPerTrack;
 	#headTitlePrefix;
@@ -31,7 +32,8 @@ export class Interface {
 	constructor({ bus, app_config, instruments }) {
 		const email =  app_config.email;
 		const container = document.querySelector('main');
-		this.#untitled = app_config.untitled;
+		this.#unsaved = document.body.dataset.unsaved;
+		this.#untitled = document.body.dataset.untitled;
 		this.#bpm = document.querySelector('#combo_tempo span');
 		this.#tempo = document.querySelector('#tempo');
 		this.#title = document.querySelector('h1');
@@ -62,6 +64,7 @@ export class Interface {
 					email,
 					container,
 					title: this.#title,
+					unsaved: this.#unsaved,
 					untitled: this.#untitled,
 					hasStroke: this.#hasStroke.bind(this),
 					presetsSelection: this.#presetsSelection,
@@ -189,6 +192,16 @@ export class Interface {
 			}
 		});
 
+		// Fallback si ViewTransition n'est supporté
+		if (!document.startViewTransition) {
+			document.startViewTransition = (callback) => {
+				callback();
+				return {
+					finished: Promise.resolve()
+				};
+			};
+		}
+
 	}
 
 	#updateInterface(changes) {
@@ -208,7 +221,6 @@ export class Interface {
 			const trackIndex = Number(index);
 			const track = this.#tracks[trackIndex];
 			for (const [item, data] of Object.entries(trackChanges)) {
-
 				if (item === 'sheet') {
 					for (const { barIndex, stepIndex, value } of data) {
 						this.#getStepFromIndexes({ trackIndex, barIndex, stepIndex }).value = value;
@@ -216,13 +228,11 @@ export class Interface {
 				} else if (item in track.dataset) {
 					track.dataset[item] = data;
 				}
-
 				if (item === this.#instrumentName) {
 					this.#instruments[trackIndex].value = data;
 				} else if (item === this.#volumeName) {
 					this.#volumes[trackIndex].value = data;
 				}
-
 			}
 		}
 	}

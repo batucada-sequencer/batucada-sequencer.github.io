@@ -18,26 +18,25 @@ export function init(ui) {
 	});
 
 	function setTrack(event) {
-		if (event.submitter.name !== 'apply') return;
-		const changes = {}
-		const values = ui.tracks[trackIndex].dataset;
-		if (values.beat !== ui.beat.value) {
-			values.beat = ui.beat.value;
-			changes.beat = ui.beat.value;
+		if (event.submitter?.name !== 'apply') return;
+		const track = ui.tracks[trackIndex];
+		const values = track.dataset;
+		const fields = {
+			beat: ui.beat.value,
+			bars: ui.bars.value,
+			loop: ui.loop.value
+		};
+		const changes = {};
+		for (const [key, newValue] of Object.entries(fields)) {
+			if (values[key] !== newValue) {
+				changes[key] = newValue;
+			}
 		}
-		if (values.bars !== ui.bars.value) {
-			values.bars = ui.bars.value;
-			changes.bars = ui.bars.value;
-		}
-		if (values.loop !== ui.loop.value) {
-			values.loop = ui.loop.value;
-			changes.loop = ui.loop.value;
-		}
-		if (Object.keys(changes).length > 0) {
-			const detail = { detail: { tracks: { [trackIndex]: changes } } };
-			ui.bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-			ui.bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
-		}
+		if (Object.keys(changes).length === 0) return;
+		document.startViewTransition(() => Object.assign(values, changes));
+		const detail = { detail: { tracks: { [trackIndex]: changes } } };
+		ui.bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+		ui.bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
 	async function handleClick({ target }) {

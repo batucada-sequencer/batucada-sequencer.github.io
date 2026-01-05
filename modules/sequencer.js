@@ -26,13 +26,12 @@ export class Sequencer {
 		this.#bus.addEventListener('interface:start', ({ detail }) => this.#start(detail));
 		this.#bus.addEventListener('interface:restart', ({ detail }) => this.#restart(detail));
 		this.#bus.addEventListener('interface:audioRequest', ({ detail }) => this.#startAudio(detail));
-		this.#bus.addEventListener('interface:swapTracks', ({ detail }) => this.#swapTracks(detail));
+		this.#bus.addEventListener('interface:moveTrack', ({ detail }) => this.#moveTrack(detail));
 		this.#bus.addEventListener('interface:inputTempo', ({ detail }) => this.#inputTempo(detail));
 		this.#bus.addEventListener('interface:inputTrack', ({ detail }) => this.#updateData(detail));
 		this.#bus.addEventListener('interface:changeNote', ({ detail }) => this.#changeNote(detail));
 		this.#bus.addEventListener('interface:changeTempo', ({ detail }) => this.#changeTempo(detail));
 		this.#bus.addEventListener('interface:changeTrack', ({ detail }) => this.#changeTrack(detail));
-		this.#bus.addEventListener('interface:removeTrack', ({ detail }) => this.#removeTrack(detail));
 		this.#bus.addEventListener('interface:changeVolume', ({ detail }) => this.#changeVolume(detail));
 		this.#bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateData(detail));
 		this.#bus.addEventListener('urlState:getTracksData', ({ detail }) => this.#sendTracksData(detail));
@@ -193,29 +192,23 @@ export class Sequencer {
 		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tempo: this.#tempo } }));
 	}
 
-	#swapTracks({ sourceIndex, targetIndex }) {
-		const [track] = this.#tracks.splice(sourceIndex, 1);
-		if (sourceIndex < targetIndex) targetIndex--;
-		this.#tracks.splice(targetIndex, 0, track);
+	#moveTrack({ sourceIndex, targetIndex }) {
+		if (targetIndex === null) {
+			// Déplace la piste à la fin du tableau
+			this.#tracks.push(this.#tracks.splice(sourceIndex, 1)[0]);
+			const newIndex = this.#tracks.length - 1;
+			// Réinitialise la piste
+			const changes = { tracks: { [newIndex]: this.#resetTrack(newIndex) } };
+			this.#bus.dispatchEvent(new CustomEvent('sequencer:updateData', { detail: changes }));
+		}
+		else {
+			// Interversion des pistes 
+			const [track] = this.#tracks.splice(sourceIndex, 1);
+			if (sourceIndex < targetIndex) targetIndex--;
+			this.#tracks.splice(targetIndex, 0, track);
+		}
 		const tracks = structuredClone(this.#tracks);
 		const volumes = this.#tracks.map(track => track.volume);
-		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tracks, volumes } }));
-	}
-
-	#removeTrack(index) {
-		//ajouter un mute du track
-		
-		// Déplace la piste à la fin du tableau
-		this.#tracks.push(this.#tracks.splice(index, 1)[0]);
-		const newIndex = this.#tracks.length - 1;
-
-		// Réinitialise la piste
-		const changes = { tracks: { [newIndex]: this.#resetTrack(newIndex) } };
-		const tracks = structuredClone(this.#tracks);
-		const volumes = this.#tracks.map(track => track.volume);
-		
-		// Envoye les événements
-		this.#bus.dispatchEvent(new CustomEvent('sequencer:updateData', { detail: changes }));
 		this.#bus.dispatchEvent(new CustomEvent('sequencer:changed', { detail: { tracks, volumes } }));
 	}
 

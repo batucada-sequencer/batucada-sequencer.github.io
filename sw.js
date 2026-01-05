@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.05.29',
+	app: '1.05.51',
 	static: '1.04',
 };
 
@@ -15,7 +15,6 @@ const assets = {
 	app: [
 		'./',
 		'./index.html',
-		'./style.css',
 		'./favicon.svg',
 		'./app/icon.svg',
 		'./app/share.html',

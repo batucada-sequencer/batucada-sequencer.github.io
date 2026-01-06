@@ -142,9 +142,9 @@ export class Presets {
 			const data = await this.#fetchData(true);
 			const value = this.#params.get(this.#setSearchParam) || this.#defaultSetValue;
 			const isNewName = ['newOne', 'rename'].includes(action);
-			const customValidity = isNewName ? this.#validateNewName(data, name) : '';
+			const customValidity = isNewName ? this.#validateNewName(data, name) : 'valid';
 			this.#bus.dispatchEvent(new CustomEvent('presets:reportNameValidity', { detail: { action, customValidity } }));
-			if (customValidity !== '') return;
+			if (customValidity !== 'valid') return;
 			const indexName = action === 'rename' ? this.#params.get(this.#titleSearchParam) : name;
 			const index = data.findIndex(preset => preset.name === indexName);
 			switch (action) {

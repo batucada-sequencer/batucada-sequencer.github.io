@@ -240,8 +240,8 @@ export function init(ui) {
 	function reportNameValidity({ action, customValidity }) {
 		const input = document.forms[action].elements.name;
 		const datasetNames = {
-			empty: invalidEmpty,
-			duplicated: invalidDuplicated,
+			empty: 'invalidEmpty',
+			duplicated: 'invalidDuplicated',
 		}
 		const validity = input.dataset[datasetNames[customValidity]] ?? '';
 		if (validity === '') {

@@ -344,15 +344,19 @@ export class Sequencer {
 		const buffer = 0.1;
 		this.#barIndex = 0;
 		let barTime = this.#audioContext.currentTime + 0.05;
+
 		const loop = () => {
-			const secondsPerBar = 60 / this.#tempo;
 			if (this.#audioContext.currentTime + buffer <= barTime) return;
+
+			const secondsPerBar = 60 / this.#tempo;
 			const animations = new Map();
 			const timeDelta = performance.now() - barTime * 1000;
+
 			if (!isLoop && !this.#tracks.some(({ loop, bars }) => loop === 0 && this.#barIndex < bars[0])) {
 				isLoop = true;
 				this.#barIndex = 0;
 			}
+
 			for (const [trackIndex, track] of this.#tracks.entries()) {
 				if (trackIndex >= this.#trackCount) continue;
 				if ((!isLoop && track.loop !== 0) || (isLoop && track.loop === 0)) continue;
@@ -376,6 +380,11 @@ export class Sequencer {
 			this.#bus.dispatchEvent(
 				new CustomEvent('sequencer:pushAnimations', { detail: { animations } })
 			);
+
+			if (animations.size === 0) {
+				clearInterval(this.#loopID);
+				this.#bus.dispatchEvent(new CustomEvent('sequencer:stopped'));
+			}
 
 			this.#barIndex++;
 			barTime += secondsPerBar;

@@ -2,6 +2,7 @@ export default class InterfacePresets {
 	#ui;
 	#bus;
 	#checkBoxShare;
+	#unsaved =        document.body.dataset.unsaved;
 	#toast =          document.querySelector('#toast');
 	#share =          document.querySelector('#share');
 	#shared =         document.querySelector('#shared');
@@ -83,7 +84,7 @@ export default class InterfacePresets {
 		const data = { items: [], checkBoxList: [], checkedBox: false };
 		if (isUnsaved) {
 			const { li, input } = this.#createCheckItem({
-				name: this.#ui.unsaved,
+				name: this.#unsaved,
 				value: -1,
 				checked: true,
 			});

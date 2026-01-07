@@ -63,7 +63,7 @@ export default class InterfaceControls {
 			this.#reset();
 		}
 		else if (target === this.#startButton) {
-			this.#toggleStartButton();
+			this.toggleStartButton();
 		}
 	}
 
@@ -148,7 +148,7 @@ export default class InterfaceControls {
 		this.#bus.dispatchEvent(new CustomEvent('interface:reset'));
 	}
 
-	#toggleStartButton(status) {
+	toggleStartButton(status) {
 		const isRunning = this.#ui.isRunning;
 		const shouldStart = status ?? !isRunning;
 		if (status !== undefined && shouldStart === isRunning) return;

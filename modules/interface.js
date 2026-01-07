@@ -21,7 +21,6 @@ export class Interface {
 	#volumesNodes =     document.getElementsByClassName(this.#volumeName);
 	#instrumentsNodes = document.getElementsByClassName(this.#instrumentName);
 
-	#unsaved =         document.body.dataset.unsaved;
 	#untitled =        document.body.dataset.untitled;
 	#headTitlePrefix = `${document.title} - `;
 	#stepsPerTrack =   this.#maxBars * this.#subdivision;
@@ -201,29 +200,29 @@ export class Interface {
 	}
 
 	getInstrumentName(trackIndex) {
-		const instrument = this.instruments[trackIndex];
+		const instrument = this.#instrumentsNodes[trackIndex];
 		return instrument.options[instrument.selectedIndex].text;
 	}
 
 	getIndexesFromStep(step) {
 		const stepPosition = Array.prototype.indexOf.call(this.#stepsNodes, step);
-		const trackIndex = Math.floor(stepPosition / this.stepsPerTrack);
-		const remainder = stepPosition % this.stepsPerTrack;
-		const barIndex = Math.floor(remainder / this.subdivision);
-		const stepIndex = remainder % this.subdivision;
+		const trackIndex = Math.floor(stepPosition / this.#stepsPerTrack);
+		const remainder = stepPosition % this.#stepsPerTrack;
+		const barIndex = Math.floor(remainder / this.#subdivision);
+		const stepIndex = remainder % this.#subdivision;
 		return { trackIndex, barIndex, stepIndex };
 	}
 
 	getStepFromIndexes({ trackIndex, barIndex, stepIndex }) {
-		return this.steps[trackIndex * this.stepsPerTrack + barIndex * this.subdivision + stepIndex];
+		return this.#stepsNodes[trackIndex * this.#stepsPerTrack + barIndex * this.#subdivision + stepIndex];
 	}
 
 	get isRunning() {
-		return this.animationModule ? this.animationModule.isRunning : false;
+		return this.#animationModule ? this.#animationModule.isRunning : false;
 	}
 
 	get hasStroke() {
-		return Array.prototype.some.call(this.stepsNodes, step => step.value !== '0');
+		return Array.prototype.some.call(this.#stepsNodes, step => step.value !== '0');
 	}
 
 	get bpm() { return this.#bpmNode; }
@@ -235,15 +234,12 @@ export class Interface {
 	get tempo() { return this.#tempoNode; }
 	get tracks() { return this.#tracksNodes; }
 	get presets() { return this.#presetsNode; }
-	get unsaved() { return this.#unsaved; }
 	get untitled() { return this.#untitled; }
 	get stepName() { return this.#stepName; }
 	get container() { return this.#containerNode; }
 	get volumeName() { return this.#volumeName; }
 	get subdivision() { return this.#subdivision; }
 	get instruments() { return this.#instrumentsNodes; }
-	get stepsPerTrack() { return this.#stepsPerTrack; }
 	get instrumentName() { return this.#instrumentName; }
-	get animationModule() { return this.#animationModule; }
 
 }

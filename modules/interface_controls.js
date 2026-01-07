@@ -1,30 +1,38 @@
-export function init(ui) {
+export default class InterfaceControls {
+	#ui;
+	#bus;
+	#trackIndex;
+	#startClass      = 'started';
+	#trackButtonName = 'trackbutton'
+	
+	#startButton =       document.querySelector('#start');
+	#resetButton =       document.querySelector('#reset');
+	#trackSettings =     document.querySelector('#track');
+	#trackSettingsName = document.querySelector('#instrument');
 
-	let trackIndex;
-	const startClass = 'started';
-	const startButton = document.querySelector('#start');
-	const resetButton = document.querySelector('#reset');
-	const trackSettings = document.querySelector('#track');
-	const instrumentName = document.querySelector('#instrument');
+	constructor({ bus, parent }) {
+		this.#bus = bus;
+		this.#ui = parent;
 
-	document.addEventListener('click', handleClick);
-	ui.container.addEventListener('input', handleInput);
-	ui.container.addEventListener('change', handleChange);
-	trackSettings.addEventListener('submit', setTrack);
+		document.           addEventListener('click',  (event) => this.#handleClick(event));
+		this.#ui.container. addEventListener('input',  (event) => this.#handleInput(event));
+		this.#ui.container. addEventListener('change', (event) => this.#handleChange(event));
+		this.#trackSettings.addEventListener('submit', (event) => this.#setTrack(event));
 
-	Array.from(ui.tracks).forEach(track => {
-		track.addEventListener('input', handleTrackChange);
-		track.addEventListener('click', openTrackSettings);
-	});
+		Array.from(this.#ui.tracks).forEach(track => {
+			track.addEventListener('input', (event) => this.#handleTrackChange(event));
+			track.addEventListener('click', (event) => this.#openTrackSettings(event));
+		});
+	}
 
-	function setTrack(event) {
+	#setTrack(event) {
 		if (event.submitter?.name !== 'apply') return;
-		const track = ui.tracks[trackIndex];
+		const track = this.#ui.tracks[this.#trackIndex];
 		const values = track.dataset;
 		const fields = {
-			beat: ui.beat.value,
-			bars: ui.bars.value,
-			loop: ui.loop.value
+			beat: this.#ui.beat.value,
+			bars: this.#ui.bars.value,
+			loop: this.#ui.loop.value
 		};
 		const changes = {};
 		for (const [key, newValue] of Object.entries(fields)) {
@@ -34,120 +42,119 @@ export function init(ui) {
 		}
 		if (Object.keys(changes).length === 0) return;
 		document.startViewTransition(() => Object.assign(values, changes));
-		const detail = { detail: { tracks: { [trackIndex]: changes } } };
-		ui.bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-		ui.bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
+		const detail = { detail: { tracks: { [this.#trackIndex]: changes } } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
-	async function handleClick({ target }) {
+	async #handleClick({ target }) {
 		// Cas où l'audio doit être prêt avant d’agir
-		if (target === startButton || target.name === ui.stepName) {
-			await audioRequest();
+		if (target === this.#startButton || target.name === this.#ui.stepName) {
+			await this.#audioRequest();
 		}
 		// Cas où l'audio peut se s'activer en arrière-plan
 		else {
-			audioRequest();
+			this.#audioRequest();
 		}
-		if (target.name === ui.stepName) {
-			changeNote(target);
+		if (target.name === this.#ui.stepName) {
+			this.#changeNote(target);
 		}
-		else if (target === resetButton) {
-			reset();
+		else if (target === this.#resetButton) {
+			this.#reset();
 		}
-		else if (target === startButton) {
-			toggleStartButton();
+		else if (target === this.#startButton) {
+			this.#toggleStartButton();
 		}
 	}
 
-	async function audioRequest() {
+	async #audioRequest() {
 		await new Promise(resolve => {
-			ui.bus.dispatchEvent(new CustomEvent('interface:audioRequest', { detail: { resolve } }));
+			this.#bus.dispatchEvent(new CustomEvent('interface:audioRequest', { detail: { resolve } }));
 		});
 	}
 
-	function handleInput({ target }) {
-		if (target === ui.presetsSelection) {
-			changePreset();
+	#handleInput({ target }) {
+		if (target === this.#ui.presetsSelection) {
+			this.#changePreset();
 		}
-		else if (target === ui.tempo) {
-			inputTempo(target.value);
-		}
-	}
-
-	function handleChange({ target }) {
-		if (target === ui.tempo) {
-			changeTempo();
-		}
-		else if (target.name === ui.volumeName) {
-			changeVolume();
+		else if (target === this.#ui.tempo) {
+			this.#inputTempo(target.value);
 		}
 	}
 
-	function openTrackSettings({ target }) {
-		if (target.name !== ui.trackButtonName) return;
-		const track = event.currentTarget;
+	#handleChange({ target }) {
+		if (target === this.#ui.tempo) {
+			this.#changeTempo();
+		}
+		else if (target.name === this.#ui.volumeName) {
+			this.#changeVolume();
+		}
+	}
+
+	#openTrackSettings({ target, currentTarget }) {
+		if (target.name !== this.#trackButtonName) return;
+		const track = currentTarget;
 		const values = track.dataset;
-		ui.beat.value = values.beat;
-		ui.bars.value = values.bars;
-		ui.loop.value = values.loop;
-		trackIndex = [...ui.tracks].indexOf(track);
-		instrumentName.textContent = ui.getInstrumentName(trackIndex);
-		trackSettings.showModal();
-		trackSettings.focus();
+		this.#ui.beat.value = values.beat;
+		this.#ui.bars.value = values.bars;
+		this.#ui.loop.value = values.loop;
+		this.#trackIndex = [...this.#ui.tracks].indexOf(track);
+		this.#trackSettingsName.textContent = this.#ui.getInstrumentName(this.#trackIndex);
+		this.#trackSettings.showModal();
+		this.#trackSettings.focus();
 	}
 
-	function changeNote(target) {
-		const { trackIndex, barIndex, stepIndex } = ui.getIndexesFromStep(target);
+	#changeNote(target) {
+		const { trackIndex, barIndex, stepIndex } = this.#ui.getIndexesFromStep(target);
 		const change = { barIndex, stepIndex, value: Number(target.value) };
 		const event = new CustomEvent('interface:changeNote', { detail: { trackIndex, change } });
-		ui.bus.dispatchEvent(event);
+		this.#bus.dispatchEvent(event);
 	}
 
-	function handleTrackChange({ currentTarget, target }) {
-		const trackIndex = [...ui.tracks].indexOf(currentTarget);
+	#handleTrackChange({ currentTarget, target }) {
+		const trackIndex = [...this.#ui.tracks].indexOf(currentTarget);
 		const value = Number(target.value);
 		const detail = { detail: { tracks: { [trackIndex]: {} } } };
-		if (target.name === ui.instrumentName) {
-			ui.tracks[trackIndex].dataset.instrument = value;
+		if (target.name === this.#ui.instrumentName) {
+			this.#ui.tracks[trackIndex].dataset.instrument = value;
 			detail.detail.tracks[trackIndex].instrument = value;
-			ui.bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-			ui.bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
+			this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+			this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 		}
-		else if (target.name === ui.volumeName) {
+		else if (target.name === this.#ui.volumeName) {
 			detail.detail.tracks[trackIndex].volume = value;
-			ui.bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+			this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
 		}
 	}
 
-	function inputTempo(value) {
-		ui.bpm.textContent = value;
-		ui.bus.dispatchEvent(new CustomEvent('interface:inputTempo', { detail: Number(value) }));
+	#inputTempo(value) {
+		this.#ui.bpm.textContent = value;
+		this.#bus.dispatchEvent(new CustomEvent('interface:inputTempo', { detail: Number(value) }));
 	}
 
-	function changeVolume() {
-		ui.bus.dispatchEvent(new CustomEvent('interface:changeVolume'));
+	#changeVolume() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:changeVolume'));
 	}
 
-	function changeTempo() {
-		ui.bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
+	#changeTempo() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
 	}
 
-	function changePreset() {
-		ui.bus.dispatchEvent(new CustomEvent('interface:restart'));
+	#changePreset() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:restart'));
 	}
 
-	function reset() {
-		ui.bus.dispatchEvent(new CustomEvent('interface:reset'));
+	#reset() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:reset'));
 	}
 
-	function toggleStartButton(status) {
-		const isRunning = ui.isRunning();
+	#toggleStartButton(status) {
+		const isRunning = this.#ui.isRunning;
 		const shouldStart = status ?? !isRunning;
 		if (status !== undefined && shouldStart === isRunning) return;
-		startButton.setAttribute('aria-checked', String(shouldStart));
-		ui.container.classList.toggle(startClass, shouldStart);
-		ui.bus.dispatchEvent(new CustomEvent(shouldStart ? 'interface:start' : 'interface:stop'));
+		this.#startButton.setAttribute('aria-checked', String(shouldStart));
+		this.#ui.container.classList.toggle(this.#startClass, shouldStart);
+		this.#bus.dispatchEvent(new CustomEvent(shouldStart ? 'interface:start' : 'interface:stop'));
 	}
 
-	return { toggleStartButton };
 }

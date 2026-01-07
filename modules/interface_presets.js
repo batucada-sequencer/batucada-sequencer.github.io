@@ -1,59 +1,66 @@
-export function init(ui) {
+export default class InterfacePresets {
+	#ui;
+	#bus;
+	#checkBoxShare;
+	#toast =          document.querySelector('#toast');
+	#share =          document.querySelector('#share');
+	#shared =         document.querySelector('#shared');
+	#settings =       document.querySelector('#settings');
+	#shareList =      document.querySelector('#share ul');
+	#presetName =     document.querySelector('#preset');
+	#sharedList =     document.querySelector('#shared ul');
+	#shareButton =    document.querySelector('#share button[name="share"]');
+	#toastMessage =   document.querySelector('#toast p');
+	#cancelButton =   document.querySelector('#toast button');
+	#settingsButton = document.querySelector('#combo_presets button');
+	#checkBoxMaster = document.querySelector('#check_all input');
 
-	let checkBoxShare;
-	const share = document.querySelector('#share');
-	const shared = document.querySelector('#shared');
-	const shareList = document.querySelector('#share ul');
-	const sharedList = document.querySelector('#shared ul');
-	const shareButton = document.querySelector('#share button[name="share"]');
-	const checkBoxMaster = document.querySelector('#check_all input');
-	const settings = document.querySelector('#settings');
-	const settingsButton = document.querySelector('#combo_presets button');
-	const presetName = document.querySelector('#preset');
-	const toast = document.querySelector('#toast');
-	const toastMessage = document.querySelector('#toast p');
-	const cancelButton = document.querySelector('#toast button');
+	constructor({ bus, parent }) {
+		this.#bus = bus
+		this.#ui = parent;
 
-	document.addEventListener('submit', submitForm);
-	shared.addEventListener('close', sharedClosed);
-	toast.addEventListener('animationend', toast.hidePopover);
-	checkBoxMaster.form.addEventListener('change', checkValues);
-	ui.presetsSelection.addEventListener('change', setSelectedPreset);
-	settingsButton.addEventListener('click', openSettings);
-	sharedList.addEventListener('click', loadClickedPreset);
-	toastPositioning();
+		document.                 addEventListener('submit',       (event) => this.#submitForm(event));
+		this.#shared.             addEventListener('close',        (event) => this.#sharedClosed());
+		this.#toast.              addEventListener('animationend', (event) => this.#toast.hidePopover());
+		this.#checkBoxMaster.form.addEventListener('change',       (event) => this.#checkValues(event));
+		this.#ui.presets.         addEventListener('change',       (event) => this.#setSelectedPreset(event));
+		this.#settingsButton.     addEventListener('click',        (event) => this.#openSettings());
+		this.#sharedList.         addEventListener('click',        (event) => this.#loadClickedPreset(event));
+
+		this.#toastPositioning();
+	}
 
 	// Chargement conditionnel du polyfill toast_positioning
-	async function toastPositioning() {
+	async #toastPositioning() {
 		if (!CSS.supports('inset', 'anchor-size(height)')) {
 			const { applyPolyfill } = await import('./toast_positioning.js');
-			applyPolyfill(toast, ui.container);
+			applyPolyfill(this.#toast, this.#ui.container);
 		}
 	}
 
-	function setSelectedPreset(event) {
+	#setSelectedPreset(event) {
 		const { value, selectedIndex, options } = event.target;
 		const { text } = options[selectedIndex];
-		const name = text === ui.untitled ? undefined : text;
+		const name = text === this.#ui.untitled ? undefined : text;
 		document.startViewTransition(() => {
-			ui.bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value } }));
+			this.#bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value } }));
 		});
 	}
 
-	function loadClickedPreset(event) {
-		const url = event.target.href;
-		if (!url) return;
+	#loadClickedPreset(event) {
+		const href = event.target.href;
+		if (!href) return;
 		event.preventDefault();
-		shared.close();
-		ui.bus.dispatchEvent(new CustomEvent('interface:presetClicked', { detail: url }));
+		this.#shared.close();
+		this.#bus.dispatchEvent(new CustomEvent('interface:presetClicked', { detail: href }));
 	}
 
-	function openSettings() {
-		const title = ui.title.textContent;
-		const presetIndex = Array.from(ui.presetsSelection.options)
+	#openSettings() {
+		const title = this.#ui.title.textContent;
+		const presetIndex = Array.from(this.#ui.presets.options)
 			.slice(1)
 			.findIndex(option => option.text === title);
-		const hasSelection = ui.presetsSelection.selectedIndex > 0;
+		const hasSelection = this.#ui.presets.selectedIndex > 0;
 		const exists = presetIndex !== -1 && title;
 		const formsValues = [
 			{ formId:'newOne', name: exists ? '' : title, hidden: hasSelection },
@@ -66,17 +73,17 @@ export function init(ui) {
 			form.hidden = hidden;
 			form.elements.name.value = name;
 		}
-		presetName.textContent = title || ui.untitled;
-		settings.showModal();
-		settings.focus();
+		this.#presetName.textContent = title || this.#ui.untitled;
+		this.#settings.showModal();
+		this.#settings.focus();
 	}
 
-	function openShareList() {
-		const unsaved = ui.presetsSelection.selectedIndex < 1 && ui.hasStroke();
+	#openShareList() {
+		const isUnsaved = this.#ui.presets.selectedIndex < 1 && this.#ui.hasStroke;
 		const data = { items: [], checkBoxList: [], checkedBox: false };
-		if (unsaved) {
-			const { li, input } = createCheckItem({
-				name: ui.unsaved,
+		if (isUnsaved) {
+			const { li, input } = this.#createCheckItem({
+				name: this.#ui.unsaved,
 				value: -1,
 				checked: true,
 			});
@@ -84,11 +91,11 @@ export function init(ui) {
 			data.checkedBox = input;
 			data.checkBoxList.push(input);
 		}
-		Array.from(ui.presetsSelection.options).forEach((option, index) => {
+		Array.from(this.#ui.presets.options).forEach((option, index) => {
 			const name = option.text;
 			// Conserve uniquement les morceaux avec un nom
-			if (option.disabled || name === ui.untitled) return;
-			const { li, input } = createCheckItem({
+			if (option.disabled || name === this.#ui.untitled) return;
+			const { li, input } = this.#createCheckItem({
 				name,
 				value: index - 1,
 				checked: option.selected,
@@ -98,16 +105,16 @@ export function init(ui) {
 			if (input.checked) data.checkedBox = input;
 		});
 		const { items, checkedBox, checkBoxList } = data;
-		shareList.replaceChildren(...items);
-		checkBoxShare = checkBoxList;
-		checkValues();
-		share.showModal();
+		this.#shareList.replaceChildren(...items);
+		this.#checkBoxShare = checkBoxList;
+		this.#checkValues();
+		this.#share.showModal();
 		if (checkedBox) {
 			checkedBox.scrollIntoView({ behavior: 'instant', block: 'center' });
 		}
 	}
 
-	const createCheckItem = ({ name, value, checked }) => {
+	#createCheckItem = ({ name, value, checked }) => {
 		const li = document.createElement('li');
 		const label = document.createElement('label');
 		const input = Object.assign(document.createElement('input'), {
@@ -121,123 +128,124 @@ export function init(ui) {
 		return { li, input };
 	};
 
-	function openShared(links) {
-		sharedList.replaceChildren(
+	openShared(links) {
+		this.#sharedList.replaceChildren(
 			...links.map(({ name, url }) => {
 				const a = document.createElement('a');
 				const li = document.createElement('li');
 				a.href = url;
-				a.textContent = name || ui.untitled;
+				a.textContent = name ||this.#ui.untitled;
 				li.appendChild(a);
 				return li;
 			})
 		);
-		shared.showModal();
-		shared.focus();
+		this.#shared.showModal();
+		this.#shared.focus();
 	}
 
-	function sharedClosed() {
-		ui.bus.dispatchEvent(new CustomEvent('interface:sharedClosed'));
+	#sharedClosed() {
+		this.#bus.dispatchEvent(new CustomEvent('interface:sharedClosed'));
 	}
 
-	function checkValues(event = { target: false }) {
-		if (event.target === checkBoxMaster) {
-			checkBoxShare.forEach(checkbox => checkbox.checked = checkBoxMaster.checked);
+	#checkValues(event = { target: false }) {
+		if (event.target === this.#checkBoxMaster) {
+			this.#checkBoxShare.forEach(checkbox => checkbox.checked = this.#checkBoxMaster.checked);
 		}
-		const checkedCount = checkBoxShare.filter(checkbox => checkbox.checked).length;
-		checkBoxMaster.checked = checkedCount > 0 && checkedCount === checkBoxShare.length;
-		checkBoxMaster.setCustomValidity('');
+		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
+		this.#checkBoxMaster.checked = checkedCount > 0 && checkedCount === this.#checkBoxShare.length;
+		this.#checkBoxMaster.setCustomValidity('');
 	}
 
-	function submitForm(event) {
+	#submitForm(event) {
 		const action = event.submitter.name;
 		if (action === 'save') {
-			saveSettings(event.target);
+			this.#saveSettings(event);
 		}
 		else if (action === 'cancel') {
-			cancelSettings(event.submitter);
+			this.#cancelSettings(event.submitter);
 		}
 		else if (action === 'share_list') {
-			openShareList();
+			this.#openShareList();
 		}
 		else if (action === 'share') {
-			sharePresets(event);
+			this.#sharePresets(event);
 		}
 		else if (action === 'import') {
-			importPresets(event.target);
+			this.#importPresets(event.target);
 		}
 	}
 
-	async function saveSettings(form) {
+	async #saveSettings(event) {
 		event.preventDefault();
+		const form = event.target;
 		try {
 			const action = form.id;
 			const presetName = form.elements['name'];
 			const name = presetName.value.trim();
 			await new Promise((resolve, reject) => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:settingsSave', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:settingsSave', { 
 					detail: { action, name, promise: { resolve, reject } }
 				}));
 			});
-			cancelButton.setAttribute('form', form.id);
-			showToast(form.dataset.success);
+			this.#cancelButton.setAttribute('form', form.id);
+			this.#showToast(form.dataset.success);
 		} catch (error) {
-			settings.close();
-			showToast(form.dataset.failure);
+			this.#settings.close();
+			this.#showToast(form.dataset.failure);
 		}
 	}
 
-	async function cancelSettings(button) {
-		toast.hidePopover();
+	async #cancelSettings(button) {
+		this.#toast.hidePopover();
 		const messages = button.form.dataset;
 		button.removeAttribute('form');
 		try {
 			await new Promise((resolve, reject) => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:settingsCancel', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:settingsCancel', { 
 					detail: { resolve, reject }
 				}));
 			});
-			showToast(messages.cancelSuccess);
+			this.#showToast(messages.cancelSuccess);
 		} catch (error) {
-			showToast(messages.cancelFailure);
+			this.#showToast(messages.cancelFailure);
 		}
 	}
 
-	async function sharePresets(event) {
+	async #sharePresets(event) {
 		const data = new FormData(event.target);
 		const presetsIndex = data.getAll('index');
 		if (!presetsIndex.length) {
-			checkBoxMaster.setCustomValidity(checkBoxMaster.dataset.invalidEmpty);
-			checkBoxMaster.reportValidity();
+			this.#checkBoxMaster.setCustomValidity(this.#checkBoxMaster.dataset.invalidEmpty);
+			this.#checkBoxMaster.reportValidity();
 			event.preventDefault();
 			return;
 		}
 		try {
 			await new Promise((resolve, reject) => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:presetsShare', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:presetsShare', { 
 					detail: { presetsIndex, promise: { resolve, reject } }
 				}));
 			});
 		} catch (error) {
-			showToast(event.target.dataset.failure);
+			this.#showToast(event.target.dataset.failure);
 		}
 	}
 
-	async function importPresets(form) {
+	async #importPresets(form) {
 		try {
 			await new Promise((resolve, reject) => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:presetsImport', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:presetsImport', { 
 					detail: { resolve, reject }
 				}));
 			});
-			cancelButton.setAttribute('form', form.id);
-			showToast(form.dataset.success);
+			this.#cancelButton.setAttribute('form', form.id);
+			this.#showToast(form.dataset.success);
 		} catch (error) {
-			showToast(form.dataset.failure);
+			this.#showToast(form.dataset.failure);
 		}
 	}
 
-	function reportNameValidity({ action, customValidity }) {
+	reportNameValidity({ action, customValidity }) {
 		const input = document.forms[action].elements.name;
 		const datasetNames = {
 			empty: 'invalidEmpty',
@@ -245,7 +253,7 @@ export function init(ui) {
 		}
 		const validity = input.dataset[datasetNames[customValidity]] ?? '';
 		if (validity === '') {
-			settings.close();
+			this.#settings.close();
 		}
 		else {
 			input.setCustomValidity(validity);
@@ -256,11 +264,10 @@ export function init(ui) {
 		}
 	}
 
-	function showToast(message) {
-		cancelButton.hidden = !cancelButton.form;
-		toastMessage.textContent = message;
-		toast.showPopover();
+	#showToast(message) {
+		this.#cancelButton.hidden = !this.#cancelButton.form;
+		this.#toastMessage.textContent = message;
+		this.#toast.showPopover();
 	}
 
-	return { openSettings, openShared, reportNameValidity };
 }

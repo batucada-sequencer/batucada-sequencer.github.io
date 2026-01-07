@@ -1,74 +1,79 @@
-export function init(ui) {
+export default class InterfaceSwap {
+	#ui;
+	#bus;
+	#over =          [];
+	#swapClass =     'swap';
+	#overClass =     'over';
+	#trashClass =    'trash';
+	#draggedClass =  'dragged';
+	#dropzoneClass = 'dropzone';
+	#trash =         document.querySelector('#trash');
 
-	const over = [];
-	const swapClass = 'swap';
-	const overClass = 'over';
-	const trashClass = 'trash';
-	const draggedClass = 'dragged';
-	const dropzoneClass = 'dropzone';
-	const trash = document.querySelector('#trash');
+	constructor({ bus, parent }) {
+		this.#bus = bus;
+		this.#ui = parent;
 
-	for (const track of ui.tracks) {
-		track.addEventListener('dragstart', (event) => handleDragStart(ui, event));
-		track.addEventListener('dragenter', (event) => handleDragEnter(event));
-		track.addEventListener('drop',      (event) => handleDrop(ui, event));
-	};
-	ui.container.addEventListener('dragover',  (event) => handleDragOver(event));
-	ui.container.addEventListener('dragleave', (event) => handleDragLeave(event));
-	ui.container.addEventListener('dragend',   (event) => handleDragEnd(event));
-	trash.addEventListener('dragenter', (event) => handleDragEnter(event));
-	trash.addEventListener('drop', (event) => handleDrop(ui, event));
+		for (const track of this.#ui.tracks) {
+			track.addEventListener('dragstart', (event) => this.#handleDragStart(event));
+			track.addEventListener('dragenter', (event) => this.#handleDragEnter(event));
+			track.addEventListener('drop',      (event) => this.#handleDrop( event));
+		};
 
-	function handleDragStart({ tracks, isDraggable }, event) {
+		this.#trash.       addEventListener('dragenter', (event) => this.#handleDragEnter(event));
+		this.#trash.       addEventListener('drop',      (event) => this.#handleDrop(event));
+		this.#ui.container.addEventListener('dragover',  (event) => this.#handleDragOver(event));
+		this.#ui.container.addEventListener('dragleave', (event) => this.#handleDragLeave(event));
+		this.#ui.container.addEventListener('dragend',   (event) => this.#handleDragEnd(event));
+	}
+
+	#handleDragStart(event) {
 		const track = event.currentTarget;
-		track.classList.add(draggedClass);
-		if (isDraggable(track)) {
-			ui.container.classList.add(swapClass);
+		track.classList.add(this.#draggedClass);
+		if (this.#ui.hasInstrument(track)) {
+			this.#ui.container.classList.add(this.#swapClass);
 		}
-		ui.container.classList.add(trashClass);
-		event.dataTransfer.setData('text/plain', [...tracks].indexOf(track));
+		this.#ui.container.classList.add(this.#trashClass);
+		event.dataTransfer.setData('text/plain', [...this.#ui.tracks].indexOf(track));
 		event.dataTransfer.setDragImage(event.target, 0, 15);
 		event.dataTransfer.effectAllowed = 'move';
 	}
 
-	function handleDragOver(event) {
-		const { target } = event;
-		if (ui.container.classList.contains(swapClass) && target.className === dropzoneClass || target === trash) {
+	#handleDragOver(event) {
+		if (this.#isOver(event.target)) {
 			event.preventDefault();
 		}
 		else {
-			removeOver();
+			this.#removeOver();
 		}
 	}
 
-	function handleDragEnter(event) {
-		const { target } = event;
-		if (ui.container.classList.contains(swapClass) && target.className === dropzoneClass || target === trash) {
-			over.push(event.currentTarget);
-			event.currentTarget.classList.add(overClass);
+	#handleDragEnter(event) {
+		if (this.#isOver(event.target)) {
+			this.#over.push(event.currentTarget);
+			event.currentTarget.classList.add(this.#overClass);
 		}
 	}
 
-	function handleDragLeave(event) {
-		if (event.target.className === dropzoneClass) {
-			removeOver();
+	#handleDragLeave(event) {
+		if (event.target.className === this.#dropzoneClass) {
+			this.#removeOver();
 		}
 	}
 
-	function handleDragEnd(event) {
-		ui.container.classList.remove(swapClass, trashClass);
-		removeOver();
+	#handleDragEnd(event) {
+		this.#ui.container.classList.remove(this.#swapClass, this.#trashClass);
+		this.#removeOver();
 	}
 
-	function handleDrop({ tracks, bus } , event) {
-		removeOver();
-		const isTrash = event.currentTarget === trash;
+	#handleDrop(event) {
+		this.#removeOver();
+		const isTrash = event.currentTarget === this.#trash;
 		const sourceIndex = Number(event.dataTransfer.getData('text'))
-		const draggedTrack = tracks.item(sourceIndex);
+		const draggedTrack = this.#ui.tracks.item(sourceIndex);
 		const targetTrack = isTrash ? null : event.currentTarget;
-		const targetIndex = isTrash ? null : [...tracks].indexOf(targetTrack);
-		const isLastTrack = sourceIndex === tracks.length - 1;
-		const canSwap = ui.container.classList.contains(swapClass);
+		const targetIndex = isTrash ? null : [...this.#ui.tracks].indexOf(targetTrack);
+		const isLastTrack = sourceIndex === this.#ui.tracks.length - 1;
+		const canSwap = this.#ui.container.classList.contains(this.#swapClass);
 		// useAnimation si on déplace à la corbeille le dernière piste affichée
 		const useAnimation = isTrash && (!canSwap || isLastTrack);
 		const moveTrack = () => {
@@ -78,7 +83,7 @@ export function init(ui) {
 			else {
 				targetTrack.before(draggedTrack);
 			}
-			bus.dispatchEvent(
+			this.#bus.dispatchEvent(
 				new CustomEvent('interface:moveTrack', { detail: { sourceIndex, targetIndex } })
 			);
 		};
@@ -90,9 +95,15 @@ export function init(ui) {
 		}
 	}
 
-	function removeOver() {
-		while (over.length) {
-			over.pop().classList.remove(overClass);
+	#isOver(target) {
+		return this.#ui.container.classList.contains(this.#swapClass) 
+			&& target.className === this.#dropzoneClass
+			|| target === this.#trash;
+	}
+
+	#removeOver() {
+		while (this.#over.length) {
+			this.#over.pop().classList.remove(this.#overClass);
 		}
 	}
 

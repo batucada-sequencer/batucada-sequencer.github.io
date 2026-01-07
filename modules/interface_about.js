@@ -1,34 +1,37 @@
-export function init(ui) {
+export default class InterfaceAbout {
+	#bus;
+	#about =              document.querySelector('#about');
+	#contact =            document.querySelector('#contact');
+	#dataDate =           document.querySelector('#dataDate');
+	#aboutButton =        document.querySelector('footer button');
+	#updateButton =       document.querySelector('#update');
+	#applicationVersion = document.querySelector('#applicationVersion');
+	#instrumentsVersion = document.querySelector('#instrumentsVersion');
 
-	const about = document.querySelector('#about');
-	const contact = document.querySelector('#contact');
-	const dataDate = document.querySelector('#dataDate');
-	const aboutButton = document.querySelector('footer button');
-	const updateButton = document.querySelector('#update');
-	const applicationVersion = document.querySelector('#applicationVersion');
-	const instrumentsVersion = document.querySelector('#instrumentsVersion');
+	constructor({ bus, email }) {
+		this.#bus = bus;
+		this.#contact.textContent = email;
+		this.#contact.href = `mailto:${email}`;
 
-	aboutButton.addEventListener('click', openAbout);
-	updateButton.addEventListener('click', update);
-
-	contact.href = `mailto:${ui.email}`;
-	contact.textContent = ui.email;
-
-	function showUpdateButton() {
-		updateButton.hidden = false;
+		this.#aboutButton. addEventListener('click', () => this.#openAbout());
+		this.#updateButton.addEventListener('click', () => this.#update());
 	}
 
-	function update() {
-		about.close();
+	showUpdateButton() {
+		this.#updateButton.hidden = false;
+	}
+
+	#update() {
+		this.#about.close();
 		document.body.inert = true;
-		ui.bus.dispatchEvent(new CustomEvent('interface:install'));
+		this.#bus.dispatchEvent(new CustomEvent('interface:install'));
 	}
 
-	async function openAbout() {
+	async #openAbout() {
 		try {
-			ui.bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
+			this.#bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
 			const lastModified = await new Promise(resolve => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { detail: resolve }));
+				this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { detail: resolve }));
 			});
 			if (lastModified) {
 				const date = new Date(lastModified);
@@ -37,17 +40,15 @@ export function init(ui) {
 					`${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', localeOpts)}`;
 			}
 			const versions = await new Promise(resolve => {
-				ui.bus.dispatchEvent(new CustomEvent('interface:getVersions', { detail: resolve }));
+				this.#bus.dispatchEvent(new CustomEvent('interface:getVersions', { detail: resolve }));
 			});
 			if (versions) {
-				applicationVersion.textContent = versions.app;
-				instrumentsVersion.textContent = versions.static;
-				updateButton.hidden = !versions.hasUpdate;
+				this.#applicationVersion.textContent = versions.app;
+				this.#instrumentsVersion.textContent = versions.static;
+				this.#updateButton.hidden = !versions.hasUpdate;
 			}
 		} catch {}
-		about.showModal();
-		about.focus();
+		this.#about.showModal();
+		this.#about.focus();
 	}
-
-	return { showUpdateButton };
 }

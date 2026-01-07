@@ -1,180 +1,101 @@
 export class Interface {
-	#maxBars = 32;
-	#subdivision = 8;
-	#unsaved;
-	#untitled;
-	#stepsPerTrack;
-	#headTitlePrefix;
-	#container;
-	#bpm;
-	#tempo;
-	#title;
-	#bars;
-	#beat;
-	#loop;
-	#steps;
-	#tracks;
-	#trackIndex;
-	#volumes;
-	#stepName;
-	#barsName;
-	#beatName;
-	#loopName;
-	#volumeName;
-	#trackButtonName;
-	#instrumentName;
-	#instruments;
-	#presetsSelection;
-	#presetsSelectionInit;
-	#interfaceData;
-	#modules;
-	
+	#maxBars        = 32;
+	#subdivision    = 8;
+	#stepName       = 'step';
+	#barsName       = 'bars';
+	#beatName       = 'beat';
+	#loopName       = 'loop';
+	#volumeName     = 'volume';
+	#instrumentName = 'instrument';
+
+	#bpmNode =          document.querySelector('#combo_tempo span');
+	#barsNode =         document.querySelector(`#${this.#barsName}`);
+	#beatNode =         document.querySelector(`#${this.#beatName}`);
+	#loopNode =         document.querySelector(`#${this.#loopName}`);
+	#titleNode =        document.querySelector('h1');
+	#tempoNode =        document.querySelector('#tempo');
+	#presetsNode =      document.querySelector('#combo_presets select');
+	#containerNode =    document.querySelector('main');
+	#stepsNodes =       document.getElementsByClassName(this.#stepName);
+	#tracksNodes =      document.getElementsByClassName('track');
+	#volumesNodes =     document.getElementsByClassName(this.#volumeName);
+	#instrumentsNodes = document.getElementsByClassName(this.#instrumentName);
+
+	#unsaved =         document.body.dataset.unsaved;
+	#untitled =        document.body.dataset.untitled;
+	#headTitlePrefix = `${document.title} - `;
+	#stepsPerTrack =   this.#maxBars * this.#subdivision;
+	#presetsInit =     this.#presetsNode.cloneNode(true);
+
+	#swapModule =      null;
+	#aboutModule =     null;
+	#presetsModule =   null;
+	#controlsModule =  null;
+	#animationModule = null;
+
+	#sharedData =    null;
+	#interfaceData = null;
+
 	constructor({ bus, app_config, instruments }) {
-		const email =  app_config.email;
-		const container = document.querySelector('main');
-		this.#unsaved = document.body.dataset.unsaved;
-		this.#untitled = document.body.dataset.untitled;
-		this.#bpm = document.querySelector('#combo_tempo span');
-		this.#tempo = document.querySelector('#tempo');
-		this.#title = document.querySelector('h1');
-
-		this.#presetsSelection = document.querySelector('#combo_presets select');
-
-		this.#stepName = 'step';
-		this.#barsName = 'bars';
-		this.#beatName = 'beat';
-		this.#loopName = 'loop';
-		this.#volumeName = 'volume';
-		this.#instrumentName = 'instrument';
-		this.#trackButtonName = 'trackbutton';
-
-		this.#tracks = document.getElementsByClassName('track');
-		this.#steps = document.getElementsByClassName(this.#stepName);
-		this.#volumes = document.getElementsByClassName(this.#volumeName);
-		this.#instruments = document.getElementsByClassName(this.#instrumentName);
-		this.#bars = document.querySelector(`#${this.#barsName}`);
-		this.#beat = document.querySelector(`#${this.#beatName}`);
-		this.#loop = document.querySelector(`#${this.#loopName}`);
-
-		this.#modules = {
-			presets: {
-				path: './interface_presets.js',
-				params: {
-					bus,
-					email,
-					container,
-					title: this.#title,
-					unsaved: this.#unsaved,
-					untitled: this.#untitled,
-					hasStroke: this.#hasStroke.bind(this),
-					presetsSelection: this.#presetsSelection,
-				},
-			},
-			controls: {
-				path: './interface_controls.js',
-				params: {
-					bus,
-					container,
-					bpm: this.#bpm,
-					beat: this.#beat,
-					bars: this.#bars,
-					loop: this.#loop,
-					tempo: this.#tempo,
-					tracks: this.#tracks,
-					stepName: this.#stepName,
-					volumeName: this.#volumeName,
-					instrumentName: this.#instrumentName,
-					trackButtonName: this.#trackButtonName,
-					presetsSelection: this.#presetsSelection,
-					isRunning: this.#isRunning.bind(this),
-					getInstrumentName: this.#getInstrumentName.bind(this),
-					getIndexesFromStep: this.#getIndexesFromStep.bind(this),
-				}
-			},
-			about: {
-				path: './interface_about.js',
-				params: {
-					bus,
-					email,
-					container,
-				}
-			},
-			animation: {
-				path: './interface_animation.js',
-				params: {
-					bus,
-					queueLimit: this.#subdivision * 2,
-					getStepFromIndexes: this.#getStepFromIndexes.bind(this),
-				}
-			},
-			swap: {
-				path: './interface_swap.js',
-				params: {
-					bus,
-					tracks: this.#tracks,
-					container,
-					isDraggable: this.#isTrackDraggable.bind(this),
-				}
-			},
-		};
-
-		for (const module of Object.values(this.#modules)) {
-			module.ready = new Promise(resolve => module.resolve = resolve);
-		}
-
-		bus.addEventListener('sequencer:stopped', (event) => this.#modules.controls.toggleStartButton(false));
-		bus.addEventListener('sequencer:updateData', ({ detail }) => this.#updateInterface(detail));
-		bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateInterface(detail));
-		bus.addEventListener('sequencer:pushAnimations', ({ detail }) => this.#modules.animation.setAnimations(detail));
-		bus.addEventListener('presets:changed', ({ detail }) => this.#updateInterface(detail));
-		bus.addEventListener('presets:openShared', ({ detail }) => this.#modules.presets.ready.then((module) => module.openShared(detail)));
-		bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#modules.presets.reportNameValidity(detail));
-		bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
-		bus.addEventListener('urlState:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
-		bus.addEventListener('serviceWorker:newVersion', ({ detail }) => this.#modules.about.showUpdateButton(detail));
-
-		this.#loadModules();
 		this.#initInterface(instruments, app_config.tracksLength);
+		this.#loadModules({ bus, email: app_config.email });
+
+		bus.addEventListener('sequencer:stopped',          ({ detail }) => this.#controlsModule?.toggleStartButton(false));
+		bus.addEventListener('sequencer:updateData',       ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('urlState:decoded',           ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('sequencer:pushAnimations',   ({ detail }) => this.#animationModule?.setAnimations(detail));
+		bus.addEventListener('presets:changed',            ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('presets:openShared',         ({ detail }) => this.#openShared(detail));
+		bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#presetsModule?.reportNameValidity(detail));
+		bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
+		bus.addEventListener('urlState:getInterfaceData',  ({ detail }) => this.#sendInterfaceData(detail));
+		bus.addEventListener('serviceWorker:newVersion',   ({ detail }) => this.#aboutModule?.showUpdateButton(detail));
 	}
 
-	async #loadModules() {
-		const loaders = Object.entries(this.#modules).map(async ([name, module]) => {
-			const imported = await import(module.path);
-			const properties = imported.init(module.params);
-			Object.assign(module, properties);
-			module.resolve(module);
+	#loadModules(context) {
+		const modules = [
+			{ path: './interface_swap.js',      assign: (instance) => this.#swapModule = instance },
+			{ path: './interface_about.js',     assign: (instance) => this.#aboutModule = instance },
+			{ path: './interface_presets.js',   assign: (instance) => this.#presetsModule = instance },
+			{ path: './interface_controls.js',  assign: (instance) => this.#controlsModule = instance },
+			{ path: './interface_animation.js', assign: (instance) => this.#animationModule = instance },
+		];
+		modules.forEach(({ path, assign }) => {
+			import(path).then(module => {
+				const instance = new module.default({ ...context, parent: this });
+				assign(instance);
+				// Cas particulier si l'event 'presets:openShared' a déja été déclenché
+				if (path === './interface_presets.js' && this.#sharedData) {
+					instance.openShared(this.#sharedData);
+					this.#sharedData = null;
+				}
+			});
 		});
-		await Promise.all(loaders);
 	}
 
 	#initInterface(instruments, tracksLength) {
-		this.#headTitlePrefix = `${document.title} - `;
 		document.title = this.#headTitlePrefix + this.#untitled;
 
-		this.#stepsPerTrack = this.#maxBars * this.#subdivision;
-		
-		this.#presetsSelectionInit = this.#presetsSelection.cloneNode(true);
-
 		const options = instruments.slice(1).map((instrument, index) => new Option(instrument.name, index + 1));
-		this.#instruments[0].append(...options);
+		this.#instrumentsNodes[0].append(...options);
 
-		const newTracks = Array.from({ length: tracksLength }, () =>  this.#tracks[0].cloneNode(true));
-		this.#tracks[0].parentNode.replaceChildren(...newTracks);
+		const newTracks = Array.from({ length: tracksLength }, () =>  this.#tracksNodes[0].cloneNode(true));
+		this.#tracksNodes[0].parentNode.replaceChildren(...newTracks);
 
-		const defaultData =  this.#tracks[0].dataset;
+		const defaultData =  this.#tracksNodes[0].dataset;
 		this.#interfaceData = {
-			defaultTempo: this.#tempo.value,
-			defaultGain: this.#volumes[0].value,
+			defaultTempo: this.#tempoNode.value,
+			defaultGain: this.#volumesNodes[0].value,
 			defaultBars: defaultData[this.#barsName],
 			defaultBeat: defaultData[this.#beatName],
 			defaultLoop: defaultData[this.#loopName],
 			defaultInstrument: defaultData[this.#instrumentName],
-			barsValues: Array.from(this.#bars.options).map(option => option.value),
-			beatValues: Array.from(this.#beat.options).map(option => option.value),
-			loopValues: Array.from(this.#loop.options).map(option => option.value),
-			tempoStep: this.#tempo.step,
+			barsValues: Array.from(this.#barsNode.options).map(option => option.value),
+			beatValues: Array.from(this.#beatNode.options).map(option => option.value),
+			loopValues: Array.from(this.#loopNode.options).map(option => option.value),
+			tempoStep: this.#tempoNode.step,
 			maxBars: this.#maxBars,
-			maxGain: this.#volumes[0].max,
+			maxGain: this.#volumesNodes[0].max,
 			subdivision: this.#subdivision,
 			tracksLength,
 		};
@@ -201,107 +122,128 @@ export class Interface {
 				};
 			};
 		}
-
 	}
 
-	#updateInterface(changes) {
-		Object.entries(changes).forEach(([item, value]) => {
-			switch (item) {
-				case 'tempo':   this.#updateTempo(value); break;
-				case 'title':   this.#updateTitle(value); break;
-				case 'tracks':  this.#updateTracks(value); break;
-				case 'presets': this.#updatePresets(value); break;
-				case 'index':   this.#updatePresetsIndex(value); break;
-			}
-		});
+	#updateInterface({ tempo, title, index, tracks, presets }) {
+		if (tempo   !== undefined) this.#tempo   = tempo;
+		if (title   !== undefined) this.#title   = title;
+		if (index   !== undefined) this.#index   = index;
+		if (tracks  !== undefined) this.#tracks  = tracks;
+		if (presets !== undefined) this.#presets = presets;
 	}
 
-	#updateTracks(changes) {
+	set #tracks(changes) {
 		for (const [index, trackChanges] of Object.entries(changes)) {
 			const trackIndex = Number(index);
-			const track = this.#tracks[trackIndex];
-			for (const [item, data] of Object.entries(trackChanges)) {
-				if (item === 'sheet') {
-					for (const { barIndex, stepIndex, value } of data) {
-						this.#getStepFromIndexes({ trackIndex, barIndex, stepIndex }).value = value;
-					}
-				} else if (item in track.dataset) {
-					track.dataset[item] = data;
-				}
-				if (item === this.#instrumentName) {
-					this.#instruments[trackIndex].value = data;
-				} else if (item === this.#volumeName) {
-					this.#volumes[trackIndex].value = data;
-				}
-			}
+			const trackNode = this.#tracksNodes[trackIndex];
+			this.#applyTrackChanges(trackIndex, trackNode, trackChanges);
 		}
 	}
 
-	#updateTitle(title) {
-		this.#title.textContent = title;
+	set #title(title) {
+		this.#titleNode.textContent = title;
 		document.title = this.#headTitlePrefix + (title || this.#untitled);
 		console.log('Presets title updated');
 	}
 
-	#updateTempo(tempo) {
-		this.#tempo.value = tempo;
-		this.#bpm.textContent = tempo;
+	set #tempo(tempo) {
+		this.#tempoNode.value = tempo;
+		this.#bpmNode.textContent = tempo;
 	}
 
-	#updatePresets(presets) {
+	set #presets(presets) {
 		const fragment = new DocumentFragment();
 		if (presets.length) {
-			fragment.appendChild(this.#presetsSelection.options[0].cloneNode(true));
+			fragment.appendChild(this.#presetsNode.options[0].cloneNode(true));
 			presets.forEach(({ name, value }) => {
 				const text = name || this.#untitled;
 				fragment.appendChild(new Option(text, value));
 			});
 		} else {
-			fragment.replaceChildren(...this.#presetsSelectionInit.cloneNode(true).options);
+			fragment.replaceChildren(...this.#presetsInit.cloneNode(true).options);
 		}
-		this.#presetsSelection.replaceChildren(fragment);
+		this.#presetsNode.replaceChildren(fragment);
 		console.log('Presets options updated');
 	}
 
-	#updatePresetsIndex(index) {
-		this.#presetsSelection.selectedIndex = index + 1;
+	set #index(index) {
+		this.#presetsNode.selectedIndex = index + 1;
 		console.log('Presets index updated');
 	}
 
-	#isRunning() {
-		return this.#modules.animation.isRunning();
+	#applyTrackChanges(trackIndex, trackNode, changes) {
+		const { sheet, ...props } = changes;
+		sheet?.forEach(change => this.getStepFromIndexes({ trackIndex, ...change }).value = change.value);
+		Object.entries(props).forEach(([key, val]) => {
+			if (key in trackNode.dataset) trackNode.dataset[key] = val;
+			const inputs = {
+				[this.#volumeName]:     this.#volumesNodes[trackIndex],
+				[this.#instrumentName]: this.#instrumentsNodes[trackIndex],
+			};
+			if (inputs[key]) inputs[key].value = val;
+		});
 	}
 
-	#isTrackDraggable(track) {
-		return track.dataset[this.#instrumentName] !== '0';
-	}
-
-	#hasStroke() {
-		return Array.prototype.some.call(this.#steps, step => step.value !== '0');
-	}
-
-	#getInstrumentName(trackIndex) {
-		const instrument = this.#instruments[trackIndex];
-		return instrument.options[instrument.selectedIndex].text;
-	}
-
-	#getIndexesFromStep(step) {
-		let stepPosition = 0;
-		for (stepPosition; stepPosition < this.#steps.length; stepPosition++) {
-			if (this.#steps[stepPosition] === step) break;
+	#openShared(data) {
+		if (this.#presetsModule) {
+			this.#presetsModule.openShared(data);
+		} else {
+			this.#sharedData = data;
 		}
-		const trackIndex = Math.floor(stepPosition / this.#stepsPerTrack);
-		const remainder = stepPosition % this.#stepsPerTrack;
-		const barIndex = Math.floor(remainder / this.#subdivision);
-		const stepIndex = remainder % this.#subdivision;
-		return { trackIndex, barIndex, stepIndex };
-	}
-
-	#getStepFromIndexes({ trackIndex, barIndex, stepIndex }) {
-		return this.#steps[trackIndex * this.#stepsPerTrack + barIndex * this.#subdivision + stepIndex];
 	}
 
 	#sendInterfaceData(callback) {
 		callback(structuredClone(this.#interfaceData));
 	}
+
+	hasInstrument(track) {
+		return track.dataset[this.instrumentName] !== '0';
+	}
+
+	getInstrumentName(trackIndex) {
+		const instrument = this.instruments[trackIndex];
+		return instrument.options[instrument.selectedIndex].text;
+	}
+
+	getIndexesFromStep(step) {
+		const stepPosition = Array.prototype.indexOf.call(this.#stepsNodes, step);
+		const trackIndex = Math.floor(stepPosition / this.stepsPerTrack);
+		const remainder = stepPosition % this.stepsPerTrack;
+		const barIndex = Math.floor(remainder / this.subdivision);
+		const stepIndex = remainder % this.subdivision;
+		return { trackIndex, barIndex, stepIndex };
+	}
+
+	getStepFromIndexes({ trackIndex, barIndex, stepIndex }) {
+		return this.steps[trackIndex * this.stepsPerTrack + barIndex * this.subdivision + stepIndex];
+	}
+
+	get isRunning() {
+		return this.animationModule ? this.animationModule.isRunning : false;
+	}
+
+	get hasStroke() {
+		return Array.prototype.some.call(this.stepsNodes, step => step.value !== '0');
+	}
+
+	get bpm() { return this.#bpmNode; }
+	get beat() { return this.#beatNode; }
+	get bars() { return this.#barsNode; }
+	get loop() { return this.#loopNode; }
+	get title() { return this.#titleNode; }
+	get steps() { return this.#stepsNodes; }
+	get tempo() { return this.#tempoNode; }
+	get tracks() { return this.#tracksNodes; }
+	get presets() { return this.#presetsNode; }
+	get unsaved() { return this.#unsaved; }
+	get untitled() { return this.#untitled; }
+	get stepName() { return this.#stepName; }
+	get container() { return this.#containerNode; }
+	get volumeName() { return this.#volumeName; }
+	get subdivision() { return this.#subdivision; }
+	get instruments() { return this.#instrumentsNodes; }
+	get stepsPerTrack() { return this.#stepsPerTrack; }
+	get instrumentName() { return this.#instrumentName; }
+	get animationModule() { return this.#animationModule; }
+
 }

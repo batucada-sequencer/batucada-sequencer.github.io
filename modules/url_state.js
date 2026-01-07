@@ -99,9 +99,10 @@ export class UrlState {
 		this.#decodeURL();
 	}
 
-	#presetClicked(url) {
-		this.#searchParams = new URLSearchParams(url);
-		history.replaceState(null, '', url);
+	#presetClicked(href) {
+		const url = new URL(href);
+		this.#searchParams = new URLSearchParams(url.search);
+		history.replaceState(null, '', this.#searchParams.size ? `?${this.#searchParams}` : '.');
 		this.#decodeURL();
 	}
 

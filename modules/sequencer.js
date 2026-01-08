@@ -3,8 +3,8 @@ export class Sequencer {
 	#tempo;
 	#loopID;
 	#tracks;
-	#barIndex;
 	#maxGain;
+	#barIndex;
 	#masterGain;
 	#synchroBar;
 	#defaultData;
@@ -20,21 +20,21 @@ export class Sequencer {
 		this.#bus = bus;
 		this.#instrumentsList = instruments;
 		this.#durationWhenHidden = app_config.durationWhenHidden;
-		document.addEventListener('visibilitychange', () => this.#handleVisibilityChange());
-		this.#bus.addEventListener('interface:stop', ({ detail }) => this.#stop(detail));
-		this.#bus.addEventListener('interface:reset', ({ detail }) => this.#reset(detail));
-		this.#bus.addEventListener('interface:start', ({ detail }) => this.#start(detail));
-		this.#bus.addEventListener('interface:restart', ({ detail }) => this.#restart(detail));
-		this.#bus.addEventListener('interface:audioRequest', ({ detail }) => this.#startAudio(detail));
-		this.#bus.addEventListener('interface:moveTrack', ({ detail }) => this.#moveTrack(detail));
-		this.#bus.addEventListener('interface:inputTempo', ({ detail }) => this.#inputTempo(detail));
-		this.#bus.addEventListener('interface:inputTrack', ({ detail }) => this.#updateData(detail));
-		this.#bus.addEventListener('interface:changeNote', ({ detail }) => this.#changeNote(detail));
-		this.#bus.addEventListener('interface:changeTempo', ({ detail }) => this.#changeTempo(detail));
-		this.#bus.addEventListener('interface:changeTrack', ({ detail }) => this.#changeTrack(detail));
-		this.#bus.addEventListener('interface:changeVolume', ({ detail }) => this.#changeVolume(detail));
-		this.#bus.addEventListener('urlState:decoded', ({ detail }) => this.#updateData(detail));
-		this.#bus.addEventListener('urlState:getTracksData', ({ detail }) => this.#sendTracksData(detail));
+		document. addEventListener('visibilitychange',         ({ detail }) => this.#handleVisibilityChange());
+		this.#bus.addEventListener('interface:stop',           ({ detail }) => this.#stop(detail));
+		this.#bus.addEventListener('interface:reset',          ({ detail }) => this.#reset(detail));
+		this.#bus.addEventListener('interface:start',          ({ detail }) => this.#start(detail));
+		this.#bus.addEventListener('interface:audioRequest',   ({ detail }) => this.#startAudio(detail));
+		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#restart(detail));
+		this.#bus.addEventListener('interface:moveTrack',      ({ detail }) => this.#moveTrack(detail));
+		this.#bus.addEventListener('interface:inputTempo',     ({ detail }) => this.#inputTempo(detail));
+		this.#bus.addEventListener('interface:inputTrack',     ({ detail }) => this.#updateData(detail));
+		this.#bus.addEventListener('interface:changeNote',     ({ detail }) => this.#changeNote(detail));
+		this.#bus.addEventListener('interface:changeTempo',    ({ detail }) => this.#changeTempo(detail));
+		this.#bus.addEventListener('interface:changeTrack',    ({ detail }) => this.#changeTrack(detail));
+		this.#bus.addEventListener('interface:changeVolume',   ({ detail }) => this.#changeVolume(detail));
+		this.#bus.addEventListener('urlState:decoded',         ({ detail }) => this.#updateData(detail));
+		this.#bus.addEventListener('urlState:getTracksData',   ({ detail }) => this.#sendTracksData(detail));
 		this.#initAudio();
 	}
 

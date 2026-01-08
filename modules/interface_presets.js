@@ -135,7 +135,7 @@ export default class InterfacePresets {
 				const a = document.createElement('a');
 				const li = document.createElement('li');
 				a.href = url;
-				a.textContent = name ||this.#ui.untitled;
+				a.textContent = name || this.#ui.untitled;
 				li.appendChild(a);
 				return li;
 			})

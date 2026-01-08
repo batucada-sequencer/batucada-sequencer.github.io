@@ -5,49 +5,50 @@ export class Interface {
 	#barsName       = 'bars';
 	#beatName       = 'beat';
 	#loopName       = 'loop';
+	#trackName      = 'track';
 	#volumeName     = 'volume';
 	#instrumentName = 'instrument';
 
-	#bpmNode =          document.querySelector('#combo_tempo span');
-	#barsNode =         document.querySelector(`#${this.#barsName}`);
-	#beatNode =         document.querySelector(`#${this.#beatName}`);
-	#loopNode =         document.querySelector(`#${this.#loopName}`);
-	#titleNode =        document.querySelector('h1');
-	#tempoNode =        document.querySelector('#tempo');
-	#presetsNode =      document.querySelector('#combo_presets select');
-	#containerNode =    document.querySelector('main');
-	#stepsNodes =       document.getElementsByClassName(this.#stepName);
-	#tracksNodes =      document.getElementsByClassName('track');
-	#volumesNodes =     document.getElementsByClassName(this.#volumeName);
+	#bpmNode          = document.querySelector('#combo_tempo span');
+	#barsNode         = document.querySelector(`#${this.#barsName}`);
+	#beatNode         = document.querySelector(`#${this.#beatName}`);
+	#loopNode         = document.querySelector(`#${this.#loopName}`);
+	#titleNode        = document.querySelector('h1');
+	#tempoNode        = document.querySelector('#tempo');
+	#presetsNode      = document.querySelector('#combo_presets select');
+	#containerNode    = document.querySelector('main');
+	#stepsNodes       = document.getElementsByClassName(this.#stepName);
+	#tracksNodes      = document.getElementsByClassName(this.#trackName);
+	#volumesNodes     = document.getElementsByClassName(this.#volumeName);
 	#instrumentsNodes = document.getElementsByClassName(this.#instrumentName);
 
-	#untitled =        document.body.dataset.untitled;
+	#untitled        = document.body.dataset.untitled;
 	#headTitlePrefix = `${document.title} - `;
-	#stepsPerTrack =   this.#maxBars * this.#subdivision;
-	#presetsInit =     this.#presetsNode.cloneNode(true);
+	#stepsPerTrack   = this.#maxBars * this.#subdivision;
+	#presetsInit     = this.#presetsNode.cloneNode(true);
 
-	#swapModule =      null;
-	#aboutModule =     null;
-	#presetsModule =   null;
-	#controlsModule =  null;
+	#swapModule      = null;
+	#aboutModule     = null;
+	#presetsModule   = null;
+	#controlsModule  = null;
 	#animationModule = null;
 
-	#sharedData =    null;
+	#sharedData    = null;
 	#interfaceData = null;
 
 	constructor({ bus, app_config, instruments }) {
 		this.#initInterface(instruments, app_config.tracksLength);
 		this.#loadModules({ bus, email: app_config.email });
 
+		bus.addEventListener('presets:changed',            ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('presets:openShared',         ({ detail }) => this.#openSharedPresets(detail));
+		bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#presetsModule?.reportNameValidity(detail));
+		bus.addEventListener('urlState:decoded',           ({ detail }) => this.#updateInterface(detail));
+		bus.addEventListener('urlState:getInterfaceData',  ({ detail }) => this.#sendInterfaceData(detail));
 		bus.addEventListener('sequencer:stopped',          ({ detail }) => this.#controlsModule?.toggleStartButton(false));
 		bus.addEventListener('sequencer:updateData',       ({ detail }) => this.#updateInterface(detail));
-		bus.addEventListener('urlState:decoded',           ({ detail }) => this.#updateInterface(detail));
 		bus.addEventListener('sequencer:pushAnimations',   ({ detail }) => this.#animationModule?.setAnimations(detail));
-		bus.addEventListener('presets:changed',            ({ detail }) => this.#updateInterface(detail));
-		bus.addEventListener('presets:openShared',         ({ detail }) => this.#openShared(detail));
-		bus.addEventListener('presets:reportNameValidity', ({ detail }) => this.#presetsModule?.reportNameValidity(detail));
 		bus.addEventListener('sequencer:getInterfaceData', ({ detail }) => this.#sendInterfaceData(detail));
-		bus.addEventListener('urlState:getInterfaceData',  ({ detail }) => this.#sendInterfaceData(detail));
 		bus.addEventListener('serviceWorker:newVersion',   ({ detail }) => this.#aboutModule?.showUpdateButton(detail));
 	}
 
@@ -78,17 +79,21 @@ export class Interface {
 		const options = instruments.slice(1).map((instrument, index) => new Option(instrument.name, index + 1));
 		this.#instrumentsNodes[0].append(...options);
 
-		const newTracks = Array.from({ length: tracksLength }, () =>  this.#tracksNodes[0].cloneNode(true));
-		this.#tracksNodes[0].parentNode.replaceChildren(...newTracks);
+		const firstTrack = this.#tracksNodes[0];
+		const extraTracks = Array.from({ length: tracksLength - 1 }, (_, index) => {
+			const track = firstTrack.cloneNode(true);
+			track.dataset.index = index + 1;
+			return track;
+		});
+		firstTrack.parentNode.append(...extraTracks);
 
-		const defaultData =  this.#tracksNodes[0].dataset;
 		this.#interfaceData = {
 			defaultTempo: this.#tempoNode.value,
 			defaultGain: this.#volumesNodes[0].value,
-			defaultBars: defaultData[this.#barsName],
-			defaultBeat: defaultData[this.#beatName],
-			defaultLoop: defaultData[this.#loopName],
-			defaultInstrument: defaultData[this.#instrumentName],
+			defaultBars: firstTrack.dataset[this.#barsName],
+			defaultBeat: firstTrack.dataset[this.#beatName],
+			defaultLoop: firstTrack.dataset[this.#loopName],
+			defaultInstrument: firstTrack.dataset[this.#instrumentName],
 			barsValues: Array.from(this.#barsNode.options).map(option => option.value),
 			beatValues: Array.from(this.#beatNode.options).map(option => option.value),
 			loopValues: Array.from(this.#loopNode.options).map(option => option.value),
@@ -142,7 +147,6 @@ export class Interface {
 	set #title(title) {
 		this.#titleNode.textContent = title;
 		document.title = this.#headTitlePrefix + (title || this.#untitled);
-		console.log('Presets title updated');
 	}
 
 	set #tempo(tempo) {
@@ -162,28 +166,26 @@ export class Interface {
 			fragment.replaceChildren(...this.#presetsInit.cloneNode(true).options);
 		}
 		this.#presetsNode.replaceChildren(fragment);
-		console.log('Presets options updated');
 	}
 
 	set #index(index) {
 		this.#presetsNode.selectedIndex = index + 1;
-		console.log('Presets index updated');
 	}
 
 	#applyTrackChanges(trackIndex, trackNode, changes) {
-		const { sheet, ...props } = changes;
+		const { sheet, ...params } = changes;
 		sheet?.forEach(change => this.getStepFromIndexes({ trackIndex, ...change }).value = change.value);
-		Object.entries(props).forEach(([key, val]) => {
-			if (key in trackNode.dataset) trackNode.dataset[key] = val;
+		Object.entries(params).forEach(([param, value]) => {
+			if (param in trackNode.dataset) trackNode.dataset[param] = value;
 			const inputs = {
 				[this.#volumeName]:     this.#volumesNodes[trackIndex],
 				[this.#instrumentName]: this.#instrumentsNodes[trackIndex],
 			};
-			if (inputs[key]) inputs[key].value = val;
+			if (inputs[param]) inputs[param].value = value;
 		});
 	}
 
-	#openShared(data) {
+	#openSharedPresets(data) {
 		if (this.#presetsModule) {
 			this.#presetsModule.openShared(data);
 		} else {
@@ -199,22 +201,21 @@ export class Interface {
 		return track.dataset[this.instrumentName] !== '0';
 	}
 
-	getInstrumentName(trackIndex) {
-		const instrument = this.#instrumentsNodes[trackIndex];
+	getInstrumentName(track) {
+		const instrument = track.querySelector(`.${this.#instrumentName}`);
 		return instrument.options[instrument.selectedIndex].text;
-	}
-
-	getIndexesFromStep(step) {
-		const stepPosition = Array.prototype.indexOf.call(this.#stepsNodes, step);
-		const trackIndex = Math.floor(stepPosition / this.#stepsPerTrack);
-		const remainder = stepPosition % this.#stepsPerTrack;
-		const barIndex = Math.floor(remainder / this.#subdivision);
-		const stepIndex = remainder % this.#subdivision;
-		return { trackIndex, barIndex, stepIndex };
 	}
 
 	getStepFromIndexes({ trackIndex, barIndex, stepIndex }) {
 		return this.#stepsNodes[trackIndex * this.#stepsPerTrack + barIndex * this.#subdivision + stepIndex];
+	}
+
+	getTrackData(target) {
+		const track = target.closest(`.${this.#trackName}`);
+		return {
+			track,
+			trackIndex: track ? Number(track.dataset.index) : null,
+		};
 	}
 
 	get isRunning() {

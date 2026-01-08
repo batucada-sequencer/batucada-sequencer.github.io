@@ -1,10 +1,10 @@
 export default class InterfaceControls {
 	#ui;
 	#bus;
-	#trackIndex;
+	#track;
 	#startClass      = 'started';
 	#trackButtonName = 'trackbutton'
-	
+
 	#startButton =       document.querySelector('#start');
 	#resetButton =       document.querySelector('#reset');
 	#trackSettings =     document.querySelector('#track');
@@ -18,17 +18,11 @@ export default class InterfaceControls {
 		this.#ui.container. addEventListener('input',  (event) => this.#handleInput(event));
 		this.#ui.container. addEventListener('change', (event) => this.#handleChange(event));
 		this.#trackSettings.addEventListener('submit', (event) => this.#setTrack(event));
-
-		Array.from(this.#ui.tracks).forEach(track => {
-			track.addEventListener('input', (event) => this.#handleTrackChange(event));
-			track.addEventListener('click', (event) => this.#openTrackSettings(event));
-		});
 	}
 
 	#setTrack(event) {
 		if (event.submitter?.name !== 'apply') return;
-		const track = this.#ui.tracks[this.#trackIndex];
-		const values = track.dataset;
+		const values = this.#track.dataset;
 		const fields = {
 			beat: this.#ui.beat.value,
 			bars: this.#ui.bars.value,
@@ -42,22 +36,25 @@ export default class InterfaceControls {
 		}
 		if (Object.keys(changes).length === 0) return;
 		document.startViewTransition(() => Object.assign(values, changes));
-		const detail = { detail: { tracks: { [this.#trackIndex]: changes } } };
+		const trackIndex = this.#track.dataset.index;
+		const detail = { detail: { tracks: { [trackIndex]: changes } } };
 		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
 		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
 	async #handleClick({ target }) {
+		const audioPromise = this.#audioRequest();
+
 		// Cas où l'audio doit être prêt avant d’agir
 		if (target === this.#startButton || target.name === this.#ui.stepName) {
-			await this.#audioRequest();
+			await audioPromise;
 		}
-		// Cas où l'audio peut se s'activer en arrière-plan
-		else {
-			this.#audioRequest();
-		}
+
 		if (target.name === this.#ui.stepName) {
 			this.#changeNote(target);
+		}
+		else if (target.name === this.#trackButtonName) {
+			this.#openTrackSettings(target)
 		}
 		else if (target === this.#resetButton) {
 			this.#reset();
@@ -74,8 +71,12 @@ export default class InterfaceControls {
 	}
 
 	#handleInput({ target }) {
-		if (target === this.#ui.presetsSelection) {
-			this.#changePreset();
+		if (target.name === this.#ui.instrumentName) {
+			this.#changeInstrument(target);
+			this.#inputTrack(target, 'instrument');
+		}
+		else if (target.name === this.#ui.volumeName) {
+			this.#inputTrack(target, 'volume');
 		}
 		else if (target === this.#ui.tempo) {
 			this.#inputTempo(target.value);
@@ -91,45 +92,44 @@ export default class InterfaceControls {
 		}
 	}
 
-	#openTrackSettings({ target, currentTarget }) {
-		if (target.name !== this.#trackButtonName) return;
-		const track = currentTarget;
-		const values = track.dataset;
-		this.#ui.beat.value = values.beat;
-		this.#ui.bars.value = values.bars;
-		this.#ui.loop.value = values.loop;
-		this.#trackIndex = [...this.#ui.tracks].indexOf(track);
-		this.#trackSettingsName.textContent = this.#ui.getInstrumentName(this.#trackIndex);
+	#openTrackSettings(target) {
+		const { track } = this.#ui.getTrackData(target);
+		const { beat, bars, loop } = track.dataset;
+		this.#track = track;
+		this.#ui.beat.value = beat;
+		this.#ui.bars.value = bars;
+		this.#ui.loop.value = loop;
+		this.#trackSettingsName.textContent = this.#ui.getInstrumentName(track);
 		this.#trackSettings.showModal();
 		this.#trackSettings.focus();
-	}
-
-	#changeNote(target) {
-		const { trackIndex, barIndex, stepIndex } = this.#ui.getIndexesFromStep(target);
-		const change = { barIndex, stepIndex, value: Number(target.value) };
-		const event = new CustomEvent('interface:changeNote', { detail: { trackIndex, change } });
-		this.#bus.dispatchEvent(event);
-	}
-
-	#handleTrackChange({ currentTarget, target }) {
-		const trackIndex = [...this.#ui.tracks].indexOf(currentTarget);
-		const value = Number(target.value);
-		const detail = { detail: { tracks: { [trackIndex]: {} } } };
-		if (target.name === this.#ui.instrumentName) {
-			this.#ui.tracks[trackIndex].dataset.instrument = value;
-			detail.detail.tracks[trackIndex].instrument = value;
-			this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-			this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
-		}
-		else if (target.name === this.#ui.volumeName) {
-			detail.detail.tracks[trackIndex].volume = value;
-			this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-		}
 	}
 
 	#inputTempo(value) {
 		this.#ui.bpm.textContent = value;
 		this.#bus.dispatchEvent(new CustomEvent('interface:inputTempo', { detail: Number(value) }));
+	}
+
+	#changeNote(target) {
+		const { trackIndex } = this.#ui.getTrackData(target);
+		const barIndex = Number(target.dataset.bar);
+		const stepIndex = Number(target.dataset.step);
+		const change = { barIndex, stepIndex, value: Number(target.value) };
+		this.#bus.dispatchEvent(
+			new CustomEvent('interface:changeNote', { detail: { trackIndex, change } })
+		);
+	}
+
+	#inputTrack(target, property) {
+		const { trackIndex } = this.#ui.getTrackData(target);
+		const value = Number(target.value);
+		const detail = { detail: { tracks: { [trackIndex]: { [property]: value} } } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+	}
+
+	#changeInstrument(target) {
+		const { track } = this.#ui.getTrackData(target);
+		track.dataset.instrument = target.value;
+		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
 	}
 
 	#changeVolume() {
@@ -138,10 +138,6 @@ export default class InterfaceControls {
 
 	#changeTempo() {
 		this.#bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
-	}
-
-	#changePreset() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:restart'));
 	}
 
 	#reset() {

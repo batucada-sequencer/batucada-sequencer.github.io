@@ -34,7 +34,7 @@ export default class InterfacePresets {
 	// Chargement conditionnel du polyfill toast_positioning
 	async #toastPositioning() {
 		if (!CSS.supports('inset', 'anchor-size(height)')) {
-			const { applyPolyfill } = await import('./toast_positioning.js');
+			const { applyPolyfill } = await import('./toast-positioning.js');
 			applyPolyfill(this.#toast, this.#ui.container);
 		}
 	}
@@ -42,10 +42,9 @@ export default class InterfacePresets {
 	#setSelectedPreset(event) {
 		const { value, selectedIndex, options } = event.target;
 		const { text } = options[selectedIndex];
+		const index = selectedIndex - 1;
 		const name = text === this.#ui.untitled ? undefined : text;
-		document.startViewTransition(() => {
-			this.#bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value } }));
-		});
+		this.#bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value, index  } }));
 	}
 
 	#loadClickedPreset(event) {

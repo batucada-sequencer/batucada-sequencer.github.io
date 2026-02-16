@@ -1,5 +1,5 @@
 const versions = {
-	app: '1.05.64',
+	app: '1.06.21',
 	static: '1.04',
 };
 
@@ -21,6 +21,8 @@ const assets = {
 		'./app/app.webmanifest',
 		'./config/app_config.json',
 		'./config/core_config.json',
+		'./modules/audio.js',
+		'./modules/audio_worker.js',
 		'./modules/instruments.json',
 		'./modules/interface.js',
 		'./modules/interface_about.js',
@@ -29,10 +31,10 @@ const assets = {
 		'./modules/interface_presets.js',
 		'./modules/interface_swap.js',
 		'./modules/presets.js',
-		'./modules/sequencer.js',
-		'./modules/service_worker.js',
-		'./modules/toast_positioning.js',
-		'./modules/url_state.js',
+		'./modules/service-worker.js',
+		'./modules/toast-positioning.js',
+		'./modules/url-state.js',
+		'./modules/url-state_worker.js',
 	],
 	static: [
 		'./audio/default.ogg',

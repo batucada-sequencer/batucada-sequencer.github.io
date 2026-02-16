@@ -1,42 +1,45 @@
 export class Presets {
 	#bus;
 	#local;
-	#index = -1;
-	#presets = null;
 	#params;
-	#lastAction = null;
 	#fileName;
 	#cacheName;
-	#userFileName = null;
-	#isPersistedStorage = null;
 	#setSearchParam;
 	#shareSearchParam;
 	#titleSearchParam;
 	#defaultSetValue;
 	#defaultTitleValue;
-	#sharedPresets = null;
+	#index              = -1;
+	#presets            = null;
+	#lastAction         = null;
+	#userFileName       = null;
+	#sharedPresets      = null;
+	#isPersistedStorage = null;
 
-	constructor({ bus, app_config, core_config }) {
-		this.#bus = bus;
-		this.#local = app_config.local;
-		this.#fileName = core_config.presetsFile;
-		this.#cacheName = core_config.dataCache;
-		this.#setSearchParam = core_config.setSearchParam;
-		this.#shareSearchParam = core_config.shareSearchParam;
-		this.#titleSearchParam = core_config.titleSearchParam;
-		this.#defaultSetValue = core_config.defaultSetValue;
-		this.#defaultTitleValue = core_config.defaultTitleValue;
+	constructor({ bus, config }) {
+		this.#bus               = bus;
+		this.#local             = config.local;
+		this.#fileName          = config.presetsFile;
+		this.#cacheName         = config.dataCache;
+		this.#setSearchParam    = config.setSearchParam;
+		this.#shareSearchParam  = config.shareSearchParam;
+		this.#titleSearchParam  = config.titleSearchParam;
+		this.#defaultSetValue   = config.defaultSetValue;
+		this.#defaultTitleValue = config.defaultTitleValue;
+
 		this.#params = new Map(new URLSearchParams(location.search));
 		this.#softUpdatePresets();
+
 		addEventListener('focus', () => this.#softUpdatePresets());
-		this.#bus.addEventListener('interface:reset', ({ detail }) => this.#reset({ detail }));
-		this.#bus.addEventListener('interface:settingsSave', ({ detail }) => this.#settingsSave(detail));
+		this.#bus.addEventListener('interface:reset',          ({ detail }) => this.#reset(detail));
+		this.#bus.addEventListener('interface:settingsSave',   ({ detail }) => this.#settingsSave(detail));
 		this.#bus.addEventListener('interface:settingsCancel', ({ detail }) => this.#settingsCancel(detail));
-		this.#bus.addEventListener('interface:presetsShare', ({ detail }) => this.#presetsShare(detail));
-		this.#bus.addEventListener('interface:presetsImport', ({ detail }) => this.#presetsImport(detail));
+		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#presetSelected(detail));
+		this.#bus.addEventListener('interface:presetsShare',   ({ detail }) => this.#presetsShare(detail));
+		this.#bus.addEventListener('interface:presetsImport',  ({ detail }) => this.#presetsImport(detail));
 		this.#bus.addEventListener('interface:getPresetsDate', ({ detail }) => this.#sendPresetsDate(detail));
-		this.#bus.addEventListener('urlState:changed', ({ detail }) => this.#updateParams(detail));
-		this.#bus.addEventListener('urlState:openShared', ({ detail }) => this.#openShared(detail));
+		this.#bus.addEventListener('urlState:changed',         ({ detail }) => this.#updateParams(detail));
+		this.#bus.addEventListener('urlState:openShared',      ({ detail }) => this.#openShared(detail));
 	}
 
 	async #fetchData() {
@@ -100,42 +103,89 @@ export class Presets {
 		}
 	}
 
+	#presetSelected(detail) {
+		this.#index = detail.index;
+		this.#bus.dispatchEvent(new CustomEvent('presets:presetSelected', { detail }));
+	}
+
 	#reset() {
-		this.#updatePresets(null, this.#defaultTitleValue);
+		const changes = {};
+		if (this.#index !== -1) {
+			this.#index = -1;
+			changes.index = this.#index;
+		}
+		if (
+			this.#params.has(this.#titleSearchParam) 
+			&& this.#params.get(this.#titleSearchParam) !== this.#defaultTitleValue
+		) {
+			this.#params.delete(this.#titleSearchParam);
+			changes.title = this.#defaultTitleValue;
+		}
+		this.#params.delete(this.#setSearchParam);
+		this.#dispatchChanges(changes);
 	}
 
 	#updateParams(params) {
-		this.#params = params;
-		this.#updatePresets();
+		if (this.#params.get(this.#setSearchParam) !== params.get(this.#setSearchParam)) {
+			this.#params = params;
+			this.#updatePresets();
+		}
 	}
 
 	#updatePresets(presets = null, title = null) {
-		const changes = {}
+		const changes = {};
 		if (presets !== null && JSON.stringify(presets) !== JSON.stringify(this.#presets)) {
 			this.#presets = presets;
 			changes.presets = presets;
 		}
-		const presetParam = this.#params.get(this.#setSearchParam) || this.#defaultSetValue;
-		const titleParam = this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue;
-		const isEmpty =  presetParam === this.#defaultSetValue && titleParam === this.#defaultTitleValue;
-		const index = (this.#presets === null || isEmpty) 
+		const setValue    = this.#params.get(this.#setSearchParam)   || this.#defaultSetValue;
+		const titleValue  = this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue;
+		const targetTitle = title !== null ? title : titleValue;
+		const hasTitle    = targetTitle !== this.#defaultTitleValue;
+		const isEmpty     = setValue === this.#defaultSetValue && !hasTitle;
+		const index       = (this.#presets === null || isEmpty) 
 			? -1
-			: this.#presets.findIndex(({ value, name }) => value === presetParam && (!titleParam || name === titleParam));
-		if (index !== this.#index) {
+			: this.#presets.findIndex(({ value, name }) => 
+				value === setValue && (!hasTitle || name === targetTitle)
+			);
+		//on passe toujours l'index si presets a été modifié
+		if ('presets' in changes || index !== this.#index) {
 			this.#index = index;
 			changes.index = index;
 		}
 		if (title === null) {
-			title = titleParam || this.#presets?.[this.#index]?.name || this.#defaultTitleValue;
+			title = titleValue || this.#presets?.[this.#index]?.name || this.#defaultTitleValue;
 		}
-		if (title !== null && title !== titleParam) {
-			this.#params.set(this.#titleSearchParam, title)
+		if (title !== titleValue) {
+			this.#params.set(this.#titleSearchParam, title);
 			changes.title = title;
 		}
-		if (Object.keys(changes).length > 0) {
-			this.#bus.dispatchEvent(new CustomEvent('presets:changed', { detail: changes }));
+		this.#dispatchChanges(changes);
+	}
+
+	#dispatchChanges(changes) {
+		if (Object.keys(changes).length) {
+			this.#bus.dispatchEvent(new CustomEvent('presets:updateData', { detail: changes }));
+			if ('title' in changes) {
+				this.#bus.dispatchEvent(new CustomEvent('presets:changed', { detail: { title: changes.title } }));
+			}
 		}
 	}
+
+	#resolveTitle(title) {
+		return title || 
+			this.#params.get(this.#titleSearchParam) || 
+			this.#presets?.[this.#index]?.name || 
+			this.#defaultTitleValue;
+	}
+
+	#resolveIndex(title) {
+		const presetParam = this.#params.get(this.#setSearchParam) || this.#defaultSetValue;
+		const isEmpty = presetParam === this.#defaultSetValue && title === this.#defaultTitleValue;
+		if (this.#presets === null || isEmpty) return -1;
+		return this.#presets.findIndex(({ value, name }) => value === presetParam && name === title);
+	}
+
 
 	async #settingsSave({ action, name, promise }) {
 		try {
@@ -158,7 +208,7 @@ export class Presets {
 			}
 			await this.#saveData(data);
 			this.#lastAction = {
-				data: this.#presets,
+				data:  this.#presets,
 				title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
 			};
 			this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
@@ -250,7 +300,7 @@ export class Presets {
 			url.searchParams.set(this.#shareSearchParam, encodeURIComponent(JSON.stringify(selection)));
 		} else {
 			const { name, value } = selection[0];
-			if (name) url.searchParams.set(this.#titleSearchParam, name);
+			if (name)  url.searchParams.set(this.#titleSearchParam, name);
 			if (value) url.searchParams.set(this.#setSearchParam, value);
 		}
 		if (navigator.share) {

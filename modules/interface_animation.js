@@ -1,16 +1,16 @@
 export default class InterfaceAnimation {
 	#ui;
 	#queueLimit;
-	#frameId        = null;
+	#stopTime       = null;
 	#currentClass   = 'current';
 	#animationQueue = new Map();
 
 	constructor({ parent }) {
 		this.#ui = parent;
-		this.#queueLimit = this.#ui.subdivision * 2;
+		this.#queueLimit = this.#ui.config.resolution.beat * 3;
 	}
 
-	setAnimations({ animations }) {
+	start({ animations }) {
 		//Supprime les pistes qui ne sont plus actives
 		for (const [trackIndex, steps] of this.#animationQueue.entries()) {
 			if (!animations.has(trackIndex)) {
@@ -18,7 +18,6 @@ export default class InterfaceAnimation {
 				this.#animationQueue.delete(trackIndex);
 			}
 		}
-
 		//Ajout des animations à la pile animationQueue
 		for (const [trackIndex, items] of animations) {
 			let steps = this.#animationQueue.get(trackIndex);
@@ -27,9 +26,8 @@ export default class InterfaceAnimation {
 				steps = [{ step: null, time: 0 }];
 				this.#animationQueue.set(trackIndex, steps);
 			}
-			for (const { barIndex, stepIndex, time } of items) {
-				const step = this.#ui.getStepFromIndexes({ trackIndex, barIndex, stepIndex });
-				steps.push({ step, time });
+			for (const { stepIndex, time } of items) {
+				steps.push({ step: this.#ui.steps[stepIndex], time });
 			}
 			//Évite l'accumulation d'animations non exécutées (onglet inactif, latence)
 			if (steps.length > this.#queueLimit) {
@@ -40,14 +38,15 @@ export default class InterfaceAnimation {
 	}
 
 	#startLoop() {
-		if (!this.#frameId) {
-			this.#frameId = requestAnimationFrame(this.#loop);
+		if (!this.#ui.playing) {
+			this.#ui.playing = true;
+			requestAnimationFrame(this.#loop);
 		}
 	}
 
 	#loop = () => {
 		if (this.#animationQueue.size === 0) {
-			this.#frameId = null;
+			this.#ui.playing = false;
 			return;
 		}
 		const now = performance.now();
@@ -65,10 +64,7 @@ export default class InterfaceAnimation {
 			steps[nextIndex]?.step?.classList.add(this.#currentClass);
 			steps.splice(0, nextIndex);
 		}
-		this.#frameId = requestAnimationFrame(this.#loop);
+		requestAnimationFrame(this.#loop);
 	};
 
-	get isRunning() {
-		return !!this.#frameId;
-	}
 }

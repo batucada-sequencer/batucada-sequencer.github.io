@@ -7,14 +7,16 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+html {
+	scrollbar-gutter:stable;
+}
 body {
 	--body-margin:0px;
 	--main-margin:.7em;
 	--sheet-columns:2;
 	--controls-lines:2;
-	--drag-handle-width:0;
-	--track-column-auto:1;
-	--track-first-col-width:7.7em;
+	--track-col-1-width:7.7em;
+	--track-col-2-width:1fr;
 	gap:.2em;
 	display:grid;
 	margin:0 0 2.8em;
@@ -109,7 +111,7 @@ tbody {
 	contain:layout style;
 	view-transition-name:match-element;
 	grid-template-rows:1em 1.65em 1fr;
-	grid-template-columns:var(--track-first-col-width) repeat(var(--track-column-auto), auto);
+	grid-template-columns:var(--track-col-1-width) var(--track-col-2-width) var(--track-col-3-width, );
 }
 .dropzone {
 	z-index:1;
@@ -122,17 +124,6 @@ tbody {
 	display:grid;
 	padding:0 0 0 .7em;
 	grid-template-rows:1.65em .3em 1.65em;
-}
-.sheet {
-	gap:.3em;
-	padding:0;
-	display:grid;
-	font-size:1em;
-	grid-column:2;
-	grid-row:span 2;
-	margin:0 .7em 0 .9em;
-	contain:layout style;
-	grid-template-columns:repeat(var(--sheet-columns),1fr);
 }
 .track td:last-of-type {
 	width:4.2em;
@@ -150,28 +141,36 @@ tbody {
 	}
 }
 .track[data-instrument="0"] ~ .track,
-.track[data-bars^="[4,"] .bar:nth-child(n+5),
-.track[data-bars^="[6,"] .bar:nth-child(n+7),
-.track[data-bars^="[8,"] .bar:nth-child(n+9),
-.track[data-bars^="[12,"] .bar:nth-child(n+13),
-.track[data-bars^="[16,"] .bar:nth-child(n+17),
-.track[data-bars^="[24,"] .bar:nth-child(n+25),
-.track[data-beat="3"] .sub_bar .step:nth-last-child(-n+5),
-.track[data-beat="4"] .sub_bar .step:nth-last-child(-n+4),
-.track[data-beat="6"] .sub_bar .step:nth-last-child(-n+2) {
+.track[data-bars="1"] .bar:nth-child(n+2),
+.track[data-bars="2"] .bar:nth-child(n+3),
+.track[data-bars="3"] .bar:nth-child(n+4),
+.track[data-bars="4"] .bar:nth-child(n+5),
+.track[data-bars="6"] .bar:nth-child(n+7),
+.track[data-bars="8"] .bar:nth-child(n+9),
+.track[data-beats="4"] .beat:nth-child(n+5),
+.track[data-beats="6"] .beat:nth-child(n+7),
+.track[data-steps="3"] .grid .step:nth-last-child(-n+5),
+.track[data-steps="4"] .grid .step:nth-last-child(-n+4),
+.track[data-steps="6"] .grid .step:nth-last-child(-n+2) {
 	display:none;
 }
 .track div[draggable] {
 	display:grid;
 	position:relative;
-	grid-template-columns:var(--drag-handle-width) 1fr;
+	grid-template-columns:var(--drag-handle-width,) 1fr;
 }
-.track[data-loop="0"] div[draggable]::after {
+.track[data-phrase="1"] div[draggable]::after,
+.track[data-phrase="2"] div[draggable]::after {
 	width:1em;
 	height:1em;
 	position:absolute;
 	inset:-.45em -.4em auto auto;
-	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m28 12v23h-5v-16l-6 2v-4z " fill="white"/></svg>');
+}
+.track[data-phrase="1"] div[draggable]::after {
+	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m28 12v23h-5v-16l-6 2v-4z" fill="white"/></svg>');
+}
+.track[data-phrase="2"] div[draggable]::after {
+	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m17.5 19c0-3 3-5 7-5 3 0 6 2 6 5 0 2-3 5-7 8l-7 6 16 0" fill="none" stroke="white" stroke-width="4.5" stroke-linecap="butt" stroke-linejoin="bevel"/></svg>');
 }
 .trackbutton {
 	width:2em;
@@ -186,28 +185,37 @@ tbody {
 	font-size:1em;
 	padding-left:.3em;
 }
-.track[data-beat="6"] .sheet,
-.track[data-beat="8"] .sheet {
-	grid-template-columns:repeat(calc(var(--sheet-columns) / 2),1fr);
+.sheet {
+	gap:.3em;
+	padding:0;
+	display:flex;
+	font-size:1em;
+	flex-wrap:wrap;
+	grid-column:2;
+	grid-row:span 2;
+	margin:0 .7em 0 .9em;
+	contain:layout style;
 }
 .bar {
+	display:contents;
+}
+.beat {
 	gap:.3em;
 	display:flex;
 	position:relative;
-	counter-increment:bar;
+	counter-increment:beat;
 }
-.track[data-bars$=",4]"] .bar:nth-child(4n+5),
-.track[data-bars$=",6]"] .bar:nth-child(6n+7) {
-	counter-reset:bar;
+.beat:first-child {
+	counter-reset:beat;
 }
-.sub_bar {
+.grid {
 	gap:.3em;
 	width:3.9em;
 	display:flex;
 	justify-content:space-evenly;
 }
-.track[data-beat="6"] .sub_bar,
-.track[data-beat="8"] .sub_bar {
+.track[data-steps="6"] .grid,
+.track[data-steps="8"] .grid {
 	width:9.5em;
 }
 .step {
@@ -234,21 +242,21 @@ tbody {
 	background-color:hsl(215,100%,43%);
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="10" x2="6" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>');
 }
-.bar > .step[value="0"] {
+.beat > .step[value="0"] {
 	background-color:hsl(240,10%,83%);
 	border:1px solid hsl(240,10%,50%);
 }
-.bar > .step[value="0"]::before {
+.beat > .step[value="0"]::before {
 	color:#000;
 	display:block;
 	line-height:1.65em;
-	content:counter(bar);
+	content:counter(beat);
 }
 .step.current {
 	outline-offset:-.05em;
 	outline:.2em solid hsl(130,30%,70%);
 }
-.bar > .step.current {
+.beat > .step.current {
 	outline-color:hsl(130,100%,25%);
 }
 .step.current:not([value="0"]) {
@@ -260,11 +268,11 @@ tbody {
 	background-color:hsl(130,100%,25%);
 }
 .step:has(~ .current):not([value="0"]),
-.bar:has(.sub_bar .current) > .step:not([value="0"]),
-.bar:has(~ .bar .current) .step:not([value="0"]) {
+.beat:has(.grid .current) > .step:not([value="0"]),
+.beat:has(~ .beat .current) .step:not([value="0"]) {
 	background-color:hsl(215,68%,63%);
 }
-.bar::before {
+.beat::before {
 	content:'';
 	width:.21em;
 	height:2.86em;
@@ -480,11 +488,11 @@ dialog h2 {
 	flex-direction:column;
 }
 #track label {
-	gap:.5em;
+	gap:1em;
 	z-index:1;
 	display:grid;
 	background:#fff;
-	grid-template-columns:1.2fr 1fr;
+	grid-template-columns:1.8fr 1fr;
 }
 #track select {
 	height:1.8em;
@@ -701,8 +709,9 @@ footer button {
 		--sheet-columns:4;
 		--controls-lines:1;
 		--drag-handle-width:1em;
-		--track-column-auto:2;
-		--track-first-col-width:10.6em;
+		--track-col-1-width:10.6em;
+		--track-col-2-width:24em;
+		--track-col-3-width:1fr;
 		font-size:clamp(.6em,2.4svw,1.2em);
 	}
 	main {
@@ -721,11 +730,11 @@ footer button {
 		grid-template-columns:1fr 2em;
 	}
 	.sheet {
-		margin:0 1em;
+		margin:0 .8em 0 1em;
 	}
 	.track td:last-of-type {
-		width:4.9em;
-		padding:0 1em 0 0;
+		width:5em;
+		padding:0;
 	}
 	.trackbutton {
 		width:auto;
@@ -757,7 +766,7 @@ footer button {
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
 		<h1 id="title"></h1>
 		<table>
-			<tr class="track" data-index="0" data-bars="[4,4]" data-beat="4" data-instrument="0" data-loop="1">
+			<tr class="track" data-index="0" data-instrument="0" data-bars="1" data-beats="4" data-steps="4" data-phrase="0">
 				<td class="dropzone" aria-hidden="true"></td>
 				<th scope="row">
 					<div draggable="true">
@@ -769,388 +778,78 @@ footer button {
 					<button name="trackbutton" class="trackbutton" title="Modifier la piste">Réglages</button>
 				</th>
 				<td class="sheet">
-					<span class="bar">
-						<button name="step" class="step" data-bar="0" data-step="0" value="0">Temps 1, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="0" data-step="1" value="0">Temps 1, division 2</button>
-							<button name="step" class="step" data-bar="0" data-step="2" value="0">Temps 1, division 3</button>
-							<button name="step" class="step" data-bar="0" data-step="3" value="0">Temps 1, division 4</button>
-							<button name="step" class="step" data-bar="0" data-step="4" value="0">Temps 1, division 5</button>
-							<button name="step" class="step" data-bar="0" data-step="5" value="0">Temps 1, division 6</button>
-							<button name="step" class="step" data-bar="0" data-step="6" value="0">Temps 1, division 7</button>
-							<button name="step" class="step" data-bar="0" data-step="7" value="0">Temps 1, division 8</button>
+					<span class="bar" data-index="0">
+						<span class="beat">
+							<button name="step" class="step" data-beat="0" data-step="0" value="0">Temps 1, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="0" data-step="1" value="0">Temps 1, division 2</button>
+								<button name="step" class="step" data-beat="0" data-step="2" value="0">Temps 1, division 3</button>
+								<button name="step" class="step" data-beat="0" data-step="3" value="0">Temps 1, division 4</button>
+								<button name="step" class="step" data-beat="0" data-step="4" value="0">Temps 1, division 5</button>
+								<button name="step" class="step" data-beat="0" data-step="5" value="0">Temps 1, division 6</button>
+								<button name="step" class="step" data-beat="0" data-step="6" value="0">Temps 1, division 7</button>
+								<button name="step" class="step" data-beat="0" data-step="7" value="0">Temps 1, division 8</button>
+							</span>
 						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="1" data-step="0" value="0">Temps 2, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="1" data-step="1" value="0">Temps 2, division 2</button>
-							<button name="step" class="step" data-bar="1" data-step="2" value="0">Temps 2, division 3</button>
-							<button name="step" class="step" data-bar="1" data-step="3" value="0">Temps 2, division 4</button>
-							<button name="step" class="step" data-bar="1" data-step="4" value="0">Temps 2, division 5</button>
-							<button name="step" class="step" data-bar="1" data-step="5" value="0">Temps 2, division 6</button>
-							<button name="step" class="step" data-bar="1" data-step="6" value="0">Temps 2, division 7</button>
-							<button name="step" class="step" data-bar="1" data-step="7" value="0">Temps 2, division 8</button>
+						<span class="beat">
+							<button name="step" class="step" data-beat="1" data-step="0" value="0">Temps 2, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="1" data-step="1" value="0">Temps 2, division 2</button>
+								<button name="step" class="step" data-beat="1" data-step="2" value="0">Temps 2, division 3</button>
+								<button name="step" class="step" data-beat="1" data-step="3" value="0">Temps 2, division 4</button>
+								<button name="step" class="step" data-beat="1" data-step="4" value="0">Temps 2, division 5</button>
+								<button name="step" class="step" data-beat="1" data-step="5" value="0">Temps 2, division 6</button>
+								<button name="step" class="step" data-beat="1" data-step="6" value="0">Temps 2, division 7</button>
+								<button name="step" class="step" data-beat="1" data-step="7" value="0">Temps 2, division 8</button>
+							</span>
 						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="2" data-step="0" value="0">Temps 3, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="2" data-step="1" value="0">Temps 3, division 2</button>
-							<button name="step" class="step" data-bar="2" data-step="2" value="0">Temps 3, division 3</button>
-							<button name="step" class="step" data-bar="2" data-step="3" value="0">Temps 3, division 4</button>
-							<button name="step" class="step" data-bar="2" data-step="4" value="0">Temps 3, division 5</button>
-							<button name="step" class="step" data-bar="2" data-step="5" value="0">Temps 3, division 6</button>
-							<button name="step" class="step" data-bar="2" data-step="6" value="0">Temps 3, division 7</button>
-							<button name="step" class="step" data-bar="2" data-step="7" value="0">Temps 3, division 8</button>
+						<span class="beat">
+							<button name="step" class="step" data-beat="2" data-step="0" value="0">Temps 3, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="2" data-step="1" value="0">Temps 3, division 2</button>
+								<button name="step" class="step" data-beat="2" data-step="2" value="0">Temps 3, division 3</button>
+								<button name="step" class="step" data-beat="2" data-step="3" value="0">Temps 3, division 4</button>
+								<button name="step" class="step" data-beat="2" data-step="4" value="0">Temps 3, division 5</button>
+								<button name="step" class="step" data-beat="2" data-step="5" value="0">Temps 3, division 6</button>
+								<button name="step" class="step" data-beat="2" data-step="6" value="0">Temps 3, division 7</button>
+								<button name="step" class="step" data-beat="2" data-step="7" value="0">Temps 3, division 8</button>
+							</span>
 						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="3" data-step="0" value="0">Temps 4, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="3" data-step="1" value="0">Temps 4, division 2</button>
-							<button name="step" class="step" data-bar="3" data-step="2" value="0">Temps 4, division 3</button>
-							<button name="step" class="step" data-bar="3" data-step="3" value="0">Temps 4, division 4</button>
-							<button name="step" class="step" data-bar="3" data-step="4" value="0">Temps 4, division 5</button>
-							<button name="step" class="step" data-bar="3" data-step="5" value="0">Temps 4, division 6</button>
-							<button name="step" class="step" data-bar="3" data-step="6" value="0">Temps 4, division 7</button>
-							<button name="step" class="step" data-bar="3" data-step="7" value="0">Temps 4, division 8</button>
+						<span class="beat">
+							<button name="step" class="step" data-beat="3" data-step="0" value="0">Temps 4, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="3" data-step="1" value="0">Temps 4, division 2</button>
+								<button name="step" class="step" data-beat="3" data-step="2" value="0">Temps 4, division 3</button>
+								<button name="step" class="step" data-beat="3" data-step="3" value="0">Temps 4, division 4</button>
+								<button name="step" class="step" data-beat="3" data-step="4" value="0">Temps 4, division 5</button>
+								<button name="step" class="step" data-beat="3" data-step="5" value="0">Temps 4, division 6</button>
+								<button name="step" class="step" data-beat="3" data-step="6" value="0">Temps 4, division 7</button>
+								<button name="step" class="step" data-beat="3" data-step="7" value="0">Temps 4, division 8</button>
+							</span>
 						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="4" data-step="0" value="0">Temps 5, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="4" data-step="1" value="0">Temps 5, division 2</button>
-							<button name="step" class="step" data-bar="4" data-step="2" value="0">Temps 5, division 3</button>
-							<button name="step" class="step" data-bar="4" data-step="3" value="0">Temps 5, division 4</button>
-							<button name="step" class="step" data-bar="4" data-step="4" value="0">Temps 5, division 5</button>
-							<button name="step" class="step" data-bar="4" data-step="5" value="0">Temps 5, division 6</button>
-							<button name="step" class="step" data-bar="4" data-step="6" value="0">Temps 5, division 7</button>
-							<button name="step" class="step" data-bar="4" data-step="7" value="0">Temps 5, division 8</button>
+						<span class="beat">
+							<button name="step" class="step" data-beat="4" data-step="0" value="0">Temps 5, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="4" data-step="1" value="0">Temps 5, division 2</button>
+								<button name="step" class="step" data-beat="4" data-step="2" value="0">Temps 5, division 3</button>
+								<button name="step" class="step" data-beat="4" data-step="3" value="0">Temps 5, division 4</button>
+								<button name="step" class="step" data-beat="4" data-step="4" value="0">Temps 5, division 5</button>
+								<button name="step" class="step" data-beat="4" data-step="5" value="0">Temps 5, division 6</button>
+								<button name="step" class="step" data-beat="4" data-step="6" value="0">Temps 5, division 7</button>
+								<button name="step" class="step" data-beat="4" data-step="7" value="0">Temps 5, division 8</button>
+							</span>
 						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="5" data-step="0" value="0">Temps 6, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="5" data-step="1" value="0">Temps 6, division 2</button>
-							<button name="step" class="step" data-bar="5" data-step="2" value="0">Temps 6, division 3</button>
-							<button name="step" class="step" data-bar="5" data-step="3" value="0">Temps 6, division 4</button>
-							<button name="step" class="step" data-bar="5" data-step="4" value="0">Temps 6, division 5</button>
-							<button name="step" class="step" data-bar="5" data-step="5" value="0">Temps 6, division 6</button>
-							<button name="step" class="step" data-bar="5" data-step="6" value="0">Temps 6, division 7</button>
-							<button name="step" class="step" data-bar="5" data-step="7" value="0">Temps 6, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="6" data-step="0" value="0">Temps 7, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="6" data-step="1" value="0">Temps 7, division 2</button>
-							<button name="step" class="step" data-bar="6" data-step="2" value="0">Temps 7, division 3</button>
-							<button name="step" class="step" data-bar="6" data-step="3" value="0">Temps 7, division 4</button>
-							<button name="step" class="step" data-bar="6" data-step="4" value="0">Temps 7, division 5</button>
-							<button name="step" class="step" data-bar="6" data-step="5" value="0">Temps 7, division 6</button>
-							<button name="step" class="step" data-bar="6" data-step="6" value="0">Temps 7, division 7</button>
-							<button name="step" class="step" data-bar="6" data-step="7" value="0">Temps 7, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="7" data-step="0" value="0">Temps 8, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="7" data-step="1" value="0">Temps 8, division 2</button>
-							<button name="step" class="step" data-bar="7" data-step="2" value="0">Temps 8, division 3</button>
-							<button name="step" class="step" data-bar="7" data-step="3" value="0">Temps 8, division 4</button>
-							<button name="step" class="step" data-bar="7" data-step="4" value="0">Temps 8, division 5</button>
-							<button name="step" class="step" data-bar="7" data-step="5" value="0">Temps 8, division 6</button>
-							<button name="step" class="step" data-bar="7" data-step="6" value="0">Temps 8, division 7</button>
-							<button name="step" class="step" data-bar="7" data-step="7" value="0">Temps 8, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="8" data-step="0" value="0">Temps 9, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="8" data-step="1" value="0">Temps 9, division 2</button>
-							<button name="step" class="step" data-bar="8" data-step="2" value="0">Temps 9, division 3</button>
-							<button name="step" class="step" data-bar="8" data-step="3" value="0">Temps 9, division 4</button>
-							<button name="step" class="step" data-bar="8" data-step="4" value="0">Temps 9, division 5</button>
-							<button name="step" class="step" data-bar="8" data-step="5" value="0">Temps 9, division 6</button>
-							<button name="step" class="step" data-bar="8" data-step="6" value="0">Temps 9, division 7</button>
-							<button name="step" class="step" data-bar="8" data-step="7" value="0">Temps 9, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="9" data-step="0" value="0">Temps 10, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="9" data-step="1" value="0">Temps 10, division 2</button>
-							<button name="step" class="step" data-bar="9" data-step="2" value="0">Temps 10, division 3</button>
-							<button name="step" class="step" data-bar="9" data-step="3" value="0">Temps 10, division 4</button>
-							<button name="step" class="step" data-bar="9" data-step="4" value="0">Temps 10, division 5</button>
-							<button name="step" class="step" data-bar="9" data-step="5" value="0">Temps 10, division 6</button>
-							<button name="step" class="step" data-bar="9" data-step="6" value="0">Temps 10, division 7</button>
-							<button name="step" class="step" data-bar="9" data-step="7" value="0">Temps 10, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="10" data-step="0" value="0">Temps 11, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="10" data-step="1" value="0">Temps 11, division 2</button>
-							<button name="step" class="step" data-bar="10" data-step="2" value="0">Temps 11, division 3</button>
-							<button name="step" class="step" data-bar="10" data-step="3" value="0">Temps 11, division 4</button>
-							<button name="step" class="step" data-bar="10" data-step="4" value="0">Temps 11, division 5</button>
-							<button name="step" class="step" data-bar="10" data-step="5" value="0">Temps 11, division 6</button>
-							<button name="step" class="step" data-bar="10" data-step="6" value="0">Temps 11, division 7</button>
-							<button name="step" class="step" data-bar="10" data-step="7" value="0">Temps 11, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="11" data-step="0" value="0">Temps 12, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="11" data-step="1" value="0">Temps 12, division 2</button>
-							<button name="step" class="step" data-bar="11" data-step="2" value="0">Temps 12, division 3</button>
-							<button name="step" class="step" data-bar="11" data-step="3" value="0">Temps 12, division 4</button>
-							<button name="step" class="step" data-bar="11" data-step="4" value="0">Temps 12, division 5</button>
-							<button name="step" class="step" data-bar="11" data-step="5" value="0">Temps 12, division 6</button>
-							<button name="step" class="step" data-bar="11" data-step="6" value="0">Temps 12, division 7</button>
-							<button name="step" class="step" data-bar="11" data-step="7" value="0">Temps 12, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="12" data-step="0" value="0">Temps 13, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="12" data-step="1" value="0">Temps 13, division 2</button>
-							<button name="step" class="step" data-bar="12" data-step="2" value="0">Temps 13, division 3</button>
-							<button name="step" class="step" data-bar="12" data-step="3" value="0">Temps 13, division 4</button>
-							<button name="step" class="step" data-bar="12" data-step="4" value="0">Temps 13, division 5</button>
-							<button name="step" class="step" data-bar="12" data-step="5" value="0">Temps 13, division 6</button>
-							<button name="step" class="step" data-bar="12" data-step="6" value="0">Temps 13, division 7</button>
-							<button name="step" class="step" data-bar="12" data-step="7" value="0">Temps 13, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="13" data-step="0" value="0">Temps 14, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="13" data-step="1" value="0">Temps 14, division 2</button>
-							<button name="step" class="step" data-bar="13" data-step="2" value="0">Temps 14, division 3</button>
-							<button name="step" class="step" data-bar="13" data-step="3" value="0">Temps 14, division 4</button>
-							<button name="step" class="step" data-bar="13" data-step="4" value="0">Temps 14, division 5</button>
-							<button name="step" class="step" data-bar="13" data-step="5" value="0">Temps 14, division 6</button>
-							<button name="step" class="step" data-bar="13" data-step="6" value="0">Temps 14, division 7</button>
-							<button name="step" class="step" data-bar="13" data-step="7" value="0">Temps 14, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="14" data-step="0" value="0">Temps 15, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="14" data-step="1" value="0">Temps 15, division 2</button>
-							<button name="step" class="step" data-bar="14" data-step="2" value="0">Temps 15, division 3</button>
-							<button name="step" class="step" data-bar="14" data-step="3" value="0">Temps 15, division 4</button>
-							<button name="step" class="step" data-bar="14" data-step="4" value="0">Temps 15, division 5</button>
-							<button name="step" class="step" data-bar="14" data-step="5" value="0">Temps 15, division 6</button>
-							<button name="step" class="step" data-bar="14" data-step="6" value="0">Temps 15, division 7</button>
-							<button name="step" class="step" data-bar="14" data-step="7" value="0">Temps 15, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="15" data-step="0" value="0">Temps 16, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="15" data-step="1" value="0">Temps 16, division 2</button>
-							<button name="step" class="step" data-bar="15" data-step="2" value="0">Temps 16, division 3</button>
-							<button name="step" class="step" data-bar="15" data-step="3" value="0">Temps 16, division 4</button>
-							<button name="step" class="step" data-bar="15" data-step="4" value="0">Temps 16, division 5</button>
-							<button name="step" class="step" data-bar="15" data-step="5" value="0">Temps 16, division 6</button>
-							<button name="step" class="step" data-bar="15" data-step="6" value="0">Temps 16, division 7</button>
-							<button name="step" class="step" data-bar="15" data-step="7" value="0">Temps 16, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="16" data-step="0" value="0">Temps 17, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="16" data-step="1" value="0">Temps 17, division 2</button>
-							<button name="step" class="step" data-bar="16" data-step="2" value="0">Temps 17, division 3</button>
-							<button name="step" class="step" data-bar="16" data-step="3" value="0">Temps 17, division 4</button>
-							<button name="step" class="step" data-bar="16" data-step="4" value="0">Temps 17, division 5</button>
-							<button name="step" class="step" data-bar="16" data-step="5" value="0">Temps 17, division 6</button>
-							<button name="step" class="step" data-bar="16" data-step="6" value="0">Temps 17, division 7</button>
-							<button name="step" class="step" data-bar="16" data-step="7" value="0">Temps 17, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="17" data-step="0" value="0">Temps 18, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="17" data-step="1" value="0">Temps 18, division 2</button>
-							<button name="step" class="step" data-bar="17" data-step="2" value="0">Temps 18, division 3</button>
-							<button name="step" class="step" data-bar="17" data-step="3" value="0">Temps 18, division 4</button>
-							<button name="step" class="step" data-bar="17" data-step="4" value="0">Temps 18, division 5</button>
-							<button name="step" class="step" data-bar="17" data-step="5" value="0">Temps 18, division 6</button>
-							<button name="step" class="step" data-bar="17" data-step="6" value="0">Temps 18, division 7</button>
-							<button name="step" class="step" data-bar="17" data-step="7" value="0">Temps 18, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="18" data-step="0" value="0">Temps 19, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="18" data-step="1" value="0">Temps 19, division 2</button>
-							<button name="step" class="step" data-bar="18" data-step="2" value="0">Temps 19, division 3</button>
-							<button name="step" class="step" data-bar="18" data-step="3" value="0">Temps 19, division 4</button>
-							<button name="step" class="step" data-bar="18" data-step="4" value="0">Temps 19, division 5</button>
-							<button name="step" class="step" data-bar="18" data-step="5" value="0">Temps 19, division 6</button>
-							<button name="step" class="step" data-bar="18" data-step="6" value="0">Temps 19, division 7</button>
-							<button name="step" class="step" data-bar="18" data-step="7" value="0">Temps 19, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="19" data-step="0" value="0">Temps 20, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="19" data-step="1" value="0">Temps 20, division 2</button>
-							<button name="step" class="step" data-bar="19" data-step="2" value="0">Temps 20, division 3</button>
-							<button name="step" class="step" data-bar="19" data-step="3" value="0">Temps 20, division 4</button>
-							<button name="step" class="step" data-bar="19" data-step="4" value="0">Temps 20, division 5</button>
-							<button name="step" class="step" data-bar="19" data-step="5" value="0">Temps 20, division 6</button>
-							<button name="step" class="step" data-bar="19" data-step="6" value="0">Temps 20, division 7</button>
-							<button name="step" class="step" data-bar="19" data-step="7" value="0">Temps 20, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="20" data-step="0" value="0">Temps 21, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="20" data-step="1" value="0">Temps 21, division 2</button>
-							<button name="step" class="step" data-bar="20" data-step="2" value="0">Temps 21, division 3</button>
-							<button name="step" class="step" data-bar="20" data-step="3" value="0">Temps 21, division 4</button>
-							<button name="step" class="step" data-bar="20" data-step="4" value="0">Temps 21, division 5</button>
-							<button name="step" class="step" data-bar="20" data-step="5" value="0">Temps 21, division 6</button>
-							<button name="step" class="step" data-bar="20" data-step="6" value="0">Temps 21, division 7</button>
-							<button name="step" class="step" data-bar="20" data-step="7" value="0">Temps 21, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="21" data-step="0" value="0">Temps 22, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="21" data-step="1" value="0">Temps 22, division 2</button>
-							<button name="step" class="step" data-bar="21" data-step="2" value="0">Temps 22, division 3</button>
-							<button name="step" class="step" data-bar="21" data-step="3" value="0">Temps 22, division 4</button>
-							<button name="step" class="step" data-bar="21" data-step="4" value="0">Temps 22, division 5</button>
-							<button name="step" class="step" data-bar="21" data-step="5" value="0">Temps 22, division 6</button>
-							<button name="step" class="step" data-bar="21" data-step="6" value="0">Temps 22, division 7</button>
-							<button name="step" class="step" data-bar="21" data-step="7" value="0">Temps 22, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="22" data-step="0" value="0">Temps 23, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="22" data-step="1" value="0">Temps 23, division 2</button>
-							<button name="step" class="step" data-bar="22" data-step="2" value="0">Temps 23, division 3</button>
-							<button name="step" class="step" data-bar="22" data-step="3" value="0">Temps 23, division 4</button>
-							<button name="step" class="step" data-bar="22" data-step="4" value="0">Temps 23, division 5</button>
-							<button name="step" class="step" data-bar="22" data-step="5" value="0">Temps 23, division 6</button>
-							<button name="step" class="step" data-bar="22" data-step="6" value="0">Temps 23, division 7</button>
-							<button name="step" class="step" data-bar="22" data-step="7" value="0">Temps 23, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="23" data-step="0" value="0">Temps 24, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="23" data-step="1" value="0">Temps 24, division 2</button>
-							<button name="step" class="step" data-bar="23" data-step="2" value="0">Temps 24, division 3</button>
-							<button name="step" class="step" data-bar="23" data-step="3" value="0">Temps 24, division 4</button>
-							<button name="step" class="step" data-bar="23" data-step="4" value="0">Temps 24, division 5</button>
-							<button name="step" class="step" data-bar="23" data-step="5" value="0">Temps 24, division 6</button>
-							<button name="step" class="step" data-bar="23" data-step="6" value="0">Temps 24, division 7</button>
-							<button name="step" class="step" data-bar="23" data-step="7" value="0">Temps 24, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="24" data-step="0" value="0">Temps 25, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="24" data-step="1" value="0">Temps 25, division 2</button>
-							<button name="step" class="step" data-bar="24" data-step="2" value="0">Temps 25, division 3</button>
-							<button name="step" class="step" data-bar="24" data-step="3" value="0">Temps 25, division 4</button>
-							<button name="step" class="step" data-bar="24" data-step="4" value="0">Temps 25, division 5</button>
-							<button name="step" class="step" data-bar="24" data-step="5" value="0">Temps 25, division 6</button>
-							<button name="step" class="step" data-bar="24" data-step="6" value="0">Temps 25, division 7</button>
-							<button name="step" class="step" data-bar="24" data-step="7" value="0">Temps 25, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="25" data-step="0" value="0">Temps 26, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="25" data-step="1" value="0">Temps 26, division 2</button>
-							<button name="step" class="step" data-bar="25" data-step="2" value="0">Temps 26, division 3</button>
-							<button name="step" class="step" data-bar="25" data-step="3" value="0">Temps 26, division 4</button>
-							<button name="step" class="step" data-bar="25" data-step="4" value="0">Temps 26, division 5</button>
-							<button name="step" class="step" data-bar="25" data-step="5" value="0">Temps 26, division 6</button>
-							<button name="step" class="step" data-bar="25" data-step="6" value="0">Temps 26, division 7</button>
-							<button name="step" class="step" data-bar="25" data-step="7" value="0">Temps 26, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="26" data-step="0" value="0">Temps 27, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="26" data-step="1" value="0">Temps 27, division 2</button>
-							<button name="step" class="step" data-bar="26" data-step="2" value="0">Temps 27, division 3</button>
-							<button name="step" class="step" data-bar="26" data-step="3" value="0">Temps 27, division 4</button>
-							<button name="step" class="step" data-bar="26" data-step="4" value="0">Temps 27, division 5</button>
-							<button name="step" class="step" data-bar="26" data-step="5" value="0">Temps 27, division 6</button>
-							<button name="step" class="step" data-bar="26" data-step="6" value="0">Temps 27, division 7</button>
-							<button name="step" class="step" data-bar="26" data-step="7" value="0">Temps 27, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="27" data-step="0" value="0">Temps 28, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="27" data-step="1" value="0">Temps 28, division 2</button>
-							<button name="step" class="step" data-bar="27" data-step="2" value="0">Temps 28, division 3</button>
-							<button name="step" class="step" data-bar="27" data-step="3" value="0">Temps 28, division 4</button>
-							<button name="step" class="step" data-bar="27" data-step="4" value="0">Temps 28, division 5</button>
-							<button name="step" class="step" data-bar="27" data-step="5" value="0">Temps 28, division 6</button>
-							<button name="step" class="step" data-bar="27" data-step="6" value="0">Temps 28, division 7</button>
-							<button name="step" class="step" data-bar="27" data-step="7" value="0">Temps 28, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="28" data-step="0" value="0">Temps 29, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="28" data-step="1" value="0">Temps 29, division 2</button>
-							<button name="step" class="step" data-bar="28" data-step="2" value="0">Temps 29, division 3</button>
-							<button name="step" class="step" data-bar="28" data-step="3" value="0">Temps 29, division 4</button>
-							<button name="step" class="step" data-bar="28" data-step="4" value="0">Temps 29, division 5</button>
-							<button name="step" class="step" data-bar="28" data-step="5" value="0">Temps 29, division 6</button>
-							<button name="step" class="step" data-bar="28" data-step="6" value="0">Temps 29, division 7</button>
-							<button name="step" class="step" data-bar="28" data-step="7" value="0">Temps 29, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="29" data-step="0" value="0">Temps 30, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="29" data-step="1" value="0">Temps 30, division 2</button>
-							<button name="step" class="step" data-bar="29" data-step="2" value="0">Temps 30, division 3</button>
-							<button name="step" class="step" data-bar="29" data-step="3" value="0">Temps 30, division 4</button>
-							<button name="step" class="step" data-bar="29" data-step="4" value="0">Temps 30, division 5</button>
-							<button name="step" class="step" data-bar="29" data-step="5" value="0">Temps 30, division 6</button>
-							<button name="step" class="step" data-bar="29" data-step="6" value="0">Temps 30, division 7</button>
-							<button name="step" class="step" data-bar="29" data-step="7" value="0">Temps 30, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="30" data-step="0" value="0">Temps 31, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="30" data-step="1" value="0">Temps 31, division 2</button>
-							<button name="step" class="step" data-bar="30" data-step="2" value="0">Temps 31, division 3</button>
-							<button name="step" class="step" data-bar="30" data-step="3" value="0">Temps 31, division 4</button>
-							<button name="step" class="step" data-bar="30" data-step="4" value="0">Temps 31, division 5</button>
-							<button name="step" class="step" data-bar="30" data-step="5" value="0">Temps 31, division 6</button>
-							<button name="step" class="step" data-bar="30" data-step="6" value="0">Temps 31, division 7</button>
-							<button name="step" class="step" data-bar="30" data-step="7" value="0">Temps 31, division 8</button>
-						</span>
-					</span>
-					<span class="bar">
-						<button name="step" class="step" data-bar="31" data-step="0" value="0">Temps 32, division 1</button>
-						<span class="sub_bar">
-							<button name="step" class="step" data-bar="31" data-step="1" value="0">Temps 32, division 2</button>
-							<button name="step" class="step" data-bar="31" data-step="2" value="0">Temps 32, division 3</button>
-							<button name="step" class="step" data-bar="31" data-step="3" value="0">Temps 32, division 4</button>
-							<button name="step" class="step" data-bar="31" data-step="4" value="0">Temps 32, division 5</button>
-							<button name="step" class="step" data-bar="31" data-step="5" value="0">Temps 32, division 6</button>
-							<button name="step" class="step" data-bar="31" data-step="6" value="0">Temps 32, division 7</button>
-							<button name="step" class="step" data-bar="31" data-step="7" value="0">Temps 32, division 8</button>
+						<span class="beat">
+							<button name="step" class="step" data-beat="5" data-step="0" value="0">Temps 6, division 1</button>
+							<span class="grid">
+								<button name="step" class="step" data-beat="5" data-step="1" value="0">Temps 6, division 2</button>
+								<button name="step" class="step" data-beat="5" data-step="2" value="0">Temps 6, division 3</button>
+								<button name="step" class="step" data-beat="5" data-step="3" value="0">Temps 6, division 4</button>
+								<button name="step" class="step" data-beat="5" data-step="4" value="0">Temps 6, division 5</button>
+								<button name="step" class="step" data-beat="5" data-step="5" value="0">Temps 6, division 6</button>
+								<button name="step" class="step" data-beat="5" data-step="6" value="0">Temps 6, division 7</button>
+								<button name="step" class="step" data-beat="5" data-step="7" value="0">Temps 6, division 8</button>
+							</span>
 						</span>
 					</span>
 				<td>
@@ -1189,21 +888,24 @@ footer button {
 		<form method="dialog" autocomplete="off">
 			<h2 id="instrument">Instrument</h2>
 			<div>
-				<label>Nombre de temps
+				<label>Nombre de mesures
 					<select id="bars" name="bars">
-						<option value="[4,4]" selected>4</option>
-						<option value="[6,6]">6</option>
-						<option value="[8,4]">8</option>
-						<option value="[12,4]">12 (3 × 4)</option>
-						<option value="[12,6]">12 (2 × 6)</option>
-						<option value="[16,4]">16</option>
-						<option value="[24,4]">24 (6 × 4)</option>
-						<option value="[24,6]">24 (4 × 6)</option>
-						<option value="[32,4]">32</option>
+						<option value="1" selected>1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="6">6</option>
+						<option value="8">8</option>
+					</select>
+				</label>
+				<label>Temps par mesure
+					<select id="beats" name="beats">
+						<option value="4" selected>4</option>
+						<option value="6">6</option>
 					</select>
 				</label>
 				<label>Division du temps
-					<select id="beat" name="beat">
+					<select id="steps" name="steps">
 						<option value="3">3</option>
 						<option value="4" selected>4</option>
 						<option value="6">6</option>
@@ -1211,9 +913,10 @@ footer button {
 					</select>
 				</label>
 				<label>Type de phrase
-					<select id="loop" name="loop">
-						<option value="0">Introduction</option>
-						<option value="1" selected>Tourne</option>
+					<select id="phrase" name="phrase">
+						<option value="1">Appel</option>
+						<option value="2">Réponse</option>
+						<option value="0" selected>Tourne</option>
 					</select>
 				</label>
 			</div>
@@ -1322,18 +1025,20 @@ footer button {
 		import app_config      from './config/app_config.json'   with { type: 'json' };
 		import core_config     from './config/core_config.json'  with { type: 'json' };
 		import instruments     from './modules/instruments.json' with { type: 'json' };
-		import {Interface}     from './modules/interface.js';
-		import {ServiceWorker} from './modules/service_worker.js';
-		import {Sequencer}     from './modules/sequencer.js';
+		import {Audio}         from './modules/audio.js';
 		import {Presets}       from './modules/presets.js';
-		import {UrlState}      from './modules/url_state.js';
+		import {UrlState}      from './modules/url-state.js';
+		import {Interface}     from './modules/interface.js';
+		import {ServiceWorker} from './modules/service-worker.js';
 
-		const bus = new EventTarget();
-		new Interface({ bus, app_config, core_config, instruments });
-		new ServiceWorker({ bus, app_config, core_config });
-		new Sequencer({ bus, app_config, core_config, instruments });
-		new Presets({ bus, app_config, core_config });
-		new UrlState({ bus, core_config, instruments });
+		const bus    = new EventTarget();
+		const ui     = new Interface({ bus, app_config, core_config, instruments });
+		const config = ui.config;
+
+		new UrlState(     { bus, config, instruments });
+		new Presets(      { bus, config, instruments });
+		new Audio(        { bus, config, instruments });
+		new ServiceWorker({ bus, config, instruments });
 	</script>
 </body>
 </html>

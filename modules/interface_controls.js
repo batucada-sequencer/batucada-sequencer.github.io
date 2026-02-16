@@ -24,28 +24,28 @@ export default class InterfaceControls {
 		if (event.submitter?.name !== 'apply') return;
 		const values = this.#track.dataset;
 		const fields = {
-			beat: this.#ui.beat.value,
-			bars: this.#ui.bars.value,
-			loop: this.#ui.loop.value
+			bars:   this.#ui.setBars.value,
+			beats:  this.#ui.setBeats.value,
+			steps:  this.#ui.setSteps.value,
+			phrase: this.#ui.setPhrase.value,
 		};
 		const changes = {};
 		for (const [key, newValue] of Object.entries(fields)) {
 			if (values[key] !== newValue) {
-				changes[key] = newValue;
+				changes[key] = Number(newValue);
 			}
 		}
 		if (Object.keys(changes).length === 0) return;
 		document.startViewTransition(() => Object.assign(values, changes));
 		const trackIndex = this.#track.dataset.index;
-		const detail = { detail: { tracks: { [trackIndex]: changes } } };
-		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
-		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
+		const detail = { detail: { tracks: [ { id:trackIndex, changes } ] } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:updateData', detail));
 	}
 
 	async #handleClick({ target }) {
-		const audioPromise = this.#audioRequest();
-
-		// Cas où l'audio doit être prêt avant d’agir
+		const audioPromise = new Promise(resolve => {
+			this.#bus.dispatchEvent(new CustomEvent('interface:audioRequest', { detail: { resolve } }));
+		});
 		if (target === this.#startButton || target.name === this.#ui.stepName) {
 			await audioPromise;
 		}
@@ -57,100 +57,101 @@ export default class InterfaceControls {
 			this.#openTrackSettings(target)
 		}
 		else if (target === this.#resetButton) {
-			this.#reset();
+			this.#bus.dispatchEvent(new CustomEvent('interface:reset'));
 		}
 		else if (target === this.#startButton) {
 			this.toggleStartButton();
 		}
 	}
 
-	async #audioRequest() {
-		await new Promise(resolve => {
-			this.#bus.dispatchEvent(new CustomEvent('interface:audioRequest', { detail: { resolve } }));
-		});
+	#handleChange({ target }) {
+		if (target === this.#ui.tempo) {
+			this.#bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
+		}
+		else if (target.name === this.#ui.volumeName) {
+			this.#bus.dispatchEvent(new CustomEvent('interface:changeVolume'));
+		}
 	}
 
 	#handleInput({ target }) {
 		if (target.name === this.#ui.instrumentName) {
-			this.#changeInstrument(target);
-			this.#inputTrack(target, 'instrument');
+			this.#inputInstrument(target);
 		}
 		else if (target.name === this.#ui.volumeName) {
-			this.#inputTrack(target, 'volume');
+			this.#inputVolume(target);
 		}
 		else if (target === this.#ui.tempo) {
-			this.#inputTempo(target.value);
-		}
-	}
-
-	#handleChange({ target }) {
-		if (target === this.#ui.tempo) {
-			this.#changeTempo();
-		}
-		else if (target.name === this.#ui.volumeName) {
-			this.#changeVolume();
+			this.#inputTempo(target);
 		}
 	}
 
 	#openTrackSettings(target) {
-		const { track } = this.#ui.getTrackData(target);
-		const { beat, bars, loop } = track.dataset;
+		const track = this.#ui.getTrack(target);
+		const { bars, beats, steps, phrase } = track.dataset;
 		this.#track = track;
-		this.#ui.beat.value = beat;
-		this.#ui.bars.value = bars;
-		this.#ui.loop.value = loop;
+		this.#ui.setBars.value   = bars;
+		this.#ui.setBeats.value  = beats;
+		this.#ui.setSteps.value  = steps;
+		this.#ui.setPhrase.value = phrase;
 		this.#trackSettingsName.textContent = this.#ui.getInstrumentName(track);
 		this.#trackSettings.showModal();
 		this.#trackSettings.focus();
 	}
 
-	#inputTempo(value) {
-		this.#ui.bpm.textContent = value;
-		this.#bus.dispatchEvent(new CustomEvent('interface:inputTempo', { detail: Number(value) }));
-	}
-
 	#changeNote(target) {
-		const { trackIndex } = this.#ui.getTrackData(target);
-		const barIndex = Number(target.dataset.bar);
-		const stepIndex = Number(target.dataset.step);
-		const change = { barIndex, stepIndex, value: Number(target.value) };
-		this.#bus.dispatchEvent(
-			new CustomEvent('interface:changeNote', { detail: { trackIndex, change } })
-		);
-	}
-
-	#inputTrack(target, property) {
-		const { trackIndex } = this.#ui.getTrackData(target);
 		const value = Number(target.value);
-		const detail = { detail: { tracks: { [trackIndex]: { [property]: value} } } };
-		this.#bus.dispatchEvent(new CustomEvent('interface:inputTrack', detail));
+		const stepIndex = this.#ui.getStepIndex(target);
+		const detail = { detail: { sheet: [{ stepIndex, value }] } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:changeNote', detail));
 	}
 
-	#changeInstrument(target) {
-		const { track } = this.#ui.getTrackData(target);
-		track.dataset.instrument = target.value;
-		this.#bus.dispatchEvent(new CustomEvent('interface:changeTrack'));
+	#inputInstrument(target) {
+		const value = Number(target.value);
+		const track = this.#ui.getTrack(target);
+		const index = this.#ui.getTrackIndex(track);
+		track.dataset.instrument = value;
+		const trackChanges = [
+			{ id: index, changes: { instrument: value } }
+		];
+		this.#bus.dispatchEvent(new CustomEvent('interface:updateData', {
+			detail: { tracks: trackChanges }
+		}));
 	}
 
-	#changeVolume() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:changeVolume'));
+	#inputVolume(target) {
+		const track = this.#ui.getTrack(target);
+		const trackIndex = this.#ui.getTrackIndex(track);
+		const value = Number(target.value);
+		const detail = { detail: { volumes: [ { id:trackIndex, value } ] } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:updateData', detail));
 	}
 
-	#changeTempo() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:changeTempo'));
+	#inputTempo(target) {
+		this.#ui.bpm.textContent = target.value;
+		const value = Number(target.value);
+		const detail = { detail: { tempo: value } };
+		this.#bus.dispatchEvent(new CustomEvent('interface:updateData', detail));
 	}
 
-	#reset() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:reset'));
+	toggleStartButton() {
+		if (this.#ui.playing) {
+			this.#bus.dispatchEvent(new CustomEvent('interface:stop'));
+			this.stop();
+		}
+		else {
+			this.#bus.dispatchEvent(new CustomEvent('interface:start'));
+			this.#start();
+		}
 	}
 
-	toggleStartButton(status) {
-		const isRunning = this.#ui.isRunning;
-		const shouldStart = status ?? !isRunning;
-		if (status !== undefined && shouldStart === isRunning) return;
-		this.#startButton.setAttribute('aria-checked', String(shouldStart));
-		this.#ui.container.classList.toggle(this.#startClass, shouldStart);
-		this.#bus.dispatchEvent(new CustomEvent(shouldStart ? 'interface:start' : 'interface:stop'));
+	#start() {
+		this.#startButton.setAttribute('aria-checked', 'true');
+		this.#ui.container.classList.add(this.#startClass);
+	}
+
+	stop() {
+		this.#startButton.setAttribute('aria-checked', 'false');
+		this.#ui.container.classList.remove(this.#startClass);
 	}
 
 }

@@ -9,6 +9,7 @@
 	"tempoSearchParam": "bpm",
 	"titleSearchParam": "title",
 	"volumeSearchParam": "vol",
-	"shareSearchParam": "share"
+	"shareSearchParam": "share",
+	"updateSearchParam": "update"
 }
 

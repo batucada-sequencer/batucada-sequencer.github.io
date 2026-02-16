@@ -8,10 +8,10 @@ export default class InterfaceAbout {
 	#applicationVersion = document.querySelector('#applicationVersion');
 	#instrumentsVersion = document.querySelector('#instrumentsVersion');
 
-	constructor({ bus, email }) {
+	constructor({ bus, parent }) {
 		this.#bus = bus;
-		this.#contact.textContent = email;
-		this.#contact.href = `mailto:${email}`;
+		this.#contact.textContent = parent.email;
+		this.#contact.href = `mailto:${parent.email}`;
 
 		this.#aboutButton. addEventListener('click', () => this.#openAbout());
 		this.#updateButton.addEventListener('click', () => this.#update());
@@ -28,6 +28,8 @@ export default class InterfaceAbout {
 	}
 
 	async #openAbout() {
+		this.#about.showModal();
+		this.#about.focus();
 		try {
 			this.#bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
 			const lastModified = await new Promise(resolve => {
@@ -48,7 +50,5 @@ export default class InterfaceAbout {
 				this.#updateButton.hidden = !versions.hasUpdate;
 			}
 		} catch {}
-		this.#about.showModal();
-		this.#about.focus();
 	}
 }

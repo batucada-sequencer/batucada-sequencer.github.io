@@ -44,18 +44,22 @@ button {
 	margin:0;
 	color:#000;
 	padding:0 .5em;
-	background:#fff;
 	appearance:none;
 	user-select:none;
 	border-radius:4px;
-	background:no-repeat;
 	box-sizing:border-box;
 	font-family:sans-serif;
+	background:transparent no-repeat;
 	border:1px solid hsl(240,10%,60%);
 }
-select {
+select:has([value]:checked) {
+	background-color:white;
+}
+select,
+.presets {
+	text-align:left;
 	padding-right:.9em;
-	background:white no-repeat right center;
+	background-position:right center;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
 button:disabled {
@@ -159,6 +163,22 @@ tbody {
 	position:relative;
 	grid-template-columns:var(--drag-handle-width,) 1fr;
 }
+.track div[draggable] label {
+	display:grid;
+}
+.track label span {
+	grid-area:1 / 1;
+	text-align:left;
+	margin-left:1px;
+	padding-left:.3em;
+	line-height:1.65em;
+	font-weight:normal;
+}
+.instrument {
+	font-size:1em;
+	grid-area:1 / 1;
+	padding-left:.3em;
+}
 .track[data-phrase="1"] div[draggable]::after,
 .track[data-phrase="2"] div[draggable]::after {
 	width:1em;
@@ -180,10 +200,6 @@ tbody {
 	color:transparent;
 	justify-self:right;
 	background:center no-repeat url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M10 10v6a4 4 0 1 0 .01 0m0 8v12M23 10v12a4 4 0 1 0 .01 0m0 8v6M36 10v8a4 4 0 1 0 .01 0m0 8v10" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-.instrument {
-	font-size:1em;
-	padding-left:.3em;
 }
 .sheet {
 	gap:.3em;
@@ -364,7 +380,17 @@ hr {
 }
 #combo_presets {
 	flex:1.4;
-	display:flex;
+	display:grid;
+	grid-template-columns:2.5rem minmax(9em, 1fr);
+}
+#presets_label {
+	grid-row:1;
+	grid-column:2;
+	overflow:hidden;
+	line-height:2.5rem;
+	white-space:nowrap;
+	padding:0 1em 0 .5em;
+	text-overflow:ellipsis;
 }
 #combo_presets button:focus,
 #combo_presets select:focus {
@@ -383,7 +409,7 @@ hr {
 	order:4;
 }
 #start,
-#combo_presets button {
+#saved {
 	padding:0;
 	width:2.5rem;
 	height:2.5rem;
@@ -409,26 +435,29 @@ hr {
 .started #pause {
 	display:block;
 }
-#combo_presets button {
+#saved {
+	border-radius:4px 0 0 4px;
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
-#combo_presets:has([value]:checked) button {
+#combo_presets:has([value]:checked) #saved {
 	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="hsl(215,80%,43%)" fill="hsl(215,80%,43%)" stroke-linejoin="round" stroke-linecap="round"/></svg>');
 }
-#combo_presets select,
+.presets,
 #reset {
 	height:2.5rem;
 	font-size:1em; 
 }
-#combo_presets select {
-	flex:1;
-	width:9em;
+.presets {
+	width:100%;
+	grid-row:1;
+	grid-column:2;
 	margin-left:-1px;
 	text-overflow:ellipsis;
 	border-radius:0 4px 4px 0;
 }
-#combo_presets button {
-	border-radius:4px 0 0 4px;
+select.presets:empty,
+button.presets:has(+ select.presets:not(:empty)) {
+	display:none;
 }
 #tempo {
 	flex:1;
@@ -498,17 +527,6 @@ dialog h2 {
 	height:1.8em;
 	font-size:.9em;
 }
-/* IOS */
-#track select:has([selected][disabled]:checked) {
-	color:#757575;
-}
-#track option[value] {
-	color:#000;
-}
-#track option[selected][disabled] {
-	color:revert;
-}
-/* End IOS */
 #preset {
 	margin-bottom:-.5em;
 }
@@ -771,9 +789,10 @@ footer button {
 				<th scope="row">
 					<div draggable="true">
 						<div class="handle" title="Déplacer"></div>
-						<select name="instrument" class="instrument" title="Choisir l'instrument" aria-label="instrument" autocomplete="off">
-							<option selected disabled hidden value="0">Instrument</option>
-						</select>
+						<label>
+							<span>Instrument</span>
+							<select name="instrument" class="instrument" title="Choisir l'instrument" autocomplete="off"></select>
+						</label>
 					</div>
 					<button name="trackbutton" class="trackbutton" title="Modifier la piste">Réglages</button>
 				</th>
@@ -860,11 +879,10 @@ footer button {
 		<hr>
 		<div id="controls" role="toolbar" tabindex="-1">
 			<div id="combo_presets" role="group">
-				<button title="Gérer le morceau">Gérer le morceau</button>
-				<select aria-label="morceaux" title="Choisir le morceau">
-					<option disabled hidden selected>Morceaux enregistrés</option>
-					<option disabled>Aucun morceau</option>
-				</select>
+				<button id="saved" title="Gérer le morceau">Gérer le morceau</button>
+				<span id="presets_label">Morceaux enregistrés</span>
+				<button class="presets" aria-labelledby="presets_label" title="Choisir le morceau" data-message="Aucun morceau n'est enregistré."></button>
+				<select class="presets" aria-labelledby="presets_label" title="Choisir le morceau"></select>
 			</div>
 			<label id="combo_tempo" for="tempo" title="Tempo">
 				<input id="tempo" aria-label="tempo" type="range" value="80" min="60" max="160" step="4" autocomplete="off">
@@ -1012,7 +1030,7 @@ footer button {
 			<div>
 				<p>Version de l'application : <span id="applicationVersion">-</span></p>
 				<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
-				<p>Version des morceaux : <span id="dataDate">-</span></p>
+				<p>Version des morceaux : <span id="dataDate">01/01/2025 00:00:00</span></p>
 				<p>Contact : <a id="contact"></a></p>
 			</div>
 			<form method="dialog" class="bottom">

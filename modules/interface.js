@@ -3,7 +3,6 @@ export class Interface {
 	#resolveDom;
 	#resolution;
 	#firstTrack;
-	#presetsInit;
 
 	#bpmNode;
 	#titleNode;
@@ -105,11 +104,10 @@ export class Interface {
 
 
 	#buildDom(instruments, app_config) {
-		this.#presetsInit = this.presets.cloneNode(true);
-
 		const firstInstrument = this.#firstTrack.querySelector(`.${this.#instrumentName}`);
 		const options = instruments.slice(1).map((inst, i) => new Option(inst.name, i + 1));
-		firstInstrument.append(...options);
+		firstInstrument.replaceChildren(...options);
+		firstInstrument.value = this.#config.defaultInstrument;
 
 		const firstBar = this.#firstTrack.querySelector(`.${this.#barName}`);
 		const barsFragment = new DocumentFragment();
@@ -132,6 +130,7 @@ export class Interface {
 			this.#instrumentsNodes.push(trackClone.querySelector(`.${this.#instrumentName}`));
 			this.#volumesNodes    .push(trackClone.querySelector(`.${this.#volumeName}`));
 			this.#stepsNodes      .push(...trackClone.getElementsByClassName(this.#stepName));
+			this.#instrumentsNodes[i].value = this.#config.defaultInstrument;
 			fragment.appendChild(trackClone);
 		}
 		this.#firstTrack.parentNode.appendChild(fragment);
@@ -249,20 +248,12 @@ export class Interface {
 
 	set #presets(presets) {
 		const fragment = new DocumentFragment();
-		if (presets.length) {
-			fragment.appendChild(this.presets.options[0].cloneNode(true));
-			presets.forEach(({ name, value }) => {
-				const text = name || this.#untitled;
-				fragment.appendChild(new Option(text, value));
-			});
-		} else {
-			fragment.replaceChildren(...this.#presetsInit.cloneNode(true).options);
-		}
+		presets.forEach(({ name, value }) => fragment.appendChild(new Option(name || this.#untitled, value)));
 		this.presets.replaceChildren(fragment);
 	}
 
 	set #index(index) {
-		this.presets.selectedIndex = index + 1;
+		this.presets.selectedIndex = index;
 	}
 
 	#openSharedPresets(data) {
@@ -330,7 +321,7 @@ export class Interface {
 	get bpm()       { return this.#bpmNode       ??= document.querySelector('#combo_tempo span'); }
 	get title()     { return this.#titleNode     ??= document.querySelector('h1'); }
 	get tempo()     { return this.#tempoNode     ??= document.querySelector('#tempo'); }
-	get presets()   { return this.#presetsNode   ??= document.querySelector('#combo_presets select'); }
+	get presets()   { return this.#presetsNode   ??= document.querySelector('select.presets'); }
 	get setBars()   { return this.#setBarsNode   ??= document.querySelector(`#${this.#barsName}`); }
 	get setSteps()  { return this.#setStepsNode  ??= document.querySelector(`#${this.#stepsName}`); }
 	get setBeats()  { return this.#setBeatsNode  ??= document.querySelector(`#${this.#beatsName}`); }

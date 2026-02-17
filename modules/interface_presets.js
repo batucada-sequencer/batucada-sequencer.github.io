@@ -13,7 +13,8 @@ export default class InterfacePresets {
 	#shareButton =    document.querySelector('#share button[name="share"]');
 	#toastMessage =   document.querySelector('#toast p');
 	#cancelButton =   document.querySelector('#toast button');
-	#settingsButton = document.querySelector('#combo_presets button');
+	#presetsButton =  document.querySelector('button.presets');
+	#settingsButton = document.querySelector('#saved');
 	#checkBoxMaster = document.querySelector('#check_all input');
 
 	constructor({ bus, parent }) {
@@ -25,6 +26,7 @@ export default class InterfacePresets {
 		this.#toast.              addEventListener('animationend', (event) => this.#toast.hidePopover());
 		this.#checkBoxMaster.form.addEventListener('change',       (event) => this.#checkValues(event));
 		this.#ui.presets.         addEventListener('change',       (event) => this.#setSelectedPreset(event));
+		this.#presetsButton.      addEventListener('click',        (event) => this.#showToast(event));
 		this.#settingsButton.     addEventListener('click',        (event) => this.#openSettings());
 		this.#sharedList.         addEventListener('click',        (event) => this.#loadClickedPreset(event));
 
@@ -42,9 +44,10 @@ export default class InterfacePresets {
 	#setSelectedPreset(event) {
 		const { value, selectedIndex, options } = event.target;
 		const { text } = options[selectedIndex];
-		const index = selectedIndex - 1;
 		const name = text === this.#ui.untitled ? undefined : text;
-		this.#bus.dispatchEvent(new CustomEvent('interface:presetSelected', { detail: { name, value, index  } }));
+		this.#bus.dispatchEvent(
+			new CustomEvent('interface:presetSelected', { detail: { name, value, index: selectedIndex } })
+		);
 	}
 
 	#loadClickedPreset(event) {
@@ -60,7 +63,7 @@ export default class InterfacePresets {
 		const presetIndex = Array.from(this.#ui.presets.options)
 			.slice(1)
 			.findIndex(option => option.text === title);
-		const hasSelection = this.#ui.presets.selectedIndex > 0;
+		const hasSelection = this.#ui.presets.selectedIndex !== -1;
 		const exists = presetIndex !== -1 && title;
 		const formsValues = [
 			{ formId:'newOne', name: exists ? '' : title, hidden: hasSelection },
@@ -79,7 +82,7 @@ export default class InterfacePresets {
 	}
 
 	#openShareList() {
-		const isUnsaved = this.#ui.presets.selectedIndex < 1 && this.#ui.hasStroke;
+		const isUnsaved = this.#ui.presets.selectedIndex === -1 && this.#ui.hasStroke;
 		const data = { items: [], checkBoxList: [], checkedBox: false };
 		if (isUnsaved) {
 			const { li, input } = this.#createCheckItem({
@@ -264,10 +267,11 @@ export default class InterfacePresets {
 		}
 	}
 
-	#showToast(message) {
-		this.#cancelButton.hidden = !this.#cancelButton.form;
+	#showToast(payload) {
+		const isEvent = payload instanceof Event;
+		const message = isEvent ? payload.currentTarget.dataset.message : payload;
 		this.#toastMessage.textContent = message;
+		this.#cancelButton.hidden = isEvent || !this.#cancelButton.form;
 		this.#toast.showPopover();
 	}
-
 }

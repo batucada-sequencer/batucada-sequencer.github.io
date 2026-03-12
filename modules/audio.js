@@ -1,46 +1,84 @@
 export class Audio {
 	#bus;
-	#worker;
 	#maxGain;
 	#gainNodes;
 	#masterGain;
+	#audioStream;
 	#audioContext;
-	#wakeLock = null;
-	#playTimer = null;
+	#audioStreamBlob;
 	#instrumentsList;
-	#activeSources = new Set();
-	#durationWhenHidden;
+	#hiddenPlayDuration;
+	#mediaPausedDuration;
+	#worker           = null;
+	#isReady          = false;
+	#wakeLock         = null;
+	#playTimer        = null;
+	#activeSources    = new Set();
+	#pendingMessages  = [];
+	#mediaPausedTimer = null;
 
 	constructor({ bus, config, instruments }) {
-		this.#bus                = bus;
-		this.#instrumentsList    = instruments;
-		this.#durationWhenHidden = config.durationWhenHidden;
+		this.#bus                 = bus;
+		this.#instrumentsList     = instruments;
+		this.#hiddenPlayDuration  = config.hiddenPlayDuration;
+		this.#mediaPausedDuration = config.mediaPausedDuration;
 
-		this.#worker           = new Worker(new URL('./audio_worker.js', import.meta.url));
-		this.#worker.onmessage = (event) => this.#handleWorkerMessage(event.data);
-
-		document. addEventListener('visibilitychange',         ({ detail }) => this.#handleVisibilityChange());
-		this.#bus.addEventListener('interface:stop',           ({ detail }) => this.#stop(detail));
-		this.#bus.addEventListener('interface:reset',          ({ detail }) => this.#reset(detail));
-		this.#bus.addEventListener('interface:start',          ({ detail }) => this.#start(detail));
+		this.#bus.addEventListener('navigation:decoded',       ({ detail }) => this.#updateData(detail, true));
+		this.#bus.addEventListener('interface:reset',          () => this.#reset());
+		this.#bus.addEventListener('interface:change',         ({ detail }) => this.#change(detail));
 		this.#bus.addEventListener('interface:moveTrack',      ({ detail }) => this.#moveTrack(detail));
+		this.#bus.addEventListener('interface:setStroke',      ({ detail }) => this.#setStroke(detail));
 		this.#bus.addEventListener('interface:updateData',     ({ detail }) => this.#updateData(detail));
-		this.#bus.addEventListener('interface:changeNote',     ({ detail }) => this.#changeNote(detail));
-		this.#bus.addEventListener('interface:changeTempo',    ({ detail }) => this.#changeTempo(detail));
-		this.#bus.addEventListener('interface:changeVolume',   ({ detail }) => this.#changeVolume(detail));
-		this.#bus.addEventListener('interface:audioRequest',   ({ detail }) => this.#startAudio(detail));
-		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#restart(detail));
-		this.#bus.addEventListener('urlState:decoded',         ({ detail }) => this.#updateData(detail, true));
-		this.#initAudio(config);
+		this.#bus.addEventListener('interface:userGesture',    () => this.#startAudio(), { once: true });
+		this.#bus.addEventListener('interface:presetSelected', () => this.#restart());
+		document. addEventListener('visibilitychange',         () => this.#handleVisibilityChange());
+
+		queueMicrotask(() => {
+			this.#worker           = new Worker(new URL('./audio_worker.js', import.meta.url));
+			this.#worker.onmessage = (event) => this.#handleWorkerMessage(event.data);
+			this.#initAudio(config);
+			this.#initAudioStream(10);
+		});
 	}
 
-	#initAudio(config) {
-		this.#audioContext = new AudioContext();
-		this.#masterGain   = new GainNode(this.#audioContext);
-		this.#masterGain.connect(this.#audioContext.destination);
-		this.#audioContext.addEventListener('statechange', () => this.#handleAudioStateChange());
-		this.#loadInstrumentSounds();
+	#initAudioStream(seconds) {
+		const sampleRate = 8000;
+		const length = sampleRate * seconds;
+		const buffer = new ArrayBuffer(44 + length * 2);
+		const view = new DataView(buffer);
+		const writeString = (offset, string) => {
+			for (let i = 0; i < string.length; i++) {
+				view.setUint8(offset + i, string.charCodeAt(i));
+			}
+		};
+		writeString(0, 'RIFF');
+		view.setUint32(4, 36 + length * 2, true);
+		writeString(8, 'WAVEfmt ');
+		view.setUint32(16, 16, true);
+		view.setUint16(20, 1, true);
+		view.setUint16(22, 1, true);
+		view.setUint32(24, sampleRate, true);
+		view.setUint32(28, sampleRate * 2, true);
+		view.setUint16(32, 2, true);
+		view.setUint16(34, 16, true);
+		writeString(36, 'data');
+		view.setUint32(40, length * 2, true);
+		this.#audioStreamBlob = new Blob([view], { type: 'audio/wav' });
+		this.#audioStream = new window.Audio(URL.createObjectURL(this.#audioStreamBlob));
+		this.#audioStream.loop = true;
+	}
 
+	async #initAudio(config) {
+		this.#audioContext = new AudioContext();
+		this.#masterGain = new GainNode(this.#audioContext);
+		this.#masterGain.connect(this.#audioContext.destination);
+		//const streamDestination  = this.#audioContext.createMediaStreamDestination();
+		//this.#masterGain.connect(streamDestination);
+		//this.#audioStream = new window.Audio();
+		//this.#audioStream.srcObject = streamDestination.stream;
+		this.#audioContext.addEventListener('statechange', () => this.#handleAudioStateChange());
+
+		const loadInstruments    = this.#loadInstrumentSounds();
 		const instrumentsStrokes = this.#instrumentsList.map(instrument => instrument.files.length || 1);
 
 		this.#maxGain = config.maxGain;
@@ -74,6 +112,11 @@ export class Audio {
 			gainNode.connect(this.#masterGain);
 			return gainNode;
 		});
+
+		await loadInstruments;
+		this.#isReady = true; 
+		this.#pendingMessages.forEach(message => this.#updateData(message.changes, message.sendState));
+		this.#pendingMessages = [];
 	}
 
 	#handleWorkerMessage(data) {
@@ -82,7 +125,7 @@ export class Audio {
 				this.#playTicks(payload);
 			}
 			else if (action === 'stop') {
-				this.#stopTicks();
+				this.#stopAudio();
 			}
 			else if (action === 'updateData') {
 				this.#bus.dispatchEvent(
@@ -120,23 +163,43 @@ export class Audio {
 		console.log('Audio sounds loaded');
 	}
 
-	async #startAudio(promise) {
-		if (this.#audioContext.state !== 'running') {
-			await this.#audioContext.resume();
+	async #start() {
+		if (this.#mediaPausedTimer) {
+			clearTimeout(this.#mediaPausedTimer);
+			this.#mediaPausedTimer = null;
 		}
-		promise.resolve(true);
-	}
-
-	#start() {
+		if (this.#audioContext.state !== 'running') {
+			await this.#audioContext.resume().then(console.log('start resume'));
+		}
+		await this.#startAudio();
+		this.#audioStream.play().catch();
 		this.#worker.postMessage({ action: 'start', payload: this.#audioContext.currentTime });
 		this.#wakeLockRequest();
 	}
-	
+
+	#startAudio() {
+		return this.#audioContext.state !== 'running' 
+			? this.#audioContext.resume() 
+			: Promise.resolve();
+	}
+
 	#stop() {
 		this.#worker.postMessage({ action: 'stop', payload: this.#audioContext.currentTime});
 		this.#muteSchedulesNotes();
+		this.#stopAudio();
+	}
+
+	#stopAudio() {
 		this.#wakeLockRelease();
-		this.#stopTicks();
+		this.#audioStream.pause();
+		this.#audioStream.currentTime = 0;
+		this.#bus.dispatchEvent(new CustomEvent('audio:stop'));
+		this.#mediaPausedTimer = setTimeout(() => {
+			this.#audioStream.removeAttribute('src');
+			this.#audioStream.load();
+			this.#audioStream.src = URL.createObjectURL(this.#audioStreamBlob);
+			this.#mediaPausedTimer = null;
+		}, this.#mediaPausedDuration * 1000);
 	}
 
 	#restart() {
@@ -172,20 +235,13 @@ export class Audio {
 		this.#bus.dispatchEvent(new CustomEvent('audio:pushAnimations', { detail: { animations } }));
 	}
 
-	#stopTicks() {
-		this.#bus.dispatchEvent(new CustomEvent('audio:pushAnimations', { detail: { animations: new Map() } }));
+	async #setStroke(payload) {
+		await this.#startAudio();
+		this.#worker.postMessage({ action: 'setStroke', payload });
 	}
 
-	#changeNote(payload) {
-		this.#worker.postMessage({ action: 'changeNote', payload });
-	}
-
-	#changeVolume() {
-		this.#worker.postMessage({ action: 'changeVolume' });
-	}
-
-	#changeTempo() {
-		this.#worker.postMessage({ action: 'changeTempo' });
+	#change(payload) {
+		this.#worker.postMessage({ action: 'change', payload });
 	}
 
 	#moveTrack(indexes) {
@@ -193,11 +249,22 @@ export class Audio {
 	}
 
 	#updateData(changes, sendState) {
-		changes.sendState = sendState === true;
-		this.#worker.postMessage({ action: 'updateData', payload: changes });
-		if (changes.volumes) {
-			this.#updateGains(changes.volumes);
+		const { tempo, sheet, tracks, volumes, playing } = changes;
+		if ((tempo ?? sheet ?? tracks ?? volumes ?? playing) === undefined) return;
+
+		if (!this.#isReady || !this.#worker) {
+			this.#pendingMessages.push({ changes, sendState });
+			return; 
 		}
+
+		if (playing === true) this.#start();
+		else if (playing === false) this.#stop();
+
+		const payload = { tempo, sheet, tracks, volumes };
+		payload.sendState = sendState === true;
+		this.#worker.postMessage({ action: 'updateData', payload });
+
+		if (volumes) this.#updateGains(volumes);
 	}
 
 	#updateGains(gains) {
@@ -254,7 +321,7 @@ export class Audio {
 				this.#playTimer = setTimeout(() => {
 					this.#audioContext.suspend();
 					this.#playTimer = null;
-				}, this.#durationWhenHidden * 1000);
+				}, this.#hiddenPlayDuration * 1000);
 			};
 		} catch {}
 	}

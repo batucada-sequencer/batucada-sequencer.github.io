@@ -7,906 +7,1069 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+:root {
+	--color-hue-primary:   215;
+	--color-hue-secondary: 130;
+	--color-saturation:    20%;
+
+	--color-background-base:    hsl(var(--color-hue-primary), var(--color-saturation), 100%);
+	--color-background-light:   hsl(var(--color-hue-primary), var(--color-saturation), 92%);
+	--color-background-strong:  hsl(var(--color-hue-primary), var(--color-saturation), 83%);
+	--color-background-popover: hsla(var(--color-hue-primary), var(--color-saturation), 20%, 0.8);
+
+	--color-text-main:    hsl(var(--color-hue-primary), var(--color-saturation), 0%);
+	--color-text-faded:   hsl(var(--color-hue-primary), var(--color-saturation), 30%);
+	--color-text-popover: var(--color-background-base);
+
+	--color-stoke-set:      hsl(var(--color-hue-primary), 100%, 43%);
+	--color-stroke-played:  hsl(var(--color-hue-primary), 68%, 63%);
+	--color-stroke-current: hsl(var(--color-hue-secondary), 100%, 25%);
+	--color-step-current:   hsl(var(--color-hue-secondary), 30%, 70%);
+
+	--color-border-light:  hsl(var(--color-hue-primary), var(--color-saturation), 50%);
+	--color-border-strong: hsl(var(--color-hue-primary), var(--color-saturation), 20%);
+
+	--color-shadow-base:   var(--color-hue-primary), 100%, 10%;
+	--color-shadow-light:  hsla(var(--color-shadow-base), 0.1);
+	--color-shadow-medium: hsla(var(--color-shadow-base), 0.2);
+	--color-shadow-strong: hsla(var(--color-shadow-base), 0.4);
+
+	--icon-stop:     url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m14 12l9 6-9 6z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
+	--icon-start:    url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m13.3 11v14h2v-14zm7 0v14h2v-14z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
+	--icon-close:    url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m14 16l10 10m0 -10l-10 10" stroke-width="2" stroke="rgb(85,85,85)" stroke-linecap="round"/></svg>');
+	--icon-saved:    url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="hsl(215,80%,43%)" fill="hsl(215,80%,43%)" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+	--icon-trash:    url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m12 12l1.5 16a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2l1.5-16m1.5-.5h-21m8 0v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2m1.7 6l-.6 9m-3.6 0v-9m-4.2 0l.6 9" stroke-width="1.3" stroke="black" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>');
+	--icon-share:    url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="12" r="4"/><circle cx="14" cy="20" r="4"/><circle cx="29" cy="28" r="4"/><path d="m27 13l-13 7l13 7" stroke-width="2" stroke="black" fill="none"/></svg>');
+	--icon-handle:   url('data:image/svg+xml,<svg viewBox="0 0 02 10" xmlns="http://www.w3.org/2000/svg"><path d="m1 .5v9" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
+	--icon-unsaved:  url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+	--icon-stroke-1: url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white"/></svg>');
+	--icon-stroke-2: url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white" fill-opacity=".1" stroke="white" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="white"/></svg>');
+	--icon-stroke-3: url('data:image/svg+xml,<svg viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="10" x2="6" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>');
+	--icon-phrase-1: url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m28 12v23h-5v-16l-6 2v-4z" fill="white"/></svg>');
+	--icon-phrase-2: url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m17.5 19c0-3 3-5 7-5 3 0 6 2 6 5 0 2-3 5-7 8l-7 6 16 0" fill="none" stroke="white" stroke-width="4.5" stroke-linecap="butt" stroke-linejoin="bevel"/></svg>');
+	--icon-settings: url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="m10 10v6a4 4 0 1 0 .01 0m0 8v12M23 10v12a4 4 0 1 0 .01 0m0 8v6M36 10v8a4 4 0 1 0 .01 0m0 8v10" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+	--icon-arrow:    url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+}
+
 html {
-	scrollbar-gutter:stable;
+	scrollbar-gutter: stable;
 }
+
 body {
-	--body-margin:0px;
-	--main-margin:.7em;
-	--sheet-columns:2;
-	--controls-lines:2;
-	--track-col-1-width:7.7em;
-	--track-col-2-width:1fr;
-	gap:.2em;
-	display:grid;
-	margin:0 0 2.8em;
-	background:#bbb;
-	user-select:none;
-	justify-content:center;
-	padding:var(--body-margin);
-	padding-bottom:0;
-	font:400 4.92svw/1.4 sans-serif;
-	grid-template-columns:minmax(0, 780px);
+	--body-margin: 0px;
+	--main-margin: .7em;
+	--controls-lines: 2;
+	--track-col-1-width: 5.2em;
+	--track-col-2-width: 2.5em;
+	--track-col-3-width: 11.9em;
+	--track-col-4-width: 0px;
+	gap: .2em;
+	display: grid;
+	margin: 0 0 2.8em;
+	user-select: none;
+	padding: var(--body-margin);
+	padding-bottom: 0;
+	justify-content: center;
+	background: var(--color-background-strong);
+	font: 400 4.92svw/1.4 sans-serif;
+	grid-template-columns: minmax(0, 780px);
+
+	&[inert]::after {
+		inset: 0;
+		z-index: 2;
+		padding-top: 2em;
+		position: absolute;
+		text-align: center;
+		background: var(--color-background-strong);
+		color: var(--color-text-main);
+		content: 'Chargement de l\'application…';
+	}
+
+	h1, h2 {
+		margin: 0;
+		text-align: center;
+		font-weight: normal;
+		color: var(--color-text-main);
+	}
+
+	h1 {
+		font-size: 1.2em;
+	}
+
+	h2 {
+		font-size: 1.1em;
+	}
+
+	@media (min-width: 520px) {
+		--body-margin: .5em;
+		--main-margin: 1em;
+		--controls-lines: 1;
+		--track-col-1-width: 8.1em;
+		--track-col-2-width: 2.5em;
+		--track-col-3-width: 24em;
+		--track-col-4-width: 5em;
+		font-size: clamp(.6em, 2.4svw, 1.2em);
+		h1 {
+			font-size: 1.4em;
+		}
+		h2 {
+			font-size: 1.2em;
+		}
+	}
 }
-body[inert]::after {
-	inset:0;
-	z-index:2;
-	background:#bbb;
-	padding-top:2em;
-	position:absolute;
-	text-align:center;
-	content:'Chargement de l\'application…';
+
+#skip {
+	height: 2em;
+	z-index: 2;
+	display: flex;
+	position: absolute;
+	align-items: center;
+	justify-content: center;
+	inset: -4em .5em auto .5em;
+	background: var(--color-background-base);
+	border: 1px solid var(--color-border-light);
+
+	&:focus {
+		top: .5em;
+	}
 }
+
+main {
+	padding: .6em 0 0;
+	position: relative;
+	anchor-name: --sequencer;
+	border-radius: 0 0 .5em .5em;
+	background: var(--color-background-base);
+	box-shadow: 0 0 .5em var(--color-shadow-medium);
+	border: 1px solid var(--color-border-light);
+
+	&.swap .dropzone::after {
+		border-top: 1.5px dashed var(--color-border-light);
+	}
+
+	@media (min-width: 520px) {
+		border-radius: .5em;
+		padding-bottom: .3em;
+	}
+}
+
+table {
+	border-spacing: 0;
+	margin: 0 0 1.8em;
+	width: 100%;
+}
+
+thead {
+	position: absolute;
+	transform: scale(0);
+}
+
+tbody {
+	display: flex;
+	flex-direction: column;
+}
+
+#title:empty,
+#title:not(:empty) + span {
+	display: none;
+}
+
+#title:empty + span {
+	position: absolute;
+	transform: scale(0);
+}
+
+.track {
+	display: grid;
+	position: relative;
+	contain: layout style;
+	view-transition-name: match-element;
+	grid-template-rows: 1em 1.65em .3em 1.65em 1fr;
+	grid-template-columns: var(--track-col-1-width) var(--track-col-2-width) var(--track-col-3-width) var(--track-col-4-width);
+
+	&.reseted {
+		animation: reseted 250ms ease-out forwards;
+	}
+
+	&[data-instrument="0"] ~ .track,
+	&[data-bars="1"] .bar:nth-child(n+2),
+	&[data-bars="2"] .bar:nth-child(n+3),
+	&[data-bars="3"] .bar:nth-child(n+4),
+	&[data-bars="4"] .bar:nth-child(n+5),
+	&[data-bars="6"] .bar:nth-child(n+7),
+	&[data-bars="8"] .bar:nth-child(n+9),
+	&[data-beats="4"] .beat:nth-child(n+5),
+	&[data-beats="6"] .beat:nth-child(n+7),
+	&[data-steps="3"] .grid [name="step"]:nth-last-child(-n+5),
+	&[data-steps="4"] .grid [name="step"]:nth-last-child(-n+4),
+	&[data-steps="6"] .grid [name="step"]:nth-last-child(-n+2) {
+		display: none;
+	}
+
+	.dropzone {
+		z-index: 1;
+		grid-column: 1 / -1;
+
+		&::after {
+			content: '';
+			display: block;
+			margin: .4em 0 0 var(--main-margin);
+		}
+	}
+
+	&.over .dropzone::after {
+		height: .3em;
+		border-radius: 3px;
+		margin-top: calc(.3em - 1px);
+		background: var(--color-background-base);
+		border: 1px solid var(--color-border-strong);
+	}
+
+	.instrument {
+		padding: 0;
+		grid-row: 2;
+		display: grid;
+		position: relative;
+		grid-column: 1 / span 2;
+		grid-template-columns: var(--main-margin) 1fr;
+
+		span {
+			grid-area: 1 / 2;
+			text-align: left;
+			margin-left: 1px;
+			padding-left: .3em;
+			line-height: 1.65em;
+			font-weight: normal;
+			color: var(--color-text-main);
+		}
+
+		select {
+			font-size: 1em;
+			grid-area: 1 / 2;
+			padding-left: .3em;
+		}
+
+		&::after {
+			content: '';
+			width: 1em;
+			height: 1em;
+			display: none;
+			position: absolute;
+			inset: -.45em -.4em auto auto;
+		}
+	}
+
+	&[data-phrase="1"] .instrument::after {
+		content: var(--icon-phrase-1);
+		display: block;
+	}
+
+	&[data-phrase="2"] .instrument::after {
+		content: var(--icon-phrase-2);
+		display: block;
+	}
+
+	&[data-steps="6"] .beat .grid,
+	&[data-steps="8"] .beat .grid {
+		width: 9.5em;
+	}
+
+	.volume {
+		grid-row: 4;
+		display: flex;
+		grid-column: 1;
+		padding: 0 0 0 .7em;
+		align-items: center;
+
+		input {
+			padding: 0;
+			width: 100%;
+			margin: 0 0 .2em 0;
+		}
+	}
+
+	.settings {
+		grid-row: 4;
+		grid-column: 2;
+		padding: 0 0 0 .5em;
+
+		button {
+			width: 100%;
+			height: 100%;
+			font-size: 1em;
+			overflow: hidden;
+			color: transparent;
+			background: center no-repeat var(--icon-settings);
+		}
+	}
+
+	.sheet {
+		gap: .3em;
+		padding: 0;
+		display: flex;
+		grid-column: 3;
+		flex-wrap: wrap;
+		grid-row: 2 / -1;
+		margin: 0 0 0 .9em;
+		contain: layout style;
+
+		:is(
+			.bar:has(~ .bar .current) *,
+			.beat:has(~ .beat .current) *,
+			:has(~ .current, ~ * .current)
+		) {
+			&[name="step"]:not([value="0"]) {
+				background-color: var(--color-stroke-played);
+			}
+		}
+	}
+
+	.bar {
+		display: contents;
+	}
+
+	.beat {
+		gap: .3em;
+		display: flex;
+		position: relative;
+		counter-increment: beat;
+
+		&:first-child {
+			counter-reset: beat;
+		}
+
+		&::before {
+			content: '';
+			width: .21em;
+			height: 2.86em;
+			position: absolute;
+			border-radius: .2em;
+			inset: -.6em auto auto .45em;
+			background: var(--color-border-light);
+		}
+
+		.grid {
+			display: flex;
+			width: 3.9em;
+			justify-content: space-evenly;
+			gap: .3em;
+		}
+
+		> [name="step"].current {
+			outline-color: var(--color-stroke-current);
+		}
+	}
+
+	[name="step"] {
+		width: 1.1em;
+		height: 1.65em;
+		padding: 0;
+		z-index: 1;
+		border: none;
+		border-radius: .2em;
+		background: var(--color-background-light) no-repeat center;
+		font-size: 1em;
+
+		&[value="1"] {
+			background-color: var(--color-stoke-set);
+			background-image: var(--icon-stroke-1);
+		}
+		&[value="2"] {
+			background-color: var(--color-stoke-set);
+			background-image: var(--icon-stroke-2);
+		}
+		&[value="3"] {
+			background-color: var(--color-stoke-set);
+			background-image: var(--icon-stroke-3);
+		}
+		.beat > &[value="0"] {
+			background-color: var(--color-background-strong);
+			border: 1px solid var(--color-border-light);
+
+			&::before {
+				color: var(--color-text-main);
+				display: block;
+				line-height: 1.65em;
+				content: counter(beat);
+				text-align: center;
+			}
+		}
+		
+		&.current {
+			outline: .2em solid var(--color-step-current);
+			outline-offset: -.05em;
+
+			&:not([value="0"]) {
+				height: 1.5em;
+				align-self: end;
+				background-size: 120%;
+				background-position: center 70%;
+				outline-color: var(--color-stroke-current);
+				background-color: var(--color-stroke-current);
+			}
+		}
+	}
+
+	@media (min-width: 520px) {
+		grid-template-rows: 1em 1.65em 1fr;
+		.instrument, .settings, .volume {
+			grid-row: 2;
+			grid-column: auto;
+		}
+		.volume {
+			padding: 0;
+		}
+	}
+}
+
+@keyframes reseted {
+	from {
+		opacity: 0;
+		transform: translateY(1em);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+hr {
+	height: 0;
+	z-index: 2;
+	border: none;
+	padding: .7em;
+	position: sticky;
+	margin: 0 0 -2.5em;
+	view-transition-name: hr;
+	background: var(--color-background-base);
+	box-shadow: 0 -.9px 0 var(--color-border-light), 0 -4px 8px var(--color-shadow-light);
+	bottom: calc(2.5rem * var(--controls-lines) - .2em + 1px + .7em * (var(--controls-lines) - 1));
+}
+
+[role="toolbar"] {
+	z-index: 2;
+	display: flex;
+	bottom: -.2em;
+	flex-wrap: wrap;
+	position: sticky;
+	gap: var(--main-margin);
+	border-radius: 0 0 .5em .5em;
+	view-transition-name: controls;
+	padding: .7em var(--main-margin);
+	background: var(--color-background-base);
+
+	button,
+	select {
+		height: 2.5rem;
+		font-size: 1em;
+	}
+
+	#start {
+		order: 2;
+		width: 2.5rem;
+		overflow: hidden;
+		color: transparent;
+		padding: 0;
+	}
+
+	#reset {
+		order: 4;
+	}
+
+	#combo_tempo {
+		flex: 1;
+		order: 3;
+		display: flex;
+		height: 2.5rem;
+	}
+
+	#start[aria-checked="true"] {
+		background-image: var(--icon-start);
+	}
+
+	#start[aria-checked="false"] {
+		background-image: var(--icon-stop);
+	}
+
+	#combo_presets {
+		flex: 1.4;
+		display: grid;
+		grid-template-columns: 2.5rem minmax(9em, 1fr);
+
+		#presets_label {
+			grid-row: 1;
+			grid-column: 2;
+			overflow: hidden;
+			line-height: 2.5rem;
+			white-space: nowrap;
+			padding: 0 1em 0 .5em;
+			text-overflow: ellipsis;
+			color: var(--color-text-main);
+		}
+
+		select,
+		.presets {
+			width: 100%;
+			grid-row: 1;
+			grid-column: 2;
+			text-align: left;
+			margin-left: -1px;
+			text-overflow: ellipsis;
+			border-radius: 0 4px 4px 0;
+		}
+
+		select:empty,
+		button.presets:has(+ select:not(:empty)) {
+			display: none;
+		}
+
+		[commandfor="presets-settings"] {
+			padding: 0;
+			width: 2.5rem;
+			overflow: hidden;
+			color: transparent;
+			border-radius: 4px 0 0 4px;
+			background-image: var(--icon-unsaved);
+		}
+
+		&:has(:checked) [commandfor="presets-settings"] {
+			background-image: var(--icon-saved);
+		}
+
+		button:focus,
+		select:focus {
+			z-index: 1;
+		}
+	}
+
+	#combo_tempo {
+		input {
+			flex: 1;
+			width: 3em;
+		}
+		output {
+			width: 4em;
+			margin-left: .5em;
+			line-height: 2.5rem;
+			color: var(--color-text-main);
+		}
+	}
+
+	@media (min-width: 520px) {
+		#start {
+			order: 4;
+		}
+		#reset {
+			order: 3;
+		}
+	}
+}
+
+::view-transition-group(hr),
+::view-transition-group(controls) {
+	z-index: 2;
+	animation: none;
+}
+
+#trash {
+	inset: 0;
+	display: none;
+	border-radius: 4px;
+	position: absolute;
+	background: inherit;
+	margin: .7em var(--main-margin);
+	border: 1.5px dashed var(--color-border-light);
+
+	&::after {
+		content: var(--icon-trash);
+		width: 2rem;
+		height: 2rem;
+	}
+
+	&.over {
+		border: 1px solid var(--color-border-strong);
+	}
+}
+
+.trash #trash {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 #combo_tempo,
 select,
 input:not([type]),
 button {
-	margin:0;
-	color:#000;
-	padding:0 .5em;
-	appearance:none;
-	user-select:none;
-	border-radius:4px;
-	box-sizing:border-box;
-	font-family:sans-serif;
-	background:transparent no-repeat;
-	border:1px solid hsl(240,10%,60%);
+	margin: 0;
+	padding: 0 .5em;
+	user-select: none;
+	appearance: none;
+	border-radius: 4px;
+	box-sizing: border-box;
+	font-family: sans-serif;
+	color: var(--color-text-main);
+	background: transparent no-repeat;
+	border: 1px solid var(--color-border-light);
 }
-select:has([value]:checked) {
-	background-color:white;
-}
+
 select,
 .presets {
-	text-align:left;
-	padding-right:.9em;
-	background-position:right center;
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m20 14l3 4 3 -4" fill="none" stroke-width="1" stroke="black" stroke-linejoin="round" stroke-linecap="round"/></svg>');
+	padding-right: .9em;
+	background-position: right center;
+	background-image: var(--icon-arrow);
 }
-button:disabled {
-	opacity:.6;
+
+select:has(:checked) {
+	background-color: var(--color-background-base);
 }
-main {
-	background:#fff;
-	position:relative;
-	border:1px solid #999;
-	border-radius:0 0 .5em .5em;
-	box-shadow:0 0 .5em rgba(0,0,0,.2);
-	anchor-name:--sequencer;
-}
-#skip {
-	z-index:2;
-	height:2em;
-	display:flex;
-	background:#fff;
-	position:absolute;
-	align-items:center;
-	justify-content:center;
-	inset:-4em .5em auto .5em;
-}
-#skip:focus {
-	top:.5em;
-}
-h1 {
-	font-size:1.2em;
-	margin:.5em 0 0;
-	padding:0 0 .3em;
-	text-align:center;
-	font-weight:normal;
-}
-h2 {
-	margin:0;
-	font-size:1.1em;
-	text-align:center;
-	font-weight:normal;
-}
-table {
-	border-spacing:0;
-	margin:-.5em 0 1.8em;
-}
-tbody {
-	display:flex;
-	flex-direction:column;
-}
-.track {
-	top:0;
-	display:grid;
-	position:relative;
-	align-items:start;
-	contain:layout style;
-	view-transition-name:match-element;
-	grid-template-rows:1em 1.65em 1fr;
-	grid-template-columns:var(--track-col-1-width) var(--track-col-2-width) var(--track-col-3-width, );
-}
-.dropzone {
-	z-index:1;
-	padding:0;
-	height:1em;
-	grid-column:1 / -1;
-}
-.track th {
-	gap:0 .5em;
-	display:grid;
-	padding:0 0 0 .7em;
-	grid-template-rows:1.65em .3em 1.65em;
-}
-.track td:last-of-type {
-	width:4.2em;
-	height:1.5em;
-	display:flex;
-	align-items:center;
-	padding:.3em 0 0 .7em;
-}
-.track:focus-within ~ .track[data-instrument="0"] {
-	transition:opacity .5s ease-out;
-	transition-behavior:allow-discrete;
-	opacity:1;
-	@starting-style {
-		opacity:0;
+
+dialog[open] {
+	inset: 0;
+	padding: 0;
+	display: flex;
+	max-width: 24em;
+	margin: 1em auto;
+	border-radius: .5em;
+	box-sizing: border-box;
+	flex-direction: column;
+	width: calc(100% - 2em);
+	overscroll-behavior: contain;
+	max-height: calc(100dvh - 2em);
+	background: var(--color-background-base);
+	border: 1px solid var(--color-border-strong);
+	box-shadow: 0 0 .5em var(--color-shadow-medium);
+
+	&::backdrop {
+		overscroll-behavior: contain;
+		background: var(--color-shadow-strong);
+	}
+
+	&::after {
+		content: '';
+		width: 2.5em;
+		height: 2.5em;
+		position: absolute;
+		inset: 0 0 auto auto;
+		background-image: var(--icon-close);
+	}
+
+	&:hover::after {
+		filter: brightness(0);
+	}
+
+	&:has(:hover)::after {
+		filter: none;
+	}
+
+	& > :first-child {
+		gap: 1em;
+		display: flex;
+		min-height: 0;
+		padding: 1em 1em 0;
+		flex-direction: column;
+	}
+
+	&:has(ul) form,
+	&:has(ul) section {
+		gap: 1em;
+		display: flex;
+		min-height: 5em;
+		flex-direction: column;
+	}
+
+	h2 {
+		margin: 0 1em;
+		color: var(--color-text-main);
+	}
+
+	button {
+		min-width: 6em;
+		font-size: .9em;
+		background-color: var(--color-background-light);
+	}
+
+	ul {
+		flex: 1;
+		margin: 0;
+		padding: .3em;
+		min-height: 4em;
+		overflow-y: auto;
+		border: 1px solid var(--color-border-strong);
+	}
+
+	li {
+		font-size: .9em;
+		overflow: hidden;
+		text-wrap: nowrap;
+		padding: 0 0 .2em .2em;
+		text-overflow: ellipsis;
+		color: var(--color-text-main);
+	}
+
+	footer {
+		gap: 1em;
+		height: 1.8em;
+		display: flex;
+		flex-shrink: 0;
+		padding: .5em 0 1em;
+		justify-content: space-around;
 	}
 }
-.track[data-instrument="0"] ~ .track,
-.track[data-bars="1"] .bar:nth-child(n+2),
-.track[data-bars="2"] .bar:nth-child(n+3),
-.track[data-bars="3"] .bar:nth-child(n+4),
-.track[data-bars="4"] .bar:nth-child(n+5),
-.track[data-bars="6"] .bar:nth-child(n+7),
-.track[data-bars="8"] .bar:nth-child(n+9),
-.track[data-beats="4"] .beat:nth-child(n+5),
-.track[data-beats="6"] .beat:nth-child(n+7),
-.track[data-steps="3"] .grid .step:nth-last-child(-n+5),
-.track[data-steps="4"] .grid .step:nth-last-child(-n+4),
-.track[data-steps="6"] .grid .step:nth-last-child(-n+2) {
-	display:none;
-}
-.track div[draggable] {
-	display:grid;
-	position:relative;
-	grid-template-columns:var(--drag-handle-width,) 1fr;
-}
-.track div[draggable] label {
-	display:grid;
-}
-.track label span {
-	grid-area:1 / 1;
-	text-align:left;
-	margin-left:1px;
-	padding-left:.3em;
-	line-height:1.65em;
-	font-weight:normal;
-}
-.instrument {
-	font-size:1em;
-	grid-area:1 / 1;
-	padding-left:.3em;
-}
-.track[data-phrase="1"] div[draggable]::after,
-.track[data-phrase="2"] div[draggable]::after {
-	width:1em;
-	height:1em;
-	position:absolute;
-	inset:-.45em -.4em auto auto;
-}
-.track[data-phrase="1"] div[draggable]::after {
-	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m28 12v23h-5v-16l-6 2v-4z" fill="white"/></svg>');
-}
-.track[data-phrase="2"] div[draggable]::after {
-	content:url('data:image/svg+xml,<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="21" fill="hsl(215,100%,43%)" stroke="white" stroke-width="4"/><path d="m17.5 19c0-3 3-5 7-5 3 0 6 2 6 5 0 2-3 5-7 8l-7 6 16 0" fill="none" stroke="white" stroke-width="4.5" stroke-linecap="butt" stroke-linejoin="bevel"/></svg>');
-}
-.trackbutton {
-	width:2em;
-	grid-row:3;
-	font-size:1em;
-	overflow:hidden;
-	color:transparent;
-	justify-self:right;
-	background:center no-repeat url('data:image/svg+xml,<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M10 10v6a4 4 0 1 0 .01 0m0 8v12M23 10v12a4 4 0 1 0 .01 0m0 8v6M36 10v8a4 4 0 1 0 .01 0m0 8v10" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-.sheet {
-	gap:.3em;
-	padding:0;
-	display:flex;
-	font-size:1em;
-	flex-wrap:wrap;
-	grid-column:2;
-	grid-row:span 2;
-	margin:0 .7em 0 .9em;
-	contain:layout style;
-}
-.bar {
-	display:contents;
-}
-.beat {
-	gap:.3em;
-	display:flex;
-	position:relative;
-	counter-increment:beat;
-}
-.beat:first-child {
-	counter-reset:beat;
-}
-.grid {
-	gap:.3em;
-	width:3.9em;
-	display:flex;
-	justify-content:space-evenly;
-}
-.track[data-steps="6"] .grid,
-.track[data-steps="8"] .grid {
-	width:9.5em;
-}
-.step {
-	padding:0;
-	z-index:1;
-	border:none;
-	width:1.1em;
-	height:1.65em;
-	font-size:1em;
-	overflow:hidden;
-	color:transparent;
-	border-radius:.2em;
-	background:hsl(240,10%,92%) no-repeat center;
-}
-.step[value="1"] {
-	background-color:hsl(215,100%,43%);
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white"/></svg>');
-}
-.step[value="2"] {
-	background-color:hsl(215,100%,43%);
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6" fill="white" fill-opacity=".1" stroke="white" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="white"/></svg>');
-}
-.step[value="3"] {
-	background-color:hsl(215,100%,43%);
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="10" x2="6" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>');
-}
-.beat > .step[value="0"] {
-	background-color:hsl(240,10%,83%);
-	border:1px solid hsl(240,10%,50%);
-}
-.beat > .step[value="0"]::before {
-	color:#000;
-	display:block;
-	line-height:1.65em;
-	content:counter(beat);
-}
-.step.current {
-	outline-offset:-.05em;
-	outline:.2em solid hsl(130,30%,70%);
-}
-.beat > .step.current {
-	outline-color:hsl(130,100%,25%);
-}
-.step.current:not([value="0"]) {
-	height:1.5em;
-	align-self:end;
-	background-size:120%;
-	background-position:center 70%;
-	outline-color:hsl(130,100%,25%);
-	background-color:hsl(130,100%,25%);
-}
-.step:has(~ .current):not([value="0"]),
-.beat:has(.grid .current) > .step:not([value="0"]),
-.beat:has(~ .beat .current) .step:not([value="0"]) {
-	background-color:hsl(215,68%,63%);
-}
-.beat::before {
-	content:'';
-	width:.21em;
-	height:2.86em;
-	position:absolute;
-	border-radius:.2em;
-	background:hsl(240,10%,60%);
-	inset:-.6em auto auto .45em;
-}
-.volume {
-	margin:0;
-	padding:0;
-	width:100%;
-}
-.track.over .dropzone {
-	height:1.3em;
-	margin-top:-.15em;
-}
-.dropzone::after {
-	display:block;
-	margin:calc(.5em - 1px) var(--main-margin) 0;
-}
-.track.over .dropzone::after {
-	content:'';
-	height:.3em;
-	background:#fff;
-	border-radius:3px;
-	border:1px solid hsl(240,10%,20%);
-}
-.swap .dropzone::after {
-	content:'';
-	border-top:1.5px dashed hsl(240,10%,60%);
-}
-hr {
-	height:0;
-	z-index:2;
-	border:none;
-	padding:.7em;
-	position:sticky;
-	background:#fff;
-	margin:0 0 -2.5em;
-	view-transition-name:hr;
-	box-shadow:0 -.9px 0 hsl(240,10%,60%), 0 -4px 8px rgba(0,0,0,.1);
-	bottom:calc(2.5rem * var(--controls-lines) - .2em + 1px + .7em * (var(--controls-lines) - 1));
-}
-#controls {
-	z-index:2;
-	display:flex;
-	bottom:-.2em;
-	flex-wrap:wrap;
-	position:sticky;
-	background:#fff;
-	gap:var(--main-margin);
-	border-radius:0 0 .5em .5em;
-	view-transition-name:controls;
-	padding:.7em var(--main-margin);
-}
-::view-transition-group(hr),
-::view-transition-group(controls) {
-	z-index:2;
-	animation:none;
-}
-#trash {
-	display:none;
-	background:#fff;
-	border-radius:4px;
-	box-sizing:border-box;
-	border:1.5px dashed hsl(240,10%,60%);
-	height:calc(2.5rem * var(--controls-lines) + .7em * (var(--controls-lines) - 1));
-}
-#trash::after {
-	width:2rem;
-	height:2rem;
-	content:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m12 12l1.5 16a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2l1.5-16m1.5-.5h-21m8 0v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2m1.7 6l-.6 9m-3.6 0v-9m-4.2 0l.6 9" stroke-width="1.3" stroke="black" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>');
-}
-.trash #trash {
-	flex:1;
-	display:flex;
-	align-items:center;
-	justify-content:center;
-}
-#trash.over {
-	border:1px solid hsl(240,10%,20%);
-}
-.trash #start,
-.trash #reset,
-.trash #combo_tempo,
-.trash #combo_presets {
-	display:none;
-}
-#combo_presets {
-	flex:1.4;
-	display:grid;
-	grid-template-columns:2.5rem minmax(9em, 1fr);
-}
-#presets_label {
-	grid-row:1;
-	grid-column:2;
-	overflow:hidden;
-	line-height:2.5rem;
-	white-space:nowrap;
-	padding:0 1em 0 .5em;
-	text-overflow:ellipsis;
-}
-#combo_presets button:focus,
-#combo_presets select:focus {
-	z-index:1;
-}
-#start {
-	order:2;
-}
-#combo_tempo {
-	flex:1;
-	order:3;
-	display:flex;
-	height:2.5rem;
-}
-#reset {
-	order:4;
-}
-#start,
-#saved {
-	padding:0;
-	width:2.5rem;
-	height:2.5rem;
-	overflow:hidden;
-	color:transparent;
-}
-#play,
-#pause {
-	width:100%;
-	height:100%;
-	pointer-events:none;
-}
-#play {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m14 12l9 6-9 6z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
-}
-#pause {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="m13.3 11v14h2v-14zm7 0v14h2v-14z" stroke-width="1" stroke="black" stroke-linejoin="round"/></svg>');
-}
-#pause,
-.started #play {
-	display:none;
-}
-.started #pause {
-	display:block;
-}
-#saved {
-	border-radius:4px 0 0 4px;
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="black" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-#combo_presets:has([value]:checked) #saved {
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="m22 10.5l3 7l8 1l-6 6l2 7l-7 -4l-7 4l2 -7l-6 -6l8 -1z" stroke-width="2" stroke="hsl(215,80%,43%)" fill="hsl(215,80%,43%)" stroke-linejoin="round" stroke-linecap="round"/></svg>');
-}
-.presets,
-#reset {
-	height:2.5rem;
-	font-size:1em; 
-}
-.presets {
-	width:100%;
-	grid-row:1;
-	grid-column:2;
-	margin-left:-1px;
-	text-overflow:ellipsis;
-	border-radius:0 4px 4px 0;
-}
-select.presets:empty,
-button.presets:has(+ select.presets:not(:empty)) {
-	display:none;
-}
-#tempo {
-	flex:1;
-	width:3em;
-}
-output[for="tempo"] {
-	width:4em;
-	margin-left:.5em;
-	line-height:2.5rem;
-}
-dialog::backdrop {
-	overflow:hidden;
-	background:rgba(0,0,0,.4);
-	overscroll-behavior:contain;
-}
-dialog {
-	inset:1em;
-	padding:0;
-	outline:none;
-	margin:0 auto;
-	max-width:24em;
-	border-radius:.5em;
-	border:1px solid #555;
-	box-sizing:border-box;
-	width:calc(100% - 2em);
-	overscroll-behavior:contain;
-	box-shadow:0 0 .5em rgba(0,0,0,.3);
-}
-dialog::after {
-	content:'';
-	width:2.5em;
-	height:2.5em;
-	position:absolute;
-	inset:0 0 auto auto;
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="m14 16l10 10m0 -10l-10 10" stroke-width="2" stroke="rgb(85,85,85)" stroke-linecap="round"/></svg>');
-}
-dialog:hover::after {
-	filter:brightness(0);
-}
-dialog:has(:hover)::after {
-	filter:none;
-}
-dialog>:first-child {
-	gap:1em;
-	padding:1em;
-	display:flex;
-	flex-direction:column;
-}
-dialog h2 {
-	margin:0 1em;
-}
-#track h2+div {
-	gap:.5em;
-	margin:auto;
-	display:flex;
-	max-width:18em;
-	flex-direction:column;
-}
-#track label {
-	gap:1em;
-	z-index:1;
-	display:grid;
-	background:#fff;
-	grid-template-columns:1.8fr 1fr;
-}
-#track select {
-	height:1.8em;
-	font-size:.9em;
-}
-#preset {
-	margin-bottom:-.5em;
-}
-#settings select,
-#settings input {
-	flex:1;
-	width:100%;
-	height:2em;
-	font-size:.9em;
-	text-overflow:ellipsis;
-}
-dialog button {
-	min-width:6em;
-	font-size:.9em;
-	background-color:hsl(240,10%,94%);
-}
-#settings input:disabled {
-	border:none;
-	cursor:text;
-}
-#settings fieldset {
-	gap:1em;
-	margin:0;
-	display:flex;
-	border:1px solid #555;
-}
-legend {
-	font-size:.9em;
-}
-.bottom {
-	gap:1em;
-	width:100%;
-	height:1.8em;
-	display:flex;
-	flex-shrink:0;
-	max-width:22em;
-	margin-top:.5em;
-	justify-content:space-around;
-}
-#share form,
-#shared > div {
-	box-sizing:border-box;
-	max-height:calc(100dvh - 2.5em);
-}
-dialog ul {
-	margin:0;
-	min-width:0;
-	padding:.3em;
-	min-height:4em;
-	overflow-y:auto;
-	border:1px solid #555;
-}
-ul {
-	margin:0;
-	padding:0;
-}
-#check_all {
-	z-index:1;
-	background:#fff;
-	padding:0 2px 0 0;
-	align-self:flex-start;
-	margin:-.1em 0 -1.75em .72em;
-}
-#share ul {
-	position:relative;
-	padding:0 .3em .3em .5em;
-}
-#share ul::before {
-	top:0;
-	content:'';
-	height:.8em;
-	display:block;
-	position:sticky;
-	background:#fff;
-}
-#share ul:empty::after {
-	content:'Aucun morceau'
-}
-#share input[type="checkbox"] {
-	margin-right:.5em;
-}
-dialog li {
-	font-size:.9em;
-	overflow:hidden;
-	text-wrap:nowrap;
-	padding:0 0 .2em .2em;
-	text-overflow:ellipsis;
-}
-button[name="share_list"] {
-	padding-left:2em;
-	background-image:url('data:image/svg+xml,<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="12" r="4"/><circle cx="14" cy="20" r="4"/><circle cx="29" cy="28" r="4"/><path d="m27 13l-13 7l13 7" stroke-width="2" stroke="black" fill="none"/></svg>');
-}
+
+#track-settings {
+	section {
+		margin: auto;
+		gap: .5em 1em;
+		display: grid;
+		grid-template-columns: 1.8fr 1fr;
+	}
+
+	select {
+		height: 1.8em;
+		font-size: .9em;
+	}
+}
+
+#presets-settings {
+	h2 {
+		margin-bottom: -.5em;
+	}
+
+	fieldset {
+		gap: 1em;
+		margin: 0;
+		display: flex;
+		border: 1px solid var(--color-border-strong);
+	}
+
+	legend {
+		font-size: .9em;
+		color: var(--color-text-main);
+	}
+
+	input,
+	select {
+		flex: 1;
+		width: 100%;
+		height: 2em;
+		font-size: .9em;
+		text-overflow: ellipsis;
+	}
+
+	input:read-only,
+	select:read-only {
+		border: none;
+		pointer-events: none;
+	}
+
+	button[commandfor="presets-share"] {
+		padding-left: 2em;
+		background-image: var(--icon-share);
+	}
+
+	@media (min-width: 520px) {
+		legend {
+			font-size: 1em;
+		}
+	}
+}
+
+#presets-share {
+	.check_all {
+		z-index: 1;
+		display: block;
+		padding: 0 2px 0 0;
+		align-self: flex-start;
+		margin: -.1em 0 -1.75em .72em;
+		color: var(--color-text-main);
+		background: var(--color-background-base);
+	}
+
+	ul {
+		padding: 0 .3em .3em .5em;
+	}
+
+	ul::before {
+		top: 0;
+		content: '';
+		height: .7em;
+		display: block;
+		position: sticky;
+		background: var(--color-background-base);
+	}
+
+	input[type="checkbox"] {
+		margin-right: .5em;
+	}
+}
+
+#about {
+	section {
+		gap: .5em;
+		display: flex;
+		flex-direction: column;
+	}
+
+	p {
+		margin: 0;
+		line-height: 1.2;
+		color: var(--color-text-main);
+	}
+
+	time {
+		white-space: nowrap;
+	}
+
+	button[command="--update"] {
+		max-width: fit-content;
+	}
+
+	button[command="close"] {
+		flex: 1;
+		max-width: 6em;
+		min-width: auto;
+	}
+
+	#contact {
+		font-size: .9em;
+	}
+
+}
+
 #toast {
-	color:white;
-	border:none;
-	padding:0 1em;
-	font-size:.8em;
-	background:#333c;
-	user-select:none;
-	border-radius:.4em;
-	backdrop-filter:blur(2px);
-	--anchor-size-height:100svh;
-	box-shadow:0 0 .5em rgba(0,0,0,.2);
-	inset:auto 0 max(0.8em, calc(100svh - var(--anchor-size-height) - 4.2em - var(--body-margin)));
+	border: none;
+	padding: 0 1em;
+	font-size: .8em;
+	position: fixed;
+	user-select: none;
+	border-radius: .4em;
+	backdrop-filter: blur(2px);
+	--anchor-size-height: 100svh;
+	color: var(--color-text-popover);
+	background: var(--color-background-popover);
+	box-shadow: 0 0 .5em var(--color-shadow-medium);
+	inset: auto 0 max(0.8em, calc(100svh - var(--anchor-size-height) - 4.2em - var(--body-margin)));
+
+	p {
+		display: inline-block;
+		margin: 1em 1em 1em 0;
+	}
+
+	button {
+		padding: .2em .5em;
+		background-color: var(--color-background-light);
+		font-size: inherit;
+	}
+
+	&:popover-open {
+		animation: fade-out 1s forwards 5s;
+	}
+
+	&:has(button[hidden]):popover-open {
+		animation: fade-out 1s forwards 2s;
+	}
 }
-@supports (anchor-name:--sequencer) {
+
+@supports (anchor-name: --sequencer) {
 	#toast {
-		position-anchor:--sequencer;
-		--anchor-size-height:anchor-size(height);
+		position-anchor: --sequencer;
+		--anchor-size-height: anchor-size(height);
 	}
 }
-#toast:popover-open {
-	animation:fade-out 1s forwards 5s;
-}
-#toast:has(button[hidden]):popover-open {
-	animation:fade-out 1s forwards 2s;
-}
-#toast p {
-	margin:1em 1em 1em 0;
-	display:inline-block;
-}
-#toast button {
-	padding:.2em .5em;
-	font-size: inherit;
-	background-color:hsl(240,10%,94%);
-}
+
 @keyframes fade-out {
-	100% { opacity:0 }
-}
-footer {
-	display:flex;
-	justify-content:right;
-}
-footer button {
-	color:#444;
-	border:none;
-	font-size:.8em;
-}
-#about div {
-	gap:.5em;
-	display:flex;
-	flex-direction:column;
-}
-#about p {
-	margin:0;
-	line-height:1.2;
-}
-#about span {
-	white-space:nowrap;
-}
-#contact {
-	font-size:.9em;
-}
-#update {
-	max-width:fit-content;
-}
-#about button[formnovalidate] {
-	flex:1;
-	max-width:6em;
-	min-width:auto;
-}
-@media (pointer:fine) and (hover:hover) {
-	#combo_presets button:hover,
-	#combo_presets select:hover {
-		z-index:1;
+	100% {
+		opacity: 0;
 	}
+}
+
+body > footer {
+	display: flex;
+	justify-content: right;
+
+	button {
+		border: none;
+		font-size: .8em;
+		color: var(--color-text-faded);
+	}
+}
+
+@media (pointer: fine) and (hover: hover) {
 	input:not([type]):hover,
 	#combo_tempo:hover,
 	select:hover,
-	button:not(.step):not(:disabled):hover {
-		border-color:hsl(240,10%,20%);
+	button:not([name="step"]):not(:disabled):hover {
+		border-color: var(--color-border-strong);
 	}
-	.step:hover {
-		filter:brightness(1.15);
+
+	[name="step"]:hover {
+		filter: brightness(1.15);
 	}
-	.step[value="0"]:hover {
-		filter:brightness(.9);
+
+	[name="step"][value="0"]:hover {
+		filter: brightness(.9);
 	}
-	div[draggable]:hover .handle {
-		opacity:.3;
-		cursor:grab;
-		background:no-repeat url('data:image/svg+xml,<svg viewBox="0 0 5 10" xmlns="http://www.w3.org/2000/svg"><path d="m3 1v8" stroke-width="1" stroke="black" stroke-linecap="round"/></svg>');
+
+	th:hover .handle {
+		opacity: .3;
+		cursor: grab;
+		background: var(--icon-handle) center no-repeat;
 	}
-	div[draggable]:active .handle {
-		cursor:grabbing;
+
+	th:active .handle {
+		cursor: grabbing;
 	}
-	div[draggable] .handle:hover {
-		opacity:1;
+
+	th .handle:hover {
+		opacity: 1;
 	}
+
 	footer button:hover {
-		color:#000;
-	}
-}
-@media (min-width:520px) {
-	body {
-		--body-margin:.5em;
-		--main-margin:1em;
-		--sheet-columns:4;
-		--controls-lines:1;
-		--drag-handle-width:1em;
-		--track-col-1-width:10.6em;
-		--track-col-2-width:24em;
-		--track-col-3-width:1fr;
-		font-size:clamp(.6em,2.4svw,1.2em);
-	}
-	main {
-		border-radius:.5em;
-		padding-bottom:.3em;
-	}
-	h1 {
-		font-size:1.4em;
-	}
-	h2 {
-		font-size:1.2em;
-	}
-	.track th {
-		padding:0;
-		grid-template-rows:1.65em;
-		grid-template-columns:1fr 2em;
-	}
-	.sheet {
-		margin:0 .8em 0 1em;
-	}
-	.track td:last-of-type {
-		width:5em;
-		padding:0;
-	}
-	.trackbutton {
-		width:auto;
-		grid-row:auto;
-		justify-self:auto;
-	}
-	#track label:nth-child(2) {
-		grid-row:2;
-		grid-column:1;
-	}
-	#track label:nth-child(3) {
-		grid-row:1;
-		grid-column:2;
-	}
-	#start {
-		order:4;
-	}
-	#reset {
-		order:3;
-	}
-	legend {
-		font-size:1em;
+		color: var(--color-text-main);
 	}
 }
 </style>
 </head>
-<body data-untitled="Morceau sans titre" data-unsaved="Morceau en cours">
+<body>
 	<main>
 		<a id="skip" href="#controls">Accéder aux boutons de contrôle</a>
-		<h1 id="title"></h1>
 		<table>
-			<tr class="track" data-index="0" data-instrument="0" data-bars="1" data-beats="4" data-steps="4" data-phrase="0">
-				<td class="dropzone" aria-hidden="true"></td>
-				<th scope="row">
-					<div draggable="true">
-						<div class="handle" title="Déplacer"></div>
-						<label>
-							<span>Instrument</span>
-							<select name="instrument" class="instrument" title="Choisir l'instrument" autocomplete="off"></select>
-						</label>
-					</div>
-					<button name="trackbutton" class="trackbutton" title="Modifier la piste">Réglages</button>
-				</th>
-				<td class="sheet">
-					<span class="bar" data-index="0">
-						<span class="beat">
-							<button name="step" class="step" data-beat="0" data-step="0" value="0">Temps 1, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="0" data-step="1" value="0">Temps 1, division 2</button>
-								<button name="step" class="step" data-beat="0" data-step="2" value="0">Temps 1, division 3</button>
-								<button name="step" class="step" data-beat="0" data-step="3" value="0">Temps 1, division 4</button>
-								<button name="step" class="step" data-beat="0" data-step="4" value="0">Temps 1, division 5</button>
-								<button name="step" class="step" data-beat="0" data-step="5" value="0">Temps 1, division 6</button>
-								<button name="step" class="step" data-beat="0" data-step="6" value="0">Temps 1, division 7</button>
-								<button name="step" class="step" data-beat="0" data-step="7" value="0">Temps 1, division 8</button>
+			<caption>
+				<h1 aria-live="polite"><span id="title"></span><span id="untitled">Morceau sans titre</span></h1>
+			</caption>
+			<thead>
+				<tr>
+					<th aria-hidden="true"></th>
+					<th scope="col">Instruments</th>
+					<th scope="col">Réglages</th>
+					<th scope="col">Partitions</th>
+					<th scope="col">Volumes</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="track" data-index="0" data-instrument="0" data-bars="1" data-beats="4" data-steps="4" data-phrase="0">
+					<td class="dropzone" aria-hidden="true"></td>
+					<th class="instrument" scope="row" draggable="true" aria-label="Piste sans instrument" data-label-template="Piste {{instrument}}">
+						<div class="handle" title="Déplacer" aria-hidden="true"></div>
+						<span>+ Instrument</span>
+						<select name="instrument" aria-label="Choisir un instrument" data-label-empty="Ajouter un instrument" data-label-active="Modifier l'instrument" autocomplete="off"></select>
+					</th>
+					<td class="settings">
+						<button title="Modifier la piste" commandfor="track-settings" command="show-modal">Réglages</button>
+					</td>
+					<td class="sheet">
+						<span class="bar" role="group" aria-label="Mesure 1" data-index="0">
+							<span class="beat" role="group" aria-label="Temps 1">
+								<button name="step" data-beat="0" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="0" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="0" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
+							</span>
+							<span class="beat" role="group" aria-label="Temps 2">
+								<button name="step" data-beat="1" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="1" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="1" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
+							</span>
+							<span class="beat" role="group" aria-label="Temps 3">
+								<button name="step" data-beat="2" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="2" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="2" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
+							</span>
+							<span class="beat" role="group" aria-label="Temps 4">
+								<button name="step" data-beat="3" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="3" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="3" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
+							</span>
+							<span class="beat" role="group" aria-label="Temps 5">
+								<button name="step" data-beat="4" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="4" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="4" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
+							</span>
+							<span class="beat" role="group" aria-label="Temps 6">
+								<button name="step" data-beat="5" data-step="0" value="0" aria-label="Division 1, vide" data-label-template="Division 1, {{stroke}}" aria-pressed="false"></button>
+								<span class="grid">
+									<button name="step" data-beat="5" data-step="1" value="0" aria-label="Division 2, vide" data-label-template="Division 2, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="2" value="0" aria-label="Division 3, vide" data-label-template="Division 3, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="3" value="0" aria-label="Division 4, vide" data-label-template="Division 4, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="4" value="0" aria-label="Division 5, vide" data-label-template="Division 5, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="5" value="0" aria-label="Division 6, vide" data-label-template="Division 6, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="6" value="0" aria-label="Division 7, vide" data-label-template="Division 7, {{stroke}}" aria-pressed="false"></button>
+									<button name="step" data-beat="5" data-step="7" value="0" aria-label="Division 8, vide" data-label-template="Division 8, {{stroke}}" aria-pressed="false"></button>
+								</span>
 							</span>
 						</span>
-						<span class="beat">
-							<button name="step" class="step" data-beat="1" data-step="0" value="0">Temps 2, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="1" data-step="1" value="0">Temps 2, division 2</button>
-								<button name="step" class="step" data-beat="1" data-step="2" value="0">Temps 2, division 3</button>
-								<button name="step" class="step" data-beat="1" data-step="3" value="0">Temps 2, division 4</button>
-								<button name="step" class="step" data-beat="1" data-step="4" value="0">Temps 2, division 5</button>
-								<button name="step" class="step" data-beat="1" data-step="5" value="0">Temps 2, division 6</button>
-								<button name="step" class="step" data-beat="1" data-step="6" value="0">Temps 2, division 7</button>
-								<button name="step" class="step" data-beat="1" data-step="7" value="0">Temps 2, division 8</button>
-							</span>
-						</span>
-						<span class="beat">
-							<button name="step" class="step" data-beat="2" data-step="0" value="0">Temps 3, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="2" data-step="1" value="0">Temps 3, division 2</button>
-								<button name="step" class="step" data-beat="2" data-step="2" value="0">Temps 3, division 3</button>
-								<button name="step" class="step" data-beat="2" data-step="3" value="0">Temps 3, division 4</button>
-								<button name="step" class="step" data-beat="2" data-step="4" value="0">Temps 3, division 5</button>
-								<button name="step" class="step" data-beat="2" data-step="5" value="0">Temps 3, division 6</button>
-								<button name="step" class="step" data-beat="2" data-step="6" value="0">Temps 3, division 7</button>
-								<button name="step" class="step" data-beat="2" data-step="7" value="0">Temps 3, division 8</button>
-							</span>
-						</span>
-						<span class="beat">
-							<button name="step" class="step" data-beat="3" data-step="0" value="0">Temps 4, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="3" data-step="1" value="0">Temps 4, division 2</button>
-								<button name="step" class="step" data-beat="3" data-step="2" value="0">Temps 4, division 3</button>
-								<button name="step" class="step" data-beat="3" data-step="3" value="0">Temps 4, division 4</button>
-								<button name="step" class="step" data-beat="3" data-step="4" value="0">Temps 4, division 5</button>
-								<button name="step" class="step" data-beat="3" data-step="5" value="0">Temps 4, division 6</button>
-								<button name="step" class="step" data-beat="3" data-step="6" value="0">Temps 4, division 7</button>
-								<button name="step" class="step" data-beat="3" data-step="7" value="0">Temps 4, division 8</button>
-							</span>
-						</span>
-						<span class="beat">
-							<button name="step" class="step" data-beat="4" data-step="0" value="0">Temps 5, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="4" data-step="1" value="0">Temps 5, division 2</button>
-								<button name="step" class="step" data-beat="4" data-step="2" value="0">Temps 5, division 3</button>
-								<button name="step" class="step" data-beat="4" data-step="3" value="0">Temps 5, division 4</button>
-								<button name="step" class="step" data-beat="4" data-step="4" value="0">Temps 5, division 5</button>
-								<button name="step" class="step" data-beat="4" data-step="5" value="0">Temps 5, division 6</button>
-								<button name="step" class="step" data-beat="4" data-step="6" value="0">Temps 5, division 7</button>
-								<button name="step" class="step" data-beat="4" data-step="7" value="0">Temps 5, division 8</button>
-							</span>
-						</span>
-						<span class="beat">
-							<button name="step" class="step" data-beat="5" data-step="0" value="0">Temps 6, division 1</button>
-							<span class="grid">
-								<button name="step" class="step" data-beat="5" data-step="1" value="0">Temps 6, division 2</button>
-								<button name="step" class="step" data-beat="5" data-step="2" value="0">Temps 6, division 3</button>
-								<button name="step" class="step" data-beat="5" data-step="3" value="0">Temps 6, division 4</button>
-								<button name="step" class="step" data-beat="5" data-step="4" value="0">Temps 6, division 5</button>
-								<button name="step" class="step" data-beat="5" data-step="5" value="0">Temps 6, division 6</button>
-								<button name="step" class="step" data-beat="5" data-step="6" value="0">Temps 6, division 7</button>
-								<button name="step" class="step" data-beat="5" data-step="7" value="0">Temps 6, division 8</button>
-							</span>
-						</span>
-					</span>
-				<td>
-					<input name="volume" class="volume" aria-label="volume" list="volume" title="Volume" type="range" value="30" min="0" max="60" autocomplete="off">
-				</td>
-			</tr>
+					</td>
+					<td class="volume">
+						<input name="volume" aria-label="Volume de la piste sans instrument" data-label-template="Volume de la piste {{instrument}}" aria-valuetext="50%" list="volume" title="Volume" type="range" value="30" min="0" max="60" autocomplete="off">
+					</td>
+				</tr>
+			</tbody>
 		</table>
 		<hr>
-		<div id="controls" role="toolbar" tabindex="-1">
+		<div id="controls" role="toolbar" aria-label="Boutons de contrôle" tabindex="-1">
 			<div id="combo_presets" role="group">
-				<button id="saved" title="Gérer le morceau">Gérer le morceau</button>
+				<button title="Gérer le morceau" command="show-modal" commandfor="presets-settings">Gérer le morceau</button>
 				<span id="presets_label">Morceaux enregistrés</span>
-				<button class="presets" aria-labelledby="presets_label" title="Choisir le morceau" data-message="Aucun morceau n'est enregistré."></button>
-				<select class="presets" aria-labelledby="presets_label" title="Choisir le morceau"></select>
+				<button class="presets" aria-labelledby="presets_label" data-message="Aucun morceau n'est enregistré."></button>
+				<select aria-labelledby="presets_label"></select>
 			</div>
-			<label id="combo_tempo" for="tempo" title="Tempo">
-				<input id="tempo" aria-label="tempo" type="range" value="80" min="60" max="160" step="4" autocomplete="off">
-				<output for="tempo"><span>80</span> bpm</output>
-			</label>
+			<div id="combo_tempo">
+				<input aria-label="Tempo" aria-valuetext="80 BPM" data-valuetext-template="{{bpm}} BPM" title="Tempo" type="range" value="80" min="60" max="160" step="4" autocomplete="off">
+				<output for="tempo" aria-hidden="true"><span>80</span> bpm</output>
+			</div>
 			<button id="reset" title="Effacer le morceau">Effacer</button>
-			<button id="start" role="switch" aria-checked="false" title="Démarrer / Arrêter">
-				<div id="play">Démarrer</div>
-				<div id="pause">Arrêter</div>
-			</button>
+			<button id="start" role="switch" aria-checked="false" title="Jouer">Jouer</button>
 			<div id="trash">Déposer ici pour supprimer</div>
 		</div>
 	</main>
 	<footer>
-		<button>À propos…</button>
+		<button commandfor="about" command="show-modal">À propos…</button>
 	</footer>
 	<datalist id="volume">
 		<option value="30"></option>
 	</datalist>
-	<dialog id="track">
-		<form method="dialog" autocomplete="off">
-			<h2 id="instrument">Instrument</h2>
-			<div>
-				<label>Nombre de mesures
+	<div id="dialogs">
+		<dialog id="track-settings" aria-label="Réglage de la piste">
+			<form method="dialog" autocomplete="off">
+				<h2>Instrument</h2>
+				<section>
+					<label for="bars">Nombre de mesures</label>
 					<select id="bars" name="bars">
 						<option value="1" selected>1</option>
 						<option value="2">2</option>
@@ -915,148 +1078,155 @@ footer button {
 						<option value="6">6</option>
 						<option value="8">8</option>
 					</select>
-				</label>
-				<label>Temps par mesure
+					<label for="beats">Temps par mesure</label>
 					<select id="beats" name="beats">
 						<option value="4" selected>4</option>
 						<option value="6">6</option>
 					</select>
-				</label>
-				<label>Division du temps
+					<label for="steps">Division du temps</label>
 					<select id="steps" name="steps">
 						<option value="3">3</option>
 						<option value="4" selected>4</option>
 						<option value="6">6</option>
 						<option value="8">8</option>
 					</select>
-				</label>
-				<label>Type de phrase
+					<label for="phrase">Type de phrase</label>
 					<select id="phrase" name="phrase">
 						<option value="1">Appel</option>
 						<option value="2">Réponse</option>
 						<option value="0" selected>Tourne</option>
 					</select>
-				</label>
-			</div>
-			<div class="bottom">
-				<button name="apply">Appliquer</button><button formnovalidate>Annuler</button>
-			</div>
-		</form>
-	</dialog>
-	<dialog id="settings">
-		<div>
-			<h2 id="preset">Nouveau morceau</h2>
-			<form id="modify" method="dialog" autocomplete="off" hidden
-				data-success="Le morceau a été enregistré."
-				data-failure="⚠️ La modification a échoué."
-				data-cancel-success="La modification a été annulée."
-				data-cancel-failure="⚠️ La modification ne peut être annulée.">
-				<fieldset>
-					<legend>Enregistrer le morceau</legend>
-					<input name="name" aria-label="nom du morceau" disabled>
-					<button name="save">Enregistrer</button>
-				</fieldset>
+				</section>
+				<footer>
+					<button name="apply">Appliquer</button><button formnovalidate>Annuler</button>
+				</footer>
 			</form>
-			<form id="newOne" method="dialog" autocomplete="off"
-				data-success="Le morceau a été enregistré."
-				data-failure="⚠️ La modification a échoué."
-				data-cancel-success="La modification a été annulée."
-				data-cancel-failure="⚠️ La modification ne peut être annulée.">
-				<fieldset>
-					<legend>Enregistrer sous</legend>
-					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required
-						data-invalid-empty="Doit contenir au moins un caractère."
-						data-invalid-duplicated="Ce nom existe déjà.">
-					<button name="save">Enregistrer</button>
-				</fieldset>
-			</form>
-			<form id="rename" method="dialog" autocomplete="off" hidden
-				data-success="Le morceau a été renommé."
-				data-failure="⚠️ La modification a échoué."
-				data-cancel-success="La modification a été annulée."
-				data-cancel-failure="⚠️ La modification ne peut être annulée.">
-				<fieldset>
-					<legend>Renommer le morceau</legend>
-					<input name="name" aria-label="nom du morceau" placeholder="Nom du morceau" required
-						data-invalid-empty="Doit contenir au moins un caractère."
-						data-invalid-duplicated="Ce nom existe déjà.">
-					<button name="save">Renommer</button>
-				</fieldset>
-			</form>
-			<form id="delete" method="dialog" autocomplete="off" hidden
-				data-success="Le morceau a été supprimé."
-				data-failure="⚠️ La modification a échoué."
-				data-cancel-success="La modification a été annulée."
-				data-cancel-failure="⚠️ La modification ne peut être annulée.">
-				<fieldset>
-					<legend>Supprimer le morceau</legend>
-					<input name="name" aria-label="nom du morceau" disabled>
-					<button name="save">Supprimer</button>
-				</fieldset>
-			</form>
-			<form class="bottom" method="dialog">
-				<button name="share_list">Partager</button><button formnovalidate>Annuler</button>
-			</form>
-		</div>
-	</dialog>
-	<dialog id="share">
-		<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
-			<h2>Partager</h2>
-			<label id="check_all">
-				<input type="checkbox" data-invalid-empty="Sélectionnez au moins un morceau.">Tout sélectionner
-			</label>
-			<ul></ul>
-			<div class="bottom">
-				<button name="share">Valider</button><button formnovalidate>Annuler</button>
-			</div>
-		</form>
-	</dialog>
-	<dialog id="shared">
-		<div>
-			<h2>Morceaux partagés</h2>
-			<ul></ul>
-			<form class="bottom" method="dialog" 
-				data-success="Tous les morceaux ont été importés."
-				data-failure="⚠️ L'import des morceaux a échoué."
-				data-cancel-success="L'import des morceaux a été annulé."
-				data-cancel-failure="⚠️ L'import des morceaux ne peut être annulé.">
-				<button name="import">Importer</button><button formnovalidate>Fermer</button>
-			</form>
-		</div>
-	</dialog>
-	<dialog id="about">
-		<div>
-			<h2>Batucada Sequencer</h2>
+		</dialog>
+		<dialog id="presets-settings" aria-label="Gestions des morceaux">
 			<div>
-				<p>Version de l'application : <span id="applicationVersion">-</span></p>
-				<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
-				<p>Version des morceaux : <span id="dataDate">01/01/2025 00:00:00</span></p>
-				<p>Contact : <a id="contact"></a></p>
+				<h2>Morceau sans titre</h2>
+				<form id="modify" method="dialog" autocomplete="off" hidden>
+					<fieldset>
+						<legend>Enregistrer le morceau</legend>
+						<input name="name" aria-label="Nom du morceau" disabled>
+						<button name="save"
+							data-success="Le morceau a été enregistré."
+							data-failure="⚠️ La modification a échoué."
+							data-cancel-success="La modification a été annulée."
+							data-cancel-failure="⚠️ La modification ne peut être annulée.">Enregistrer</button>
+					</fieldset>
+				</form>
+				<form id="newOne" method="dialog" autocomplete="off">
+					<fieldset>
+						<legend>Enregistrer sous</legend>
+						<input name="name" aria-label="Nom du morceau" placeholder="Nom du morceau" required
+							data-invalid-empty="Doit contenir au moins un caractère."
+							data-invalid-duplicated="Ce nom existe déjà.">
+						<button name="save"
+							data-success="Le morceau a été enregistré."
+							data-failure="⚠️ La modification a échoué."
+							data-cancel-success="La modification a été annulée."
+							data-cancel-failure="⚠️ La modification ne peut être annulée.">Enregistrer</button>
+					</fieldset>
+				</form>
+				<form id="rename" method="dialog" autocomplete="off" hidden>
+					<fieldset>
+						<legend>Renommer le morceau</legend>
+						<input name="name" aria-label="Nom du morceau" placeholder="Nom du morceau" required
+							data-invalid-empty="Doit contenir au moins un caractère."
+							data-invalid-duplicated="Ce nom existe déjà.">
+						<button name="save"
+							data-success="Le morceau a été renommé."
+							data-failure="⚠️ La modification a échoué."
+							data-cancel-success="La modification a été annulée."
+							data-cancel-failure="⚠️ La modification ne peut être annulée.">Renommer</button>
+					</fieldset>
+				</form>
+				<form id="delete" method="dialog" autocomplete="off" hidden>
+					<fieldset>
+						<legend>Supprimer le morceau</legend>
+						<input name="name" aria-label="Nom du morceau" readonly tabindex="-1">
+						<button name="save"
+							data-success="Le morceau a été supprimé."
+							data-failure="⚠️ La modification a échoué."
+							data-cancel-success="La modification a été annulée."
+							data-cancel-failure="⚠️ La modification ne peut être annulée.">Supprimer</button>
+					</fieldset>
+				</form>
+				<footer>
+					<button commandfor="presets-share" command="show-modal">Partager</button>
+					<button commandfor="presets-settings" command="close">Annuler</button>
+				</footer>
 			</div>
-			<form method="dialog" class="bottom">
-				<button id="update" hidden>Mettre à jour l'application</button><button formnovalidate>Fermer</button>
-			</form>
-		</div>
-	</dialog>
-	<div id="toast" popover="auto"><p></p><button name="cancel">Annuler</button></div>
+		</dialog>
+		<dialog id="presets-share" aria-label="Partage des morceaux">
+			<div>
+				<h2>Partager</h2>
+				<form method="dialog" autocomplete="off" data-failure="🔗 Lien de partage copié dans le presse-papier.">
+					<label class="check_all">
+						<input name="check_all" type="checkbox" data-invalid-empty="Sélectionnez au moins un morceau.">Tout sélectionner
+					</label>
+					<ul></ul>
+					<footer>
+						<button name="share">Valider</button><button formnovalidate>Annuler</button>
+					</footer>
+				</form>
+			</div>
+		</dialog>
+		<dialog id="presets-shared" aria-label="Morceaux partagés">
+			<div>
+				<h2>Morceaux partagés</h2>
+				<section>
+					<ul></ul>
+				</section>
+				<footer>
+					<button commandfor="presets-shared" command="--import"
+						data-success="Tous les morceaux ont été importés."
+						data-failure="⚠️ L'import des morceaux a échoué."
+						data-cancel-success="L'import des morceaux a été annulé."
+						data-cancel-failure="⚠️ L'import des morceaux ne peut être annulé.">Importer</button>
+					<button commandfor="presets-shared" command="close">Fermer</button>
+				</footer>
+			</div>
+		</dialog>
+		<dialog id="about" aria-labelledby="aboutTitle">
+			<div>
+				<h2 id="aboutTitle">Batucada Sequencer</h2>
+				<section>
+					<p>Version de l'application : <span id="applicationVersion">-</span></p>
+					<p>Version des instruments : <span id="instrumentsVersion">-</span></p>
+					<p>Version des morceaux : <time>01/01/2025 00:00:00</time></p>
+					<p>Contact : <a id="contact"></a></p>
+				</section>
+				<footer>
+					<button commandfor="about" command="--update" hidden>Mettre à jour l'application</button>
+					<button commandfor="about" command="close" autofocus>Fermer</button>
+				</footer>
+			</div>
+		</dialog>
+	</div>
+	<div id="toast" popover="auto" role="status">
+		<p></p>
+		<button command="--cancel">Annuler</button>
+	</div>
 	<script type="module">
-		import app_config      from './config/app_config.json'   with { type: 'json' };
-		import core_config     from './config/core_config.json'  with { type: 'json' };
-		import instruments     from './modules/instruments.json' with { type: 'json' };
-		import {Audio}         from './modules/audio.js';
-		import {Presets}       from './modules/presets.js';
-		import {UrlState}      from './modules/url-state.js';
-		import {Interface}     from './modules/interface.js';
-		import {ServiceWorker} from './modules/service-worker.js';
+		import {Audio}      from './modules/audio.js';
+		import {Presets}    from './modules/presets.js';
+		import {Navigation} from './modules/navigation.js';
+		import {Interface}  from './modules/interface.js';
+		import {SwClient}   from './modules/sw-client.js';
+		import app_config   from './config/app.js';
+		import core_config  from './config/core.js';
+		import instruments  from './data/instruments.json' with { type: 'json' };
 
 		const bus    = new EventTarget();
 		const ui     = new Interface({ bus, app_config, core_config, instruments });
 		const config = ui.config;
 
-		new UrlState(     { bus, config, instruments });
-		new Presets(      { bus, config, instruments });
-		new Audio(        { bus, config, instruments });
-		new ServiceWorker({ bus, config, instruments });
+		new Audio(     { bus, config, instruments });
+		new Navigation({ bus, config, instruments });
+		new Presets(   { bus, config, instruments });
+		new SwClient(  { bus, config, instruments });
 	</script>
 </body>
 </html>

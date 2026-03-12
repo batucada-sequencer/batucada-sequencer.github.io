@@ -6,6 +6,7 @@ export default class InterfaceSwap {
 	#swapClass     = 'swap';
 	#overClass     = 'over';
 	#trashClass    = 'trash';
+	#resetedClass  = 'reseted';
 	#dropzoneClass = 'dropzone';
 	#trash         = document.querySelector('#trash');
 
@@ -66,23 +67,28 @@ export default class InterfaceSwap {
 		const targetTrack  = this.#ui.getTrack(event.target);
 		const targetIndex  = targetTrack ? this.#ui.getTrackIndex(targetTrack) : null;
 		const sourceIndex  = Number(event.dataTransfer.getData('text/plain'));
+		if (targetIndex !== null) {
+			const sourcePosition = this.#order.indexOf(sourceIndex);
+			const targetPosition = this.#order.indexOf(targetIndex);
+			if (sourcePosition === targetPosition || sourcePosition + 1 === targetPosition) {
+				return;
+			}
+		}
 		const draggedTrack = this.#ui.tracks[sourceIndex];
 		const trashed = targetIndex === null ? sourceIndex : null;
-		const isLastVisualTrack = (sourceIndex === this.#order.at(-1)) || !this.#ui.hasInstrument(draggedTrack);
+		const isLastVisualTrack = sourceIndex === this.#order.at(-1) || !this.#ui.hasInstrument(draggedTrack);
 		this.#swapOrder(sourceIndex, targetIndex);
 		const moveTrack = () => {
-			if (!targetTrack) {
-				draggedTrack.parentNode.appendChild(draggedTrack);
-			}
-			else {
-				targetTrack.before(draggedTrack);
-			}
+			draggedTrack.parentNode.insertBefore(draggedTrack, targetTrack);
 			this.#bus.dispatchEvent(
 				new CustomEvent('interface:moveTrack', { detail: { trashed, order: this.#order } })
 			);
 		};
 		if (trashed !== null && isLastVisualTrack) {
-			draggedTrack.animate([{ opacity: 0 }], { duration: 200, easing: 'ease' }).finished.then(moveTrack);
+			const target = draggedTrack.nextElementSibling || draggedTrack;
+			moveTrack();
+			target.classList.remove(this.#resetedClass);
+			requestAnimationFrame(() => target.classList.add(this.#resetedClass));
 		}
 		else {
 			document.startViewTransition(moveTrack);

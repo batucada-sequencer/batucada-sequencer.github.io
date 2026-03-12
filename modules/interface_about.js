@@ -1,54 +1,44 @@
+import versions from '../versions.js';
+
 export default class InterfaceAbout {
+	#ui;
 	#bus;
 	#about =              document.querySelector('#about');
 	#contact =            document.querySelector('#contact');
-	#dataDate =           document.querySelector('#dataDate');
-	#aboutButton =        document.querySelector('footer button');
-	#updateButton =       document.querySelector('#update');
+	#dataDate =           document.querySelector('#about time');
+	#updateButton =       document.querySelector('[command="--update"]');
 	#applicationVersion = document.querySelector('#applicationVersion');
 	#instrumentsVersion = document.querySelector('#instrumentsVersion');
 
 	constructor({ bus, parent }) {
 		this.#bus = bus;
-		this.#contact.textContent = parent.email;
-		this.#contact.href = `mailto:${parent.email}`;
-
-		this.#aboutButton. addEventListener('click', () => this.#openAbout());
-		this.#updateButton.addEventListener('click', () => this.#update());
+		this.#ui = parent;
+		this.#contact.textContent = parent.config.email;
+		this.#contact.href = `mailto:${parent.config.email}`;
+		this.#about.addEventListener('command', (event) => this.#update(event));
+		this.#applicationVersion.textContent = versions.app;
+		this.#instrumentsVersion.textContent = versions.static;
+		this.#dataDate.textContent = this.#getDate();
 	}
 
 	showUpdateButton() {
 		this.#updateButton.hidden = false;
 	}
 
-	#update() {
-		this.#about.close();
-		document.body.inert = true;
-		this.#bus.dispatchEvent(new CustomEvent('interface:install'));
+	#update({ command }) {
+		if (command === 'show-modal') {
+			this.#dataDate.textContent = this.#getDate();
+			this.#bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
+		}
+		else if (command === '--update') {
+			this.#about.close();
+			document.body.inert = true;
+			this.#bus.dispatchEvent(new CustomEvent('interface:install'));
+		}
 	}
 
-	async #openAbout() {
-		this.#about.showModal();
-		this.#about.focus();
-		try {
-			this.#bus.dispatchEvent(new CustomEvent('interface:findUpdate'));
-			const lastModified = await new Promise(resolve => {
-				this.#bus.dispatchEvent(new CustomEvent('interface:getPresetsDate', { detail: resolve }));
-			});
-			if (lastModified) {
-				const date = new Date(lastModified);
-				const localeOpts = { hour12: false };
-				dataDate.textContent =
-					`${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', localeOpts)}`;
-			}
-			const versions = await new Promise(resolve => {
-				this.#bus.dispatchEvent(new CustomEvent('interface:getVersions', { detail: resolve }));
-			});
-			if (versions) {
-				this.#applicationVersion.textContent = versions.app;
-				this.#instrumentsVersion.textContent = versions.static;
-				this.#updateButton.hidden = !versions.hasUpdate;
-			}
-		} catch {}
+	#getDate() {
+		return this.#ui.presetsDate?.toLocaleString('fr-FR', { hour12: false }) ?? '-';
 	}
+
 }

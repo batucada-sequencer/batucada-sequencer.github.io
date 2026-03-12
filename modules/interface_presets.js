@@ -1,34 +1,32 @@
 export default class InterfacePresets {
 	#ui;
 	#bus;
+	#sharedPresets;
 	#checkBoxShare;
-	#unsaved =        document.body.dataset.unsaved;
 	#toast =          document.querySelector('#toast');
-	#share =          document.querySelector('#share');
-	#shared =         document.querySelector('#shared');
-	#settings =       document.querySelector('#settings');
-	#shareList =      document.querySelector('#share ul');
-	#presetName =     document.querySelector('#preset');
-	#sharedList =     document.querySelector('#shared ul');
-	#shareButton =    document.querySelector('#share button[name="share"]');
+	#share =          document.querySelector('#presets-share');
+	#shared =         document.querySelector('#presets-shared');
+	#dialogs =        document.querySelector('#dialogs');
+	#settings =       document.querySelector('#presets-settings');
+	#shareList =      document.querySelector('#presets-share ul');
+	#presetName =     document.querySelector('#presets-settings h2');
+	#sharedList =     document.querySelector('#presets-shared ul');
 	#toastMessage =   document.querySelector('#toast p');
 	#cancelButton =   document.querySelector('#toast button');
 	#presetsButton =  document.querySelector('button.presets');
-	#settingsButton = document.querySelector('#saved');
-	#checkBoxMaster = document.querySelector('#check_all input');
+	#checkBoxMaster = document.querySelector('[name="check_all"]');
 
 	constructor({ bus, parent }) {
 		this.#bus = bus
 		this.#ui = parent;
 
-		document.                 addEventListener('submit',       (event) => this.#submitForm(event));
-		this.#shared.             addEventListener('close',        (event) => this.#sharedClosed());
-		this.#toast.              addEventListener('animationend', (event) => this.#toast.hidePopover());
-		this.#checkBoxMaster.form.addEventListener('change',       (event) => this.#checkValues(event));
-		this.#ui.presets.         addEventListener('change',       (event) => this.#setSelectedPreset(event));
-		this.#presetsButton.      addEventListener('click',        (event) => this.#showToast(event));
-		this.#settingsButton.     addEventListener('click',        (event) => this.#openSettings());
-		this.#sharedList.         addEventListener('click',        (event) => this.#loadClickedPreset(event));
+		document.           addEventListener('change',       (event) => this.#handleChange(event));
+		this.#dialogs.      addEventListener('command',      (event) => this.#handleCommand(event), { capture: true });
+		this.#dialogs.      addEventListener('submit',       (event) => this.#submitForm(event));
+		this.#shared.       addEventListener('close',        (event) => this.#sharedClosed(event));
+		this.#toast.        addEventListener('animationend', (event) => this.#toast.hidePopover());
+		this.#presetsButton.addEventListener('click',        (event) => this.#showToast(event));
+		this.#sharedList.   addEventListener('click',        (event) => this.#loadClickedPreset(event));
 
 		this.#toastPositioning();
 	}
@@ -36,88 +34,104 @@ export default class InterfacePresets {
 	// Chargement conditionnel du polyfill toast_positioning
 	async #toastPositioning() {
 		if (!CSS.supports('inset', 'anchor-size(height)')) {
-			const { applyPolyfill } = await import('./toast-positioning.js');
+			const { applyPolyfill } = await import('./polyfills/anchor-positioning.js');
 			applyPolyfill(this.#toast, this.#ui.container);
 		}
 	}
 
-	#setSelectedPreset(event) {
-		const { value, selectedIndex, options } = event.target;
-		const { text } = options[selectedIndex];
-		const name = text === this.#ui.untitled ? undefined : text;
-		this.#bus.dispatchEvent(
-			new CustomEvent('interface:presetSelected', { detail: { name, value, index: selectedIndex } })
-		);
+	#submitForm(event) {
+		const action = event.submitter.name;
+		if (action === 'save') {
+			this.#saveSettings(event);
+		}
+		else if (action === 'share') {
+			this.#sharePresets(event);
+		}
+	}
+
+	#handleChange(event) {
+		if (event.target === this.#ui.presets) {
+			this.#bus.dispatchEvent(
+				new CustomEvent('interface:presetSelected', { detail: event.target.selectedIndex })
+			);
+		}
+		else if (event.target.name === 'check_all' || event.target.name === 'index') {
+			this.#checkValues(event);
+		}
+	}
+
+	#handleCommand(event) {
+		const { command, source } = event;
+		if (command === 'show-modal') {
+			if (event.target === this.#share) this.#openShareList();
+			if (event.target === this.#settings) this.#openSettings();
+		}
+		else if (command === '--import') {
+			this.#importPresets(source);
+		}
+		else if (command === '--cancel') {
+			this.#cancelSettings(source);
+		}
 	}
 
 	#loadClickedPreset(event) {
-		const href = event.target.href;
-		if (!href) return;
 		event.preventDefault();
-		this.#shared.close();
-		this.#bus.dispatchEvent(new CustomEvent('interface:presetClicked', { detail: href }));
+		this.#shared.close(event.target.href);
 	}
 
 	#openSettings() {
-		const title = this.#ui.title.textContent;
-		const presetIndex = Array.from(this.#ui.presets.options)
-			.slice(1)
-			.findIndex(option => option.text === title);
+		const title = this.#ui.title.textContent.trim();
+		const exists = Array.from(this.#ui.presets.options).some(option => option.text === title);
 		const hasSelection = this.#ui.presets.selectedIndex !== -1;
-		const exists = presetIndex !== -1 && title;
+
 		const formsValues = [
-			{ formId:'newOne', name: exists ? '' : title, hidden: hasSelection },
-			{ formId:'modify', name: title, hidden: hasSelection || !exists },
-			{ formId:'rename', name: title, hidden: !hasSelection },
-			{ formId:'delete', name: title, hidden: !hasSelection },
+			{ id: 'newOne', name: exists ? '' : title, hidden: hasSelection },
+			{ id: 'modify', name: title,               hidden: hasSelection || !exists },
+			{ id: 'rename', name: title,               hidden: !hasSelection },
+			{ id: 'delete', name: title,               hidden: !hasSelection },
 		];
-		for (const { formId, name, hidden } of formsValues) {
-			const form = document.forms[formId];
+
+		for (const { id, name, hidden } of formsValues) {
+			const form = document.forms[id];
+			const input = form.elements['name'];
 			form.hidden = hidden;
-			form.elements.name.value = name;
+			input.value = name;
+			input.setCustomValidity('');
 		}
+
 		this.#presetName.textContent = title || this.#ui.untitled;
-		this.#settings.showModal();
-		this.#settings.focus();
 	}
 
 	#openShareList() {
+		this.#settings.close();
+
+		const options = Array.from(this.#ui.presets.options);
 		const isUnsaved = this.#ui.presets.selectedIndex === -1 && this.#ui.hasStroke;
-		const data = { items: [], checkBoxList: [], checkedBox: false };
+		const items = [];
 		if (isUnsaved) {
-			const { li, input } = this.#createCheckItem({
-				name: this.#unsaved,
-				value: -1,
-				checked: true,
-			});
-			data.items.push(li);
-			data.checkedBox = input;
-			data.checkBoxList.push(input);
+			items.push({ text: this.#ui.untitled, value: -1, checked: true });
 		}
-		Array.from(this.#ui.presets.options).forEach((option, index) => {
-			const name = option.text;
-			// Conserve uniquement les morceaux avec un nom
-			if (option.disabled || name === this.#ui.untitled) return;
-			const { li, input } = this.#createCheckItem({
-				name,
-				value: index - 1,
-				checked: option.selected,
-			});
-			data.items.push(li);
-			data.checkBoxList.push(input);
-			if (input.checked) data.checkedBox = input;
+
+		options.forEach(({ text, selected }, value) => {
+			if (text !== this.#ui.untitled) {
+				items.push({ text, value, checked: selected });
+			}
 		});
-		const { items, checkedBox, checkBoxList } = data;
-		this.#shareList.replaceChildren(...items);
-		this.#checkBoxShare = checkBoxList;
+
+		const nodes = items.map(data => this.#createCheckItem(data));
+		this.#shareList.replaceChildren(...nodes);
+		this.#checkBoxShare = nodes.map(li => li.querySelector('input'));
 		this.#checkValues();
-		this.#share.showModal();
-		if (checkedBox) {
-			checkedBox.scrollIntoView({ behavior: 'instant', block: 'center' });
-		}
+
+		requestAnimationFrame(() => {
+			this.#checkBoxShare.find(item => item.checked)?.scrollIntoView({ 
+				behavior: 'instant',
+				block: 'center',
+			});
+		});
 	}
 
-	#createCheckItem = ({ name, value, checked }) => {
+	#createCheckItem = ({ text, value, checked }) => {
 		const li = document.createElement('li');
 		const label = document.createElement('label');
 		const input = Object.assign(document.createElement('input'), {
@@ -126,12 +140,13 @@ export default class InterfacePresets {
 			value,
 			checked,
 		});
-		label.append(input, document.createTextNode(name));
+		label.append(input, document.createTextNode(text));
 		li.append(label);
-		return { li, input };
+		return li;
 	};
 
-	openShared(links) {
+	openShared({ links, presets }) {
+		this.#sharedPresets = presets;
 		this.#sharedList.replaceChildren(
 			...links.map(({ name, url }) => {
 				const a = document.createElement('a');
@@ -146,12 +161,12 @@ export default class InterfacePresets {
 		this.#shared.focus();
 	}
 
-	#sharedClosed() {
-		this.#bus.dispatchEvent(new CustomEvent('interface:sharedClosed'));
+	#sharedClosed(event) {
+		this.#bus.dispatchEvent(new CustomEvent('interface:sharedClosed', { detail: event.target.returnValue }));
 	}
 
 	#checkValues(event = { target: false }) {
-		if (event.target === this.#checkBoxMaster) {
+		if (event.target?.name === 'check_all') {
 			this.#checkBoxShare.forEach(checkbox => checkbox.checked = this.#checkBoxMaster.checked);
 		}
 		const checkedCount = this.#checkBoxShare.filter(checkbox => checkbox.checked).length;
@@ -159,52 +174,51 @@ export default class InterfacePresets {
 		this.#checkBoxMaster.setCustomValidity('');
 	}
 
-	#submitForm(event) {
-		const action = event.submitter.name;
-		if (action === 'save') {
-			this.#saveSettings(event);
-		}
-		else if (action === 'cancel') {
-			this.#cancelSettings(event.submitter);
-		}
-		else if (action === 'share_list') {
-			this.#openShareList();
-		}
-		else if (action === 'share') {
-			this.#sharePresets(event);
-		}
-		else if (action === 'import') {
-			this.#importPresets(event.target);
-		}
-	}
-
 	async #saveSettings(event) {
 		event.preventDefault();
-		const form = event.target;
+		const {
+			target: { id: action, elements }, 
+			submitter: button 
+		} = event;
+		const messages = button.dataset;
+
 		try {
-			const action = form.id;
-			const presetName = form.elements['name'];
-			const name = presetName.value.trim();
-			await new Promise((resolve, reject) => {
+			const name = elements['name']?.value.trim() || '';
+			const request = await new Promise((resolve, reject) => {
 				this.#bus.dispatchEvent(new CustomEvent('interface:settingsSave', { 
 					detail: { action, name, promise: { resolve, reject } }
 				}));
 			});
-			this.#cancelButton.setAttribute('form', form.id);
-			this.#showToast(form.dataset.success);
-		} catch (error) {
+			if (request === false) return;
 			this.#settings.close();
-			this.#showToast(form.dataset.failure);
+			await request.result;
+			this.#cancelButton.commandForElement = button;
+			this.#showToast(messages.success);
+		} 
+
+		catch (error) {
+			this.#settings.close();
+			this.#showToast(messages.failure);
 		}
 	}
 
-	async #cancelSettings(button) {
+	reportNameValidity({ action, status }) {
+		const input = document.forms[action]?.elements['name'];
+		const datasetNames = { empty: 'invalidEmpty', duplicated: 'invalidDuplicated' };
+		const validityMessage = input.dataset[datasetNames[status]];
+		input.setCustomValidity(validityMessage);
+		input.reportValidity();
+		input.addEventListener('input', () => input.setCustomValidity(''), { once: true });
+	}
+
+
+	async #cancelSettings(source) {
 		this.#toast.hidePopover();
-		const messages = button.form.dataset;
-		button.removeAttribute('form');
+		const messages = source.commandForElement.dataset;
+		source.commandForElement = null;
 		try {
 			await new Promise((resolve, reject) => {
-				this.#bus.dispatchEvent(new CustomEvent('interface:settingsCancel', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:settingsCancel', {
 					detail: { resolve, reject }
 				}));
 			});
@@ -225,7 +239,7 @@ export default class InterfacePresets {
 		}
 		try {
 			await new Promise((resolve, reject) => {
-				this.#bus.dispatchEvent(new CustomEvent('interface:presetsShare', { 
+				this.#bus.dispatchEvent(new CustomEvent('interface:presetsShare', {
 					detail: { presetsIndex, promise: { resolve, reject } }
 				}));
 			});
@@ -234,36 +248,20 @@ export default class InterfacePresets {
 		}
 	}
 
-	async #importPresets(form) {
+	async #importPresets(source) {
+		const messages = source.dataset;
 		try {
+			if (!this.#sharedPresets?.length) throw new Error();
 			await new Promise((resolve, reject) => {
-				this.#bus.dispatchEvent(new CustomEvent('interface:presetsImport', { 
-					detail: { resolve, reject }
+				this.#bus.dispatchEvent(new CustomEvent('interface:presetsImport', {
+					detail: { data: this.#sharedPresets, promise: { resolve, reject } }
 				}));
 			});
-			this.#cancelButton.setAttribute('form', form.id);
-			this.#showToast(form.dataset.success);
-		} catch (error) {
-			this.#showToast(form.dataset.failure);
-		}
-	}
-
-	reportNameValidity({ action, customValidity }) {
-		const input = document.forms[action].elements.name;
-		const datasetNames = {
-			empty: 'invalidEmpty',
-			duplicated: 'invalidDuplicated',
-		}
-		const validity = input.dataset[datasetNames[customValidity]] ?? '';
-		if (validity === '') {
-			this.#settings.close();
-		}
-		else {
-			input.setCustomValidity(validity);
-			input.reportValidity();
-			input.addEventListener('input', () => {
-				input.setCustomValidity('');
-			}, { once: true });
+			this.#sharedPresets = null;
+			this.#cancelButton.commandForElement = form;
+			this.#showToast(messages.success);
+		} catch {
+			this.#showToast(messages.failure);
 		}
 	}
 
@@ -271,7 +269,7 @@ export default class InterfacePresets {
 		const isEvent = payload instanceof Event;
 		const message = isEvent ? payload.currentTarget.dataset.message : payload;
 		this.#toastMessage.textContent = message;
-		this.#cancelButton.hidden = isEvent || !this.#cancelButton.form;
+		this.#cancelButton.hidden = isEvent || !this.#cancelButton.commandForElement;
 		this.#toast.showPopover();
 	}
 }

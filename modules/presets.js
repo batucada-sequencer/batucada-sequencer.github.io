@@ -1,9 +1,12 @@
 export class Presets {
 	#bus;
 	#local;
+	#apiKey;
 	#params;
-	#fileName;
 	#cacheName;
+	#presetsDate;
+	#apiEndPoint;
+	#userFileName;
 	#setSearchParam;
 	#shareSearchParam;
 	#titleSearchParam;
@@ -12,14 +15,12 @@ export class Presets {
 	#index              = -1;
 	#presets            = null;
 	#lastAction         = null;
-	#userFileName       = null;
-	#sharedPresets      = null;
 	#isPersistedStorage = null;
 
 	constructor({ bus, config }) {
 		this.#bus               = bus;
 		this.#local             = config.local;
-		this.#fileName          = config.presetsFile;
+		this.#apiKey            = config.apiKey;
 		this.#cacheName         = config.dataCache;
 		this.#setSearchParam    = config.setSearchParam;
 		this.#shareSearchParam  = config.shareSearchParam;
@@ -27,26 +28,24 @@ export class Presets {
 		this.#defaultSetValue   = config.defaultSetValue;
 		this.#defaultTitleValue = config.defaultTitleValue;
 
-		this.#params = new Map(new URLSearchParams(location.search));
+		this.#params       = new Map(new URLSearchParams(location.search));
+		const user         = this.#params.get('user')?.trim() || '0';
+		this.#apiEndPoint  = `${config.apiURL}?user=${user}&filename=${config.presetsFile}`;
+		this.#userFileName = `./${this.#cacheName}/presets/${user}/${config.presetsFile}`;
+
 		this.#softUpdatePresets();
 
 		addEventListener('focus', () => this.#softUpdatePresets());
-		this.#bus.addEventListener('interface:reset',          ({ detail }) => this.#reset(detail));
-		this.#bus.addEventListener('interface:settingsSave',   ({ detail }) => this.#settingsSave(detail));
-		this.#bus.addEventListener('interface:settingsCancel', ({ detail }) => this.#settingsCancel(detail));
-		this.#bus.addEventListener('interface:presetSelected', ({ detail }) => this.#presetSelected(detail));
-		this.#bus.addEventListener('interface:presetsShare',   ({ detail }) => this.#presetsShare(detail));
-		this.#bus.addEventListener('interface:presetsImport',  ({ detail }) => this.#presetsImport(detail));
-		this.#bus.addEventListener('interface:getPresetsDate', ({ detail }) => this.#sendPresetsDate(detail));
-		this.#bus.addEventListener('urlState:changed',         ({ detail }) => this.#updateParams(detail));
-		this.#bus.addEventListener('urlState:openShared',      ({ detail }) => this.#openShared(detail));
+		this.#bus.addEventListener('interface:reset',             ({ detail }) => this.#reset(detail));
+		this.#bus.addEventListener('interface:settingsSave',      ({ detail }) => this.#settingsSave(detail));
+		this.#bus.addEventListener('interface:settingsCancel',    ({ detail }) => this.#settingsCancel(detail));
+		this.#bus.addEventListener('interface:presetSelected',    ({ detail }) => this.#presetSelected(detail));
+		this.#bus.addEventListener('interface:presetsShare',      ({ detail }) => this.#presetsShare(detail));
+		this.#bus.addEventListener('interface:presetsImport',     ({ detail }) => this.#presetsImport(detail));
+		this.#bus.addEventListener('navigation:changed',          ({ detail }) => this.#updateParams(detail));
 	}
 
 	async #fetchData() {
-		if (!this.#userFileName) {
-			const user = new URLSearchParams(location.search).get('user')?.trim() || '0';
-			this.#userFileName = `./${this.#cacheName}/preset.php?user=${user}&filename=${this.#fileName}`;
-		}
 		const cache = await caches.open(this.#cacheName);
 		if (this.#local) {
 			let response = await cache.match(this.#userFileName);
@@ -59,12 +58,15 @@ export class Presets {
 			// Cache fetch au premier appel puis network fetch pour les suivants
 			const options = this.#presets !== null ? { headers: { 'Cache-Control': 'no-cache' } } : {};
 			const response = await fetch(this.#userFileName, options);
+			if (response.status === 404) return []; 
 			if (!response.ok) throw new Error(`Échec du fetch : ${response.status}`);
 			// Ajout au cache uniquement si non présent
 			if (!(await cache.match(this.#userFileName))) {
 				await cache.put(this.#userFileName, response.clone());
 			}
-			return response.json();
+			const lastModified = response.headers.get('last-modified');
+			this.#presetsDate = lastModified ? new Date(lastModified) : null;
+			return await response.json();
 		}
 	}
 
@@ -75,12 +77,24 @@ export class Presets {
 			response = this.#jsonResponse(data);
 			if (this.#isPersistedStorage === null) {
 				this.#isPersistedStorage = await navigator.storage.persist();
-				console.log(`Persisted storage granted: ${this.#isPersistedStorage}`);
 			}
 		} else {
-			response = await fetch(this.#userFileName, { method: 'PUT', body: JSON.stringify(data) });
+			response = await fetch(this.#apiEndPoint, { 
+				method: 'PUT', 
+				body: JSON.stringify(data),
+				headers: {
+					'Content-Type': 'application/json',
+					'X-API-KEY': atob(this.#apiKey)
+				}
+			});
 		}
-		await cache.put(this.#userFileName, response);
+
+		if (!response.ok) {
+			throw new Error(`HTTP Error: ${response.status}`);
+		}
+		const lastModified = response.headers.get('last-modified');
+		this.#presetsDate = lastModified ? new Date(lastModified) : new Date();
+		await cache.put(this.#userFileName, response.clone());
 	}
 
 	#jsonResponse(json) {
@@ -103,9 +117,11 @@ export class Presets {
 		}
 	}
 
-	#presetSelected(detail) {
-		this.#index = detail.index;
-		this.#bus.dispatchEvent(new CustomEvent('presets:presetSelected', { detail }));
+	#presetSelected(index) {
+		const preset = this.#presets[index];
+		if (!preset) return;
+		this.#index = index;
+		this.#bus.dispatchEvent(new CustomEvent('presets:presetSelected', { detail: preset }));
 	}
 
 	#reset() {
@@ -126,7 +142,10 @@ export class Presets {
 	}
 
 	#updateParams(params) {
-		if (this.#params.get(this.#setSearchParam) !== params.get(this.#setSearchParam)) {
+		if (
+			this.#params.get(this.#setSearchParam) !== params.get(this.#setSearchParam)
+			|| this.#params.get(this.#titleSearchParam) !== params.get(this.#titleSearchParam)
+		) {
 			this.#params = params;
 			this.#updatePresets();
 		}
@@ -134,9 +153,9 @@ export class Presets {
 
 	#updatePresets(presets = null, title = null) {
 		const changes = {};
-		if (presets !== null && JSON.stringify(presets) !== JSON.stringify(this.#presets)) {
+		if (presets !== null) {
 			this.#presets = presets;
-			changes.presets = presets;
+			changes.presets = { values: presets, lastModified: this.#presetsDate }
 		}
 		const setValue    = this.#params.get(this.#setSearchParam)   || this.#defaultSetValue;
 		const titleValue  = this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue;
@@ -186,37 +205,53 @@ export class Presets {
 		return this.#presets.findIndex(({ value, name }) => value === presetParam && name === title);
 	}
 
-
 	async #settingsSave({ action, name, promise }) {
 		try {
 			const data = await this.#fetchData(true);
-			const value = this.#params.get(this.#setSearchParam) || this.#defaultSetValue;
 			const isNewName = ['newOne', 'rename'].includes(action);
-			const customValidity = isNewName ? this.#validateNewName(data, name) : 'valid';
-			this.#bus.dispatchEvent(new CustomEvent('presets:reportNameValidity', { detail: { action, customValidity } }));
-			if (customValidity !== 'valid') return;
-			const indexName = action === 'rename' ? this.#params.get(this.#titleSearchParam) : name;
-			const index = data.findIndex(preset => preset.name === indexName);
-			switch (action) {
-				case 'newOne': data.push({ name, value }); break;
-				case 'modify': data[index].value = value; break;
-				case 'rename': data[index].name = name; break;
-				case 'delete': data.splice(index, 1); break;
+			const status = this.#validateNewName(data, name);
+
+			if (isNewName && status !== 'valid') {
+				this.#bus.dispatchEvent(new CustomEvent('presets:invalidName', { 
+					detail: { action, status } 
+				}));
+				promise.resolve(false);
+				return;
 			}
-			if (['newOne', 'rename'].includes(action)) {
-				data.sort((a, b) => a.name.localeCompare(b.name));
-			}
-			await this.#saveData(data);
-			this.#lastAction = {
-				data:  this.#presets,
-				title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
-			};
-			this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
-			promise.resolve();
-		} 
+
+			const result = this.#applyModification(data, action, name);
+			promise.resolve({ result });
+			await result;
+		}
+
 		catch (error) {
 			promise.reject(error);
 		}
+	}
+
+	async #applyModification(data, action, name) {
+		const isNewName = ['newOne', 'rename'].includes(action);
+		const value = this.#params.get(this.#setSearchParam) || this.#defaultSetValue;
+		const indexName = action === 'rename' ? this.#params.get(this.#titleSearchParam) : name;
+		const index = data.findIndex(preset => preset.name === indexName);
+
+		switch (action) {
+			case 'newOne': data.push({ name, value }); break;
+			case 'modify': if (index !== -1) data[index].value = value; break;
+			case 'rename': if (index !== -1) data[index].name = name; break;
+			case 'delete': if (index !== -1) data.splice(index, 1); break;
+		}
+
+		if (isNewName) data.sort((a, b) => a.name.localeCompare(b.name));
+
+		await this.#saveData(data);
+
+		this.#lastAction = {
+			data: this.#presets,
+			title: this.#params.get(this.#titleSearchParam) || this.#defaultTitleValue,
+		};
+
+		this.#updatePresets(data, action === 'delete' ? this.#defaultTitleValue : name);
 	}
 
 	#validateNewName(data, name) {
@@ -245,43 +280,21 @@ export class Presets {
 		}
 	}
 
-	#openShared(data) {
+	async #presetsImport({ data, promise }) {
 		try {
-			const encoded = decodeURIComponent(data);
-			const presets = JSON.parse(encoded);
-			if (!presets.length) return
-			const links = presets.map(({ name, value }) => {
-				const url = new URL(location.origin + location.pathname);
-				if (name) url.searchParams.set(this.#titleSearchParam, name);
-				if (value) url.searchParams.set(this.#setSearchParam, value);
-				return { name, url:url.href };
-			});
-			this.#sharedPresets = presets;
-			this.#bus.dispatchEvent(new CustomEvent('presets:openShared', { detail: links }));
-		} catch {
-			this.#sharedPresets = null;
-		}
-	}
-
-	async #presetsImport(promise) {
-		try {
-			const data = await this.#fetchData();
-			const dataMap = new Map(data.map(preset => [preset.name, { ...preset }]));
-			for (const { name = this.#defaultTitleValue, value = this.#defaultSetValue } of this.#sharedPresets) {
+			const currentData = await this.#fetchData();
+			const dataMap = new Map(currentData.map(preset => [preset.name, { ...preset }]));
+			for (const { name = this.#defaultTitleValue, value = this.#defaultSetValue } of data) {
 				dataMap.set(name, { name, value });
 			}
-			const newData = Array.from(dataMap.values());
-			newData.sort((a, b) => a.name.localeCompare(b.name));
+			const newData = Array.from(dataMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 			await this.#saveData(newData);
-			this.#lastAction = { data };
+			this.#lastAction = { currentData };
 			this.#updatePresets(newData, null);
 			promise.resolve();
 		} 
 		catch (error) {
 			promise.reject(error)
-		}
-		finally {
-			this.#sharedPresets = null;
 		}
 	}
 
@@ -314,13 +327,6 @@ export class Presets {
 			await navigator.clipboard.writeText(url);
 			promise.reject();
 		}
-	}
-
-	async #sendPresetsDate(callback) {
-		const response = await caches.match(this.#userFileName, { cacheName: this.#cacheName });
-		if (!response) return callback(null);
-		const lastModified = response.headers.get('last-modified');
-		callback(lastModified ? new Date(lastModified) : null);
 	}
 
 }

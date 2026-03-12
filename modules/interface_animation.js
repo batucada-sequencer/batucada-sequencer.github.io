@@ -37,6 +37,10 @@ export default class InterfaceAnimation {
 		this.#startLoop();
 	}
 
+	stop() {
+		this.start({ animations: new Map() });
+	}
+
 	#startLoop() {
 		if (!this.#ui.playing) {
 			this.#ui.playing = true;

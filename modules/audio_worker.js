@@ -24,9 +24,8 @@ self.onmessage = ({ data }) => {
 		case 'stop':          stop(); break;
 		case 'restart':       restart(); break;
 		case 'reset':         reset(messages); break;
-		case 'changeNote':    changeNote(payload, messages, transferables); break;
-		case 'changeTempo':   pushMessage('changed', ['tempo'], messages); break;
-		case 'changeVolume':  pushMessage('changed', ['volumes'], messages); break;
+		case 'change':        pushMessage('changed', [payload], messages); break;
+		case 'setStroke':     setStroke(payload, messages, transferables); break;
 		case 'updateData':    updateData(payload, messages, transferables); break;
 		case 'moveTrack':     moveTrack(payload, messages); break;
 	}
@@ -86,6 +85,7 @@ function scheduler(nextTickTime) {
 		.reduce((max, track) => Math.max(max, track.bars * track.beats), 0);
 
 	for (const [trackIndex, track] of tracks.entries()) {
+
 		const { instrument, bars, beats, steps, active, phrase, sheetIndex } = track;
 		const totalBeats = bars * beats;
 		if (!active || phrase !== phraseCounter || (phrase !== 0 && beatCounter >= totalBeats)) continue;
@@ -93,8 +93,8 @@ function scheduler(nextTickTime) {
 		const barCount = Math.floor((beatCounter % (bars * beats)) / beats);
 		const beatIndex = (barCount * config.resolution.maxBeats) + (beatCounter % beats);
 		const beatOffset = sheetIndex + (beatIndex * config.resolution.beat);
-
 		const secondsPerStep = secondsPerBar / steps;
+
 		for (let stepOffset = 0; stepOffset < steps; stepOffset++) {
 			const stepIndex = beatOffset + stepOffset;
 			const offset = noteCount * 5;
@@ -131,7 +131,7 @@ function scheduler(nextTickTime) {
 	}
 }
 
-function changeNote({ sheet: change }, messages, transferables) {
+function setStroke({ sheet: change }, messages, transferables) {
 	const [{ stepIndex, value }] = change;
 	const trackIndex = (stepIndex / config.resolution.track) | 0;
 	const instrument = tracks[trackIndex].instrument;

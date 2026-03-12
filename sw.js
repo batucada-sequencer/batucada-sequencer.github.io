@@ -1,40 +1,31 @@
-const versions = {
-	app: '1.06.28',
-	static: '1.04',
-};
-
-// En attendant la prise ne comptes des modules par firefox
-// import config from './config/core_config.json' with { type: 'json' };
-const config = {
-	appCache: 'app',
-	dataCache: 'data',
-	versionsFile: 'versions.json',
-};
+import versions from './versions.js';
+import config   from './config/core.js?cache=nocache';
 
 const assets = {
 	app: [
 		'./',
 		'./index.html',
 		'./favicon.svg',
+		'./versions.js',
 		'./app/icon.svg',
 		'./app/share.html',
 		'./app/app.webmanifest',
-		'./config/app_config.json',
-		'./config/core_config.json',
+		'./config/app.js',
+		'./config/core.js',
+		'./data/instruments.json',
 		'./modules/audio.js',
 		'./modules/audio_worker.js',
-		'./modules/instruments.json',
 		'./modules/interface.js',
 		'./modules/interface_about.js',
 		'./modules/interface_animation.js',
+		'./modules/interface_aria.js',
 		'./modules/interface_controls.js',
 		'./modules/interface_presets.js',
 		'./modules/interface_swap.js',
+		'./modules/navigation.js',
+		'./modules/navigation_worker.js',
 		'./modules/presets.js',
-		'./modules/service-worker.js',
-		'./modules/toast-positioning.js',
-		'./modules/url-state.js',
-		'./modules/url-state_worker.js',
+		'./modules/sw-client.js',
 	],
 	static: [
 		'./audio/default.ogg',
@@ -74,10 +65,6 @@ Object.entries(assets).forEach(([key, paths]) => {
 
 const versionedUrls = [...urlMap.values()];
 
-const versionsFile = new Response(JSON.stringify(versions), {
-	headers: { 'Content-Type': 'application/json' }
-});
-
 let skipWaitingCalled = false;
 
 self.addEventListener('message', event => {
@@ -106,8 +93,6 @@ self.addEventListener('activate', event => {
 			// Supprime les anciennes entrées du cache
 			const obsoleteRequests = cachedRequests.filter(request => !versionedUrls.includes(request.url));
 			await Promise.all(obsoleteRequests.map(request => cache.delete(request)));
-			// Met à jour le fichier des versions dans le cache
-			await cache.put(config.versionsFile, versionsFile);
 			// Prend le controle des tous les clients
 			await self.clients.claim();
 			const clientsList = await self.clients.matchAll({ type: 'window' });
@@ -120,8 +105,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
 	if (event.request.method !== 'GET') return;
 	const url = new URL(event.request.url);
-	const folder = url.pathname.split('/').slice(-2, -1)[0];
-	if (folder === config.dataCache) {
+	if (url.pathname.includes(`/${config.dataCache}/presets/`)) {
 		event.respondWith(handleDataRequest(event.request));
 	} else {
 		event.respondWith(handleAppRequest(event.request));
